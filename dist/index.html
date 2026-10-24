@@ -13,7 +13,7 @@
     <meta name="format-detection" content="telephone=no" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon-180.png" />
     <meta name="theme-color" content="#07060f" />
     <title>DOM Battlefield · Sherman Operations</title>
     <meta
@@ -36,7 +36,7 @@
               fill="#172127"
             /></svg
           ><span>DOM <b>BATTLEFIELD</b></span></a
-        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.4.1</i></span
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.5</i></span
         ><button id="bf-sound" aria-label="Mute game sound" aria-pressed="true">
           <svg viewBox="0 0 20 20" aria-hidden="true">
             <path d="M3 8h3l4-4v12l-4-4H3ZM14 6q4 4 0 8" />
@@ -116,6 +116,20 @@
                 <h2>Build a platoon.<br />Break a path.</h2>
                 <p>Pick a squad size. Twelve points shape your first four tanks; larger squads repeat your wingmen.</p>
               </div>
+              <div id="bf-install" class="bf-install" hidden>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14v8H3zM6 17h8" /></svg>
+                <div>
+                  <b>Play full screen</b>
+                  <p id="bf-install-ios" hidden>
+                    Tap <span class="bf-share" aria-label="Share"><svg viewBox="0 0 20 20"><path d="M10 2v11M6 6l4-4 4 4M4 10v8h12v-8" /></svg></span> Share → <b>Add to Home Screen</b>, then open Battlefield from the new icon. No browser bars, no tabs.
+                  </p>
+                  <p id="bf-install-app" hidden>Install Battlefield as an app: it opens full screen in landscape, with no browser bars.</p>
+                </div>
+                <div class="bf-install-actions">
+                  <button id="bf-install-go" class="bf-primary" hidden>Install</button
+                  ><button id="bf-install-later">Not now</button>
+                </div>
+              </div>
               <div id="bf-missions" class="bf-missions"></div>
               <div class="bf-config">
                 <div class="bf-field">
@@ -193,6 +207,7 @@
             <div id="bf-roster" class="bf-roster"></div>
             <div class="bf-drawer-actions">
               <button id="bf-tips">Show button tips</button
+              ><button id="bf-install-help">Full-screen app</button
               ><button id="bf-fullscreen" aria-label="Enter fullscreen">Full screen</button
               ><button id="bf-restart">New operation</button>
             </div>

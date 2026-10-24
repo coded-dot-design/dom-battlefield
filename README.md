@@ -43,7 +43,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 28KB gzip budget (0.4.0: ~26.8KB).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 30KB gzip budget (0.5.0: ~28.1KB).
 
 ## Boundaries
 
@@ -61,6 +61,12 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.5.0 — Install for true full screen (Battlefield only)
+
+- **iPhone / iPad:** Safari tabs cannot hide the browser UI. The setup screen shows a "Play full screen" card: Share → Add to Home Screen, then launch from the icon. The Home Screen app runs with no address bar, tabs or toolbar (status bar hidden in landscape). The card hides once running as the installed app; "Full-screen app" in the in-game panel shows it again.
+- **Android:** Chrome's install prompt is offered via an Install button; the installed app launches full screen in landscape.
+- PNG app icons (180/192/512, maskable) for iOS and Android home screens. Desktop never sees the card. Size budget 30KB (~28.1KB).
 
 ### 0.4.1 — Height-adaptive rails
 

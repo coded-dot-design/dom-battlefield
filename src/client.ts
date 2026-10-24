@@ -345,6 +345,75 @@ function ready() {
   readyOnce = true;
   if (coarse.matches && !tipsOff()) requestAnimationFrame(() => coach(true));
 }
+/* ---------- Install for true full screen (Battlefield only) ----------
+   iPhone Safari tabs can never hide the browser UI; a Home Screen web app can.
+   Android Chrome offers a native install prompt; the installed app launches full screen. */
+type InstallPrompt = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: string }> };
+const ios =
+  /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let installPrompt: InstallPrompt | null = null,
+  installLater = false;
+try {
+  installLater = sessionStorage.getItem("dom-battlefield:install") === "later";
+} catch {}
+function isInstalled() {
+  return installed.matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+function installMode(): "ios" | "app" | null {
+  if (isInstalled() || !coarse.matches) return null;
+  if (installPrompt) return "app";
+  return ios ? "ios" : null;
+}
+function installCard(floating = false) {
+  const card = $("#bf-install"),
+    mode = installMode();
+  $("#bf-install-ios").hidden = mode !== "ios";
+  $("#bf-install-app").hidden = mode !== "app";
+  $("#bf-install-go").hidden = mode !== "app";
+  $("#bf-install-help").hidden = !mode;
+  card.classList.toggle("floating", floating);
+  // Floating (from the in-game panel) the card leaves the hidden setup panel; it returns on close.
+  if (floating) $("#battlefield").append(card);
+  else if (card.parentElement !== $(".bf-setup-scroll")) $("#bf-missions").before(card);
+  card.hidden = !mode || (!floating && installLater);
+}
+async function install() {
+  if (!installPrompt) return;
+  const p = installPrompt;
+  installPrompt = null;
+  await p.prompt().catch(() => {});
+  const choice = await p.userChoice.catch(() => ({ outcome: "dismissed" }));
+  say(choice.outcome === "accepted" ? "Installed. Open Battlefield from your Home Screen for full screen." : "Install skipped.");
+  installCard();
+}
+listen(window, "beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installPrompt = e as InstallPrompt;
+  installCard();
+});
+listen(window, "appinstalled", () => {
+  installPrompt = null;
+  installCard();
+});
+listen($("#bf-install-go"), "click", () => void install());
+listen($("#bf-install-later"), "click", () => {
+  const floating = $("#bf-install").classList.contains("floating");
+  if (!floating) {
+    installLater = true;
+    try {
+      sessionStorage.setItem("dom-battlefield:install", "later");
+    } catch {}
+  }
+  installCard();
+  if (floating && playing && paused && !gatePaused) setPause(false);
+});
+listen($("#bf-install-help"), "click", () => {
+  setDrawer(false);
+  if (installPrompt) return void install();
+  if (playing && !paused) setPause(true);
+  installCard(true);
+});
 /* Keep the screen awake during a battle; browsers release it on tab hide, so re-request. */
 let wake: { release(): Promise<void> } | null = null;
 function keepAwake(on: boolean) {
@@ -837,6 +906,7 @@ listen(window, "pagehide", () => {
   abort.abort();
 });
 preview();
+installCard();
 // Small read-only diagnostic contract for lifecycle and command tests.
 Object.defineProperty(window, "battlefield", {
   value: {
@@ -846,6 +916,10 @@ Object.defineProperty(window, "battlefield", {
     },
     get paused() {
       return paused;
+    },
+    get install() {
+      const c = document.querySelector<HTMLElement>("#bf-install")!;
+      return c.hidden ? null : installMode();
     },
     get gate() {
       const g = document.querySelector<HTMLElement>("#bf-gate")!;

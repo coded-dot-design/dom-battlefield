@@ -376,6 +376,28 @@ try {
       });
       await page.close();
     }
+  // Install card: iPhone Safari gets Add to Home Screen steps; desktop never sees it.
+  {
+    const page = await browser.newPage({
+      viewport: { width: 844, height: 390 },
+      hasTouch: true,
+      isMobile: true,
+      userAgent:
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+    });
+    await page.goto("http://127.0.0.1:5231");
+    await page.waitForFunction(() => window.battlefield);
+    assert.equal(await page.evaluate(() => window.battlefield.install), "ios");
+    await page.locator("#bf-install-later").click();
+    assert.equal(await page.evaluate(() => window.battlefield.install), null);
+    await page.close();
+    const desk = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await desk.goto("http://127.0.0.1:5231");
+    await desk.waitForFunction(() => window.battlefield);
+    assert.equal(await desk.evaluate(() => window.battlefield.install), null);
+    await desk.close();
+    console.log({ install: true });
+  }
 } catch (e) {
   // CI annotation: readable from the checks API even when log downloads are not.
   console.log(`::error title=Battlefield browser test (${where})::${String(e.stack || e).split("\n").slice(0, 4).join(" | ")}`);

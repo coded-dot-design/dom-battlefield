@@ -1940,3 +1940,88 @@ html.bf-playing body {
     width: var(--fire);
   }
 }
+
+/* ---------- Install card: the only route to a browser-free screen on iPhone ---------- */
+.bf-install {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 12px;
+  align-items: start;
+  margin: 4px 0 14px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+  border: 2px solid var(--green);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--green) 45%, #07060f);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.bf-install > svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2;
+}
+.bf-install b {
+  color: var(--ink);
+}
+.bf-install p {
+  margin: 3px 0 0;
+  color: var(--muted);
+}
+.bf-share {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  vertical-align: -5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.bf-share svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bf-install-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+.bf-install-actions button {
+  min-height: 38px;
+  font-size: 11px;
+}
+.bf-install-actions .bf-primary {
+  flex: 1;
+}
+.bf-install.floating {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  top: 50%;
+  width: min(380px, calc(100vw - 32px));
+  margin: 0;
+  transform: translate(-50%, -50%);
+}
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  .bf-setup-scroll > .bf-install {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    margin: 6px 0 2px;
+    padding: 8px 10px;
+  }
+  .bf-setup-scroll > .bf-install .bf-install-actions {
+    grid-column: auto;
+  }
+  .bf-setup-scroll:has(> .bf-install:not([hidden])) .bf-missions {
+    grid-row: 2 / span 4;
+  }
+}

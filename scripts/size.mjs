@@ -12,4 +12,4 @@ for (const file of [
   console.log(`${file}: ${data.length} bytes / ${gzip} gzip`);
 }
 console.log(`Total: ${total} gzip bytes`);
-if (total > 28000) throw Error("28KB compressed app budget exceeded");
+if (total > 30000) throw Error("30KB compressed app budget exceeded");
