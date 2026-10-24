@@ -50,6 +50,7 @@ try {
       });
       await page.locator("#bf-deploy").click();
       await page.waitForTimeout(100);
+      if (mobile) await page.evaluate(async () => { if (document.fullscreenElement) await document.exitFullscreen(); });
       assert.equal(await page.evaluate(() => window.battlefield.playing), true);
       if (mobile)
         assert.equal(
@@ -66,6 +67,7 @@ try {
         () => window.battlefield.snapshot().units[0],
       );
       assert.ok(after.x > before.x);
+      if (mobile) await page.locator("#bf-squad").click();
       await page.locator("[data-order=follow]").click();
       assert.ok(
         await page.evaluate(() =>
@@ -163,8 +165,16 @@ try {
         await page.locator("#bf-center").click();
       }
       if (mobile) {
+        await page.setViewportSize({ width: 844, height: 390 });
+        await page.waitForTimeout(100);
+        const stage = await page.locator(".bf-stage").boundingBox();
+        assert.ok(stage.width >= 840 && stage.height >= 386, "landscape map fills screen");
+        const pad = await page.locator(".bf-dpad").boundingBox();
+        assert.ok(pad.width <= 844 * .2, "movement uses under 20% width");
+        assert.ok(pad.y + pad.height <= 390);
+        assert.equal(await page.locator("#bf-tactics").isVisible(), false);
         const fire = await page.locator('[data-key="Space"]').boundingBox();
-        assert.ok(fire.y + fire.height <= 844, "Fire stays in viewport");
+        assert.ok(fire.y + fire.height <= 390, "Fire stays in viewport");
         await page.mouse.move(
           fire.x + fire.width / 2,
           fire.y + fire.height / 2,

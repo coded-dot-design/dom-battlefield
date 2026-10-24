@@ -100,6 +100,8 @@ function selectUnit(id: number) {
       ? "Squad selected."
       : `Tank ${(id % 4) + 1}: click an open grid square to move. It will then resume its orders.`,
   );
+  $("#battlefield").classList.remove("squad-open");
+  $("#bf-squad").setAttribute("aria-expanded", "false");
   view.render(selected, paused, reduced.matches);
 }
 function order(order: Order) {
@@ -139,12 +141,21 @@ function setPause(value: boolean) {
   status.textContent = paused ? "PAUSED" : "LIVE";
   say(paused ? "Battle paused." : "Battle resumed.");
 }
+function fullscreen() {
+  if (document.fullscreenElement) {
+    void document.exitFullscreen().catch(() => {});
+  } else if (document.documentElement.requestFullscreen) {
+    void document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
 function deploy() {
   if (playing) return;
   if (loadoutCost(roles) > 12) return;
   audio.unlock();
   audio.play("start");
+  if (matchMedia("(pointer: coarse)").matches) fullscreen();
   playing = true;
+  $("#battlefield").dataset.active = "true";
   paused = false;
   selected = -1;
   setPan(false);
@@ -164,9 +175,13 @@ function deploy() {
   frame = requestAnimationFrame(loop);
 }
 function reset() {
+  if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   cancelAnimationFrame(frame);
   audio.close();
   playing = false;
+  $("#battlefield").dataset.active = "false";
+  $("#battlefield").classList.remove("squad-open");
+  $("#bf-squad").setAttribute("aria-expanded", "false");
   paused = false;
   selected = -1;
   clearInput();
@@ -318,6 +333,15 @@ listen($("#bf-reroll"), "click", () => {
 });
 listen($("#bf-restart"), "click", reset);
 listen($("#bf-new-operation"), "click", reset);
+listen($("#bf-fullscreen"), "click", fullscreen);
+listen(document, "fullscreenchange", () => {
+  $("#bf-fullscreen").textContent = document.fullscreenElement ? "Window" : "Full screen";
+  fit();
+});
+listen($("#bf-squad"), "click", () => {
+  const open = $("#battlefield").classList.toggle("squad-open");
+  $("#bf-squad").setAttribute("aria-expanded", String(open));
+});
 listen($("#bf-pause"), "click", () => setPause(!paused));
 listen($("#bf-pan"), "click", () => setPan(!pan));
 listen($("#bf-center"), "click", () => view.center());

@@ -110,7 +110,7 @@ export class View {
   resize() {
     const { cols, rows } = this.s.board;
     this.tile =
-      innerWidth < 760
+      matchMedia("(pointer: coarse)").matches || innerWidth < 760
         ? 32
         : Math.min(
             this.viewport.clientWidth / cols,
@@ -150,12 +150,12 @@ export class View {
         r.setAttribute(
           "fill",
           t === "water"
-            ? "#41879a"
+            ? "#427dac"
             : t === "rock"
-              ? "#788887"
+              ? "#8984bd"
               : t === "rubble"
-                ? "#736d5e"
-                : "#536c57",
+                ? "#665778"
+                : "#ab6597",
         );
         map.append(r);
       });

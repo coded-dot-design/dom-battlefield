@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#141b20" />
     <title>DOM Battlefield · Sherman Operations</title>
     <meta
@@ -140,15 +140,16 @@
             </button>
           </section>
         </div>
+        <p class="bf-rotate">Rotate your phone for a wider battlefield.</p>
         <section id="bf-controls" class="bf-controls" hidden>
           <div class="bf-command-top">
             <span id="bf-order-label">SQUAD ORDERS</span>
             <div>
-              <button id="bf-pause" aria-pressed="false">Pause</button
+              <button id="bf-squad" aria-expanded="false" aria-controls="bf-tactics">Squad</button><button id="bf-fullscreen" aria-label="Enter fullscreen">Full screen</button><button id="bf-pause" aria-pressed="false">Pause</button
               ><button id="bf-restart">New operation</button>
             </div>
           </div>
-          <div class="bf-command-row">
+          <div class="bf-command-row" id="bf-tactics">
             <div class="bf-orders">
               <button data-order="follow"><kbd>F</kbd> Fall in</button
               ><button data-order="retreat"><kbd>R</kbd> Retreat</button
@@ -179,7 +180,7 @@
               </button>
             </div>
             <div class="bf-fire-area">
-              <span>AUTO-AIM / NEAREST VISIBLE</span
+              <span>AUTO-AIM</span
               ><button
                 data-key="Space"
                 class="bf-fire"
