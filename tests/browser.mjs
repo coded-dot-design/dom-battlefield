@@ -184,7 +184,13 @@ try {
       assert.ok(target >= 0);
       const tile = page.locator(`[data-cell="${target}"]`);
       await tile.scrollIntoViewIfNeeded();
-      await tile.click({ force: true });
+      // Click the map at the square's centre; a tank driving over it must not intercept the tap.
+      await tile.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        document.querySelector("#bf-viewport").dispatchEvent(
+          new MouseEvent("click", { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }),
+        );
+      });
       assert.equal(
         await page.evaluate(() => window.battlefield.snapshot().units[1].order),
         "retreat",
