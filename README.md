@@ -2,7 +2,10 @@
 
 A separate, lightweight squad-tactics app in the DOM Virus family. Battlefield builds the map, terrain, objectives and platoon simulation. Sherman Bytes owns the tank artwork and its cached renderer. Battlefield adds **zero bytes** to the Sherman game bundle.
 
-Play: https://coded-dot-design.github.io/dom-virus/battlefield/
+Play: https://coded-dot-design.github.io/dom-virus/battlefield/ (latest release, via the hub)
+Preview: https://coded-dot-design.github.io/dom-battlefield/ (every checked `main` push)
+
+Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the preview deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
 
 ## First release
 
