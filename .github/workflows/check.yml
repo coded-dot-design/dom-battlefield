@@ -1,0 +1,35 @@
+name: Battlefield checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run size
+      - run: git diff --exit-code -- dist
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+  tag-version:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          tag="v$(node -p 'JSON.parse(require("node:fs").readFileSync("package.json","utf8")).version')"
+          git fetch origin --tags
+          if git show-ref --verify --quiet "refs/tags/$tag"; then exit 0; fi
+          git tag "$tag"
+          git push origin "$tag"

@@ -1,0 +1,26 @@
+{
+  "note": "Generated owning-source snapshots. Edit the owning game/core, then run node scripts/sync-shared.mjs. Never edit shared independently.",
+  "sources": [
+    {
+      "repository": "https://github.com/coded-dot-design/sherman-bytes",
+      "version": "0.5.1",
+      "path": "src/sprites.ts",
+      "destination": "shared/sherman-sprites.ts",
+      "sha256": "126f0e73d7bc016be1a80e99473d11c48b0ebad3b6437ea0ff0ca6e8786d1639"
+    },
+    {
+      "repository": "https://github.com/coded-dot-design/dom-virus",
+      "version": "0.11.1",
+      "path": "src/selection-lock.ts",
+      "destination": "shared/selection-lock.ts",
+      "sha256": "6259100feb6101256a23b2af175ae0c6f703863f1dd0c7e0b5dc8b531488cf70"
+    },
+    {
+      "repository": "https://github.com/coded-dot-design/dom-virus",
+      "version": "0.11.1",
+      "path": "src/audio.ts",
+      "destination": "shared/audio.ts",
+      "sha256": "3c2bfcd152bfb2976a77995661d1f47fb4b5c361dc2ce4bfadba3e88f34fb187"
+    }
+  ]
+}

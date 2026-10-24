@@ -1,0 +1,23 @@
+{
+  "name": "@coded-design/dom-battlefield",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A separate DOM battlefield and squad tactics app, powered by Sherman Bytes artwork.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.mjs",
+    "build": "npm run typecheck && vite build && node scripts/build-manifest.mjs",
+    "check": "npm run typecheck && npm test && npm run build",
+    "size": "node scripts/size.mjs",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "devDependencies": {
+    "vite": "8.3.5",
+    "typescript": "7.0.2",
+    "tsx": "4.23.15",
+    "playwright": "1.58.2"
+  }
+}

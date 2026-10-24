@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#141b20" />
+    <title>DOM Battlefield · Sherman Operations</title>
+    <meta
+      name="description"
+      content="A separate DOM battlefield. Assemble a Sherman platoon, breach terrain, and command your squad across four arcade operations."
+    />
+    <script type="module" crossorigin src="./assets/battlefield.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/battlefield.css">
+  </head>
+  <body>
+    <div id="battlefield" data-theme="dark">
+      <header class="bf-header">
+        <a
+          href="https://coded-dot-design.github.io/dom-virus/#sherman-bytes"
+          class="bf-brand"
+          ><svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 4h16v13h-4v4H8v-4H4Z" fill="currentColor" />
+            <path
+              d="M7 8h4v4H7zm7 0h4v4h-4zM10 15h5v3h-5z"
+              fill="#172127"
+            /></svg
+          ><span>DOM <b>BATTLEFIELD</b></span></a
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.1</i></span
+        ><button id="bf-sound" aria-label="Mute game sound" aria-pressed="true">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M3 8h3l4-4v12l-4-4H3ZM14 6q4 4 0 8" />
+          </svg></button
+        ><button id="bf-theme" aria-label="Toggle light and dark theme">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="6" />
+            <path d="M10 4v12" /></svg
+          ><span>Theme</span></button
+        ><a
+          class="bf-exit"
+          href="https://coded-dot-design.github.io/dom-virus/#sherman-bytes"
+          aria-label="Exit Battlefield"
+          >Exit
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="m5 5 10 10M15 5 5 15" /></svg
+        ></a>
+      </header>
+      <main class="bf-main">
+        <div class="bf-topline">
+          <div>
+            <span class="bf-eyebrow"
+              >TACTICAL SURFACE / <b id="bf-status">PREPARE</b></span
+            >
+            <h1 id="bf-operation">Hedgerow breach</h1>
+          </div>
+          <div class="bf-metrics">
+            <span>ARMOR <b id="bf-armor">100%</b></span
+            ><span>FRIENDLY <b id="bf-allies">4 / 4</b></span
+            ><span>HOSTILE <b id="bf-enemies">4 / 4</b></span
+            ><span>ELAPSED <b id="bf-clock">0:00</b></span>
+          </div>
+        </div>
+        <div class="bf-stage">
+          <div
+            id="bf-viewport"
+            aria-label="Battlefield map. Select a friendly tank then an open square."
+          ></div>
+          <aside class="bf-mini">
+            <div>
+              <b>SECTOR MAP</b><span>A <i></i> / B <i></i></span>
+            </div>
+            <svg
+              id="bf-minimap"
+              role="img"
+              aria-label="Tactical map: mint side A, coral side B. Click to move the camera."
+            ></svg>
+            <p id="bf-progress">OBJECTIVE</p>
+          </aside>
+          <div class="bf-map-tools">
+            <button id="bf-center" title="C · Center on your tank">
+              Center <kbd>C</kbd></button
+            ><button
+              id="bf-pan"
+              aria-pressed="false"
+              title="M · Toggle map panning"
+            >
+              Pan <kbd>M</kbd>
+            </button>
+          </div>
+          <section id="bf-setup" class="bf-panel">
+            <div class="bf-setup-scroll">
+              <div class="bf-panel-heading">
+                <span class="bf-eyebrow">YOUR NEXT OPERATION</span>
+                <h2>Build a platoon.<br />Break a path.</h2>
+                <p>Four tanks. Twelve points. One shared objective.</p>
+              </div>
+              <div id="bf-missions" class="bf-missions"></div>
+              <div class="bf-config">
+                <label
+                  >CHOOSE YOUR SIDE<select id="bf-side">
+                    <option value="0">SIDE A / MINT</option>
+                    <option value="1">SIDE B / CORAL</option>
+                  </select></label
+                ><label
+                  >DEPLOYMENT FORMATION<select id="bf-formation">
+                    <option value="wedge">Wedge</option>
+                    <option value="line">Line</option>
+                    <option value="column">Column</option>
+                  </select></label
+                >
+              </div>
+              <div class="bf-loadout-heading">
+                <span>PLATOON LOADOUT</span
+                ><strong id="bf-points">12 / 12 points</strong>
+              </div>
+              <div id="bf-loadout" class="bf-loadout"></div>
+              <p id="bf-cost-error" role="status"></p>
+              <p id="bf-brief" class="bf-brief"></p>
+              <p id="bf-tip" class="bf-tip"></p>
+            </div>
+            <div class="bf-setup-actions">
+              <button id="bf-deploy" class="bf-primary">
+                Deploy platoon
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M3 10h13m-5-5 5 5-5 5" />
+                </svg></button
+              ><button id="bf-reroll">New terrain</button>
+            </div>
+            <p class="bf-disclaimer">
+              Historically inspired arcade maps, not battle reconstructions.
+              Both fictional sides use the Sherman silhouette. Single-player
+              today.
+            </p>
+          </section>
+          <section id="bf-result" class="bf-result bf-panel" hidden>
+            <span class="bf-eyebrow">AFTER ACTION</span>
+            <h2 id="bf-result-title"></h2>
+            <p id="bf-result-copy"></p>
+            <button id="bf-new-operation" class="bf-primary">
+              Plan another operation
+            </button>
+          </section>
+        </div>
+        <section id="bf-controls" class="bf-controls" hidden>
+          <div class="bf-command-top">
+            <span id="bf-order-label">SQUAD ORDERS</span>
+            <div>
+              <button id="bf-pause" aria-pressed="false">Pause</button
+              ><button id="bf-restart">New operation</button>
+            </div>
+          </div>
+          <div class="bf-command-row">
+            <div class="bf-orders">
+              <button data-order="follow"><kbd>F</kbd> Fall in</button
+              ><button data-order="retreat"><kbd>R</kbd> Retreat</button
+              ><button data-order="advance"><kbd>E</kbd> Advance</button>
+            </div>
+            <div id="bf-roster" class="bf-roster"></div>
+          </div>
+          <p class="bf-help">
+            <b>WASD / arrows</b> move · <b>Pointer</b> aim ·
+            <b>Click / Space</b> fire · <b>1–3</b> select wingman ·
+            <b>Click a square</b> send · <b>P</b> pause · <b>Esc</b> deselect /
+            pause
+          </p>
+          <div class="bf-touch">
+            <div class="bf-dpad">
+              <button data-key="ArrowUp" aria-label="Move up">
+                <svg viewBox="0 0 20 20">
+                  <path d="m4 12 6-6 6 6" />
+                </svg></button
+              ><button data-key="ArrowLeft" aria-label="Move left">
+                <svg viewBox="0 0 20 20">
+                  <path d="m12 4-6 6 6 6" />
+                </svg></button
+              ><button data-key="ArrowRight" aria-label="Move right">
+                <svg viewBox="0 0 20 20"><path d="m8 4 6 6-6 6" /></svg></button
+              ><button data-key="ArrowDown" aria-label="Move down">
+                <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6" /></svg>
+              </button>
+            </div>
+            <div class="bf-fire-area">
+              <span>AUTO-AIM / NEAREST VISIBLE</span
+              ><button
+                data-key="Space"
+                class="bf-fire"
+                aria-label="Hold to fire cannon"
+              >
+                FIRE
+              </button>
+            </div>
+          </div>
+        </section>
+        <footer class="bf-footer">
+          <span id="bf-objective-label"></span
+          ><span id="bf-announcement" role="status" aria-live="polite"
+            >Choose an operation and prepare your platoon.</span
+          >
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
