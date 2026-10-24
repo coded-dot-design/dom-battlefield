@@ -9,6 +9,7 @@ import {
   cell,
   solid,
   point,
+  commander,
 } from "./model";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
@@ -24,6 +25,7 @@ let mission = 0,
   side = 0,
   seed = 1207,
   formation = "wedge",
+  per = 4,
   roles: Role[] = ["medium", "scout", "medium", "heavy"];
 let state: Battle,
   view: View,
@@ -37,6 +39,14 @@ let state: Battle,
   accumulator = 0,
   hiddenPause = false;
 const audio = createGameAudio(document, "battlefield");
+/** Player aim: auto (nearest visible enemy), pointer (mouse), a locked tank, or a locked square. */
+type Aim =
+  | { mode: "auto" | "pointer" }
+  | { mode: "unit"; id: number }
+  | { mode: "cell"; x: number; y: number };
+let aim: Aim = { mode: "auto" },
+  picking = false,
+  pointer: { x: number; y: number } | null = null;
 const input: Input = { x: 0, y: 0, fire: false, aim: null },
   keys = new Set<string>(),
   held = new Set<string>(),
@@ -107,8 +117,12 @@ function preview() {
   if (playing) return;
   view?.destroy();
   $("#bf-roster").replaceChildren();
-  const cols = innerWidth < 760 ? 26 : Math.floor(viewport.clientWidth / 36),
-    rows = innerWidth < 760 ? 20 : Math.floor(viewport.clientHeight / 36);
+  // Bigger squads get a bigger field; the camera already scrolls on touch.
+  const touchMap = innerWidth < 760 || coarse.matches,
+    grow = per === 12 ? 12 : per === 8 ? 6 : 0,
+    unit = per === 12 ? 28 : per === 8 ? 32 : 36,
+    cols = touchMap ? 26 + grow : Math.floor(viewport.clientWidth / unit),
+    rows = touchMap ? 20 + grow / 2 : Math.floor(viewport.clientHeight / unit);
   const b = generate(cols, rows, mission, seed);
   state = createBattle(
     b,
@@ -116,6 +130,7 @@ function preview() {
     side,
     loadoutCost(roles) <= 12 ? roles : ["medium", "medium", "medium", "medium"],
     formation,
+    per,
   );
   view = new View(viewport, state, selectUnit);
   view.center();
@@ -145,17 +160,68 @@ function preview() {
 function selectUnit(id: number) {
   if (!playing || paused || pan) return;
   const u = state.units.find((u) => u.id === id);
-  if (u?.side !== side || u.hp <= 0) return;
-  selected = u.id === side * 4 ? -1 : id;
+  if (!u || u.hp <= 0) return;
+  if (u.side !== side) {
+    // Tapping an enemy locks your aim; with a wingman selected it also orders that attack.
+    lockUnit(u.id);
+    if (selected >= 0) {
+      command(state, { type: "focus", ids: [selected], target: u.id });
+      say(`Tank ${(selected % state.per) + 1} attacking. Your aim is locked on the same tank.`);
+    }
+    return;
+  }
+  selected = u.id === commander(state).id ? -1 : id;
   $("#bf-order-label").textContent =
-    selected < 0 ? "SQUAD ORDERS" : `TANK ${(id % 4) + 1} SELECTED`;
+    selected < 0 ? "SQUAD ORDERS" : `TANK ${(id % state.per) + 1} SELECTED`;
   say(
     selected < 0
       ? "Squad selected."
-      : `Tank ${(id % 4) + 1}: click an open grid square to move. It will then resume its orders.`,
+      : `Tank ${(id % state.per) + 1}: tap a square to move, or an enemy to attack it.`,
   );
   setDrawer(false);
   view.render(selected, paused, reduced.matches);
+}
+function aimButtons() {
+  $("#bf-auto").setAttribute("aria-pressed", String(aim.mode === "auto"));
+  $("#bf-target").setAttribute("aria-pressed", String(picking || aim.mode === "unit" || aim.mode === "cell"));
+  $("#battlefield").classList.toggle("picking", picking);
+}
+function setAim(next: Aim, message?: string) {
+  aim = next;
+  picking = false;
+  input.aim = null;
+  aimButtons();
+  if (message) say(message);
+}
+function lockUnit(id: number) {
+  setAim({ mode: "unit", id }, "Aim locked on that tank. It returns to auto-aim when the tank is destroyed.");
+}
+function autoAim() {
+  // On desktop, Auto toggles back to mouse aiming.
+  if (aim.mode === "auto" && !coarse.matches) setAim({ mode: "pointer" }, "Mouse aim.");
+  else setAim({ mode: "auto" }, "Auto-aim: nearest visible enemy.");
+}
+function startPick() {
+  if (!playing || paused) return;
+  if (picking) return setAim({ mode: "auto" }, "Auto-aim.");
+  picking = true;
+  aimButtons();
+  say("Lock aim: tap an enemy tank, or any square to keep shooting there.");
+}
+/** Resolve the aim point each frame; a destroyed lock falls back to auto-aim. */
+function resolveAim() {
+  if (aim.mode === "unit") {
+    const id = aim.id,
+      t = state.units.find((u) => u.id === id && u.hp > 0);
+    if (!t) {
+      setAim({ mode: "auto" }, "Target destroyed. Back to auto-aim.");
+      return null;
+    }
+    return { x: t.x, y: t.y };
+  }
+  if (aim.mode === "cell") return { x: aim.x, y: aim.y };
+  if (aim.mode === "pointer") return pointer;
+  return null;
 }
 function setDrawer(open: boolean) {
   $("#battlefield").classList.toggle("squad-open", open);
@@ -167,9 +233,11 @@ function order(order: Order) {
     selected >= 0
       ? [selected]
       : state.units
-          .filter((u) => u.side === side && u.id !== side * 4)
+          .filter((u) => u.side === side && u.id !== commander(state).id)
           .map((u) => u.id);
-  command(state, { type: "order", order, ids });
+  if (order === "attack")
+    command(state, { type: "focus", ids, target: aim.mode === "unit" ? aim.id : null });
+  else command(state, { type: "order", order, ids });
   say(state.events.at(-1) ?? "");
   updateHUD();
 }
@@ -180,6 +248,7 @@ function clearInput() {
   input.x = input.y = 0;
   input.fire = false;
   input.aim = null;
+  pointer = null;
 }
 function setPause(value: boolean) {
   if (!playing || state.winner !== null || paused === value) return;
@@ -231,6 +300,7 @@ function deploy() {
   paused = false;
   selected = -1;
   setPan(false);
+  setAim({ mode: coarse.matches ? "auto" : "pointer" });
   $("#bf-order-label").textContent = "SQUAD ORDERS";
   setup.hidden = true;
   $("#bf-result").hidden = true;
@@ -266,15 +336,15 @@ function reset() {
   preview();
 }
 function updateHUD() {
-  const p = state.units.find((u) => u.id === side * 4)!;
+  const p = commander(state);
   text("#bf-armor", `${Math.ceil((p.hp / p.maxHp) * 100)}%`);
   text(
     "#bf-allies",
-    `${state.units.filter((u) => u.side === side && u.hp > 0).length} / 4`,
+    `${state.units.filter((u) => u.side === side && u.hp > 0).length}/${state.per}`,
   );
   text(
     "#bf-enemies",
-    `${state.units.filter((u) => u.side !== side && u.hp > 0).length} / 4`,
+    `${state.units.filter((u) => u.side !== side && u.hp > 0).length}/${state.per}`,
   );
   text(
     "#bf-clock",
@@ -311,7 +381,7 @@ function updateHUD() {
     const n = roster.children[i] as HTMLButtonElement;
     n.classList.toggle("active", selected === u.id);
     n.disabled = u.hp <= 0;
-    const text = `${u.id === side * 4 ? "YOU" : u.id % 4} · ${u.role} · ${Math.ceil(u.hp)} HP`;
+    const text = `${u.id === commander(state).id ? "YOU" : u.id % state.per} · ${u.role} · ${Math.ceil(u.hp)} HP`;
     if (n.textContent !== text) n.textContent = text;
   });
 }
@@ -332,7 +402,8 @@ function loop(now: number) {
     input.fire = held.has("Space") || held.has("MouseFire");
     const previousEvents = state.events.at(-1),
       shots = state.nextId,
-      hp = state.units.find((u) => u.id === side * 4)!.hp;
+      hp = commander(state).hp;
+    input.aim = resolveAim();
     // Fixed simulation ticks; bounded catch-up prevents tab stalls from spiraling.
     accumulator = Math.min(0.1, accumulator + dt);
     while (accumulator >= 1 / 60) {
@@ -340,11 +411,14 @@ function loop(now: number) {
       accumulator -= 1 / 60;
     }
     if (state.nextId > shots && input.fire) audio.play("fire");
-    if (state.units.find((u) => u.id === side * 4)!.hp < hp) audio.play("hurt");
+    if (commander(state).hp < hp) audio.play("hurt");
     if (state.events.at(-1) !== previousEvents) audio.play("kill");
     if (state.events.at(-1) !== previousEvents && state.events.length)
       say(state.events.at(-1)!);
     view.render(selected, paused, reduced.matches);
+    const lead = commander(state),
+      auto = state.units.find((u) => u.id === lead.target && u.hp > 0);
+    view.aim(aim.mode, aim.mode === "auto" ? (auto ?? null) : aim.mode === "pointer" ? null : input.aim);
     if (now - uiAt > 160) {
       updateHUD();
       uiAt = now;
@@ -368,7 +442,6 @@ function loop(now: number) {
 }
 function setPan(value: boolean) {
   pan = value;
-  input.aim = null;
   $("#bf-pan").setAttribute("aria-pressed", String(pan));
   viewport.classList.toggle("panning", pan);
   say(
@@ -417,6 +490,9 @@ function picker(sel: string, attr: string, apply: (v: string) => void) {
   }) as EventListener);
 }
 picker("#bf-side", "side", (v) => (side = Number(v)));
+picker("#bf-size", "size", (v) => (per = Number(v)));
+listen($("#bf-auto"), "click", autoAim);
+listen($("#bf-target"), "click", startPick);
 picker("#bf-formation", "formation", (v) => (formation = v));
 listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
   const b = (e.target as Element).closest<HTMLElement>("[data-role]");
@@ -465,6 +541,10 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
   if (!playing) return;
   if (e.code === "Escape") {
     e.preventDefault();
+    if (picking) {
+      setAim({ mode: "auto" }, "Lock cancelled. Auto-aim.");
+      return;
+    }
     if (selected >= 0) {
       selected = -1;
       view.highlight(-1);
@@ -498,10 +578,13 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
     if (e.code === "KeyF") order("follow");
     if (e.code === "KeyR") order("retreat");
     if (e.code === "KeyE") order("advance");
+    if (e.code === "KeyG") order("attack");
+    if (e.code === "KeyQ") autoAim();
+    if (e.code === "KeyT") startPick();
     if (e.code === "KeyC") view.center();
     if (e.code === "KeyM") setPan(!pan);
-    if (/^Digit[123]$/.test(e.code))
-      selectUnit(side * 4 + Number(e.code.at(-1)));
+    if (/^Digit[1-9]$/.test(e.code) && Number(e.code.at(-1)) < state.per)
+      selectUnit(commander(state).id + Number(e.code.at(-1)));
   }
 }) as EventListener);
 listen(document, "keyup", ((e: KeyboardEvent) => {
@@ -562,7 +645,7 @@ listen(viewport, "pointermove", ((e: PointerEvent) => {
     return;
   }
   const p = view.location(e);
-  if (e.pointerType === "mouse") input.aim = p;
+  if (e.pointerType === "mouse") pointer = p;
   if (
     selected >= 0 &&
     p.x >= 0 &&
@@ -577,10 +660,16 @@ for (const event of ["pointerup", "pointercancel"])
     drag = null;
   });
 listen(viewport, "click", ((e: MouseEvent) => {
-  if (!playing || paused || pan || selected < 0) return;
+  if (!playing || paused || pan) return;
   const p = view.location(e);
   if (p.x < 0 || p.y < 0 || p.x >= state.board.cols || p.y >= state.board.rows)
     return;
+  if (picking) {
+    const c = point(state.board, cell(state.board, p));
+    setAim({ mode: "cell", x: c.x, y: c.y }, "Aim locked on that square. Tap Auto to release.");
+    return;
+  }
+  if (selected < 0) return;
   const id = cell(state.board, p);
   if (command(state, { type: "move", id: selected, cell: id })) {
     view.highlight(id);
@@ -597,6 +686,7 @@ listen(viewport, "pointerdown", ((e: PointerEvent) => {
       (e.button === 0 &&
         e.pointerType === "mouse" &&
         selected < 0 &&
+        !picking &&
         !(e.target as Element).closest(".bf-tank")))
   ) {
     keys.add("MouseFire");
@@ -657,6 +747,9 @@ Object.defineProperty(window, "battlefield", {
     },
     get paused() {
       return paused;
+    },
+    get aim() {
+      return { ...aim, picking };
     },
   },
   configurable: true,

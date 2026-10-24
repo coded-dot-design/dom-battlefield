@@ -103,6 +103,20 @@ try {
             .every((u) => u.order === "retreat"),
         ),
       );
+      // Aim: lock an enemy tank, order the squad to attack it, then release to auto.
+      const foe = await page.evaluate(() => window.battlefield.snapshot().units.find((u) => u.side === 1 && u.hp > 0).id);
+      await page.evaluate((id) => document.querySelector(`[data-unit="${id}"]`).click(), foe);
+      assert.deepEqual(await page.evaluate(() => window.battlefield.aim), { mode: "unit", id: foe, picking: false });
+      await page.locator("[data-order=attack]").click();
+      assert.ok(await page.evaluate((foe) => window.battlefield.snapshot().units.filter((u) => u.side === 0 && u.id !== 0).every((u) => u.order === "attack" && u.focus === foe), foe));
+      await page.locator("#bf-target").click();
+      assert.equal(await page.evaluate(() => window.battlefield.aim.picking), true);
+      const box = await page.locator("#bf-viewport").boundingBox();
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      assert.equal(await page.evaluate(() => window.battlefield.aim.mode), "cell");
+      await page.locator("#bf-auto").click();
+      assert.equal(await page.evaluate(() => window.battlefield.aim.mode), mobile ? "auto" : "auto");
+      await page.locator("[data-order=retreat]").click();
       if (mobile) {
         await page.locator("#bf-squad").click();
         await page.waitForTimeout(300);
@@ -196,7 +210,7 @@ try {
         assert.ok(pad.x + pad.width <= stage.x, "D-pad sits in the left rail");
         assert.ok(fireBox.x >= stage.x + stage.width, "Fire sits in the right rail");
         assert.ok(pad.y + pad.height <= 390);
-        for (const sel of [".bf-mini", ".bf-map-tools", ".bf-orders"]) {
+        for (const sel of [".bf-mini", ".bf-aim", ".bf-orders"]) {
           const r = await page.locator(sel).boundingBox();
           assert.ok(r.x >= stage.x + stage.width && r.x + r.width <= 844, `${sel} in right rail`);
           assert.ok(await page.locator(sel).evaluate((el) => {
@@ -204,6 +218,11 @@ try {
             return el.contains(document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2));
           }), `${sel} is not covered`);
         }
+        const tools = await page.locator(".bf-map-tools").boundingBox();
+        assert.ok(tools.x + tools.width <= stage.x, "camera tools in left rail");
+        const score = await page.locator(".bf-metrics").boundingBox();
+        assert.ok(score.y + score.height <= tools.y, "scoreboard clears camera tools");
+        assert.ok(tools.y + tools.height <= pad.y, "camera tools clear the D-pad");
         const orders = await page.locator(".bf-orders").boundingBox();
         assert.ok(orders.y + orders.height <= fireBox.y, "orders clear the Fire button");
         assert.equal(await page.locator("#bf-tactics").isVisible(), false);
@@ -252,6 +271,20 @@ try {
         await page.locator("style[data-dom-virus-selection]").count(),
         0,
       );
+      // Big battle: 12 per side deploys and runs without errors.
+      await page.locator('#bf-size [data-size="12"]').click();
+      assert.equal(await page.locator(".bf-tank").count(), 24);
+      await page.locator("#bf-deploy").click();
+      if (mobile && (await page.locator("#bf-coach").isVisible()))
+        await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
+      await page.waitForTimeout(800);
+      assert.equal(await page.evaluate(() => window.battlefield.snapshot().units.length), 24);
+      if (mobile) {
+        await page.locator("#bf-squad").click();
+        await page.waitForTimeout(300);
+      }
+      await page.locator("#bf-restart").click();
+      await page.locator('#bf-size [data-size="4"]').click();
       assert.deepEqual(errors, []);
       console.log({
         mobile,

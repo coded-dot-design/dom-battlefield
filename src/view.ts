@@ -32,6 +32,9 @@ export class View {
   effects = new Map<number, HTMLElement>();
   shotPool: HTMLElement[] = [];
   effectPool: HTMLElement[] = [];
+  kits = new Map<number, HTMLElement>();
+  reticle: HTMLElement;
+  reticleKey = "";
   tile = 36;
   revision = -1;
   pathStamp = "";
@@ -96,9 +99,10 @@ export class View {
       node.className = "bf-tank";
       node.dataset.unit = String(u.id);
       node.style.setProperty("--team", colors[u.side]!);
+      if (u.side !== s.side) node.classList.add("enemy");
       node.setAttribute(
         "aria-label",
-        `${u.side === s.side ? "Friendly" : "Enemy"} ${u.role} tank ${(u.id % 4) + 1}`,
+        `${u.side === s.side ? "Friendly" : "Enemy"} ${u.role} tank ${(u.id % s.per) + 1}`,
       );
       const canvas = document.createElement("canvas");
       canvas.width = 64;
@@ -117,11 +121,15 @@ export class View {
         "http://www.w3.org/2000/svg",
         "circle",
       );
-      circle.setAttribute("r", u.id === s.side * 4 ? ".55" : ".34");
+      circle.setAttribute("r", u.id === s.side * s.per ? ".55" : ".34");
       circle.setAttribute("fill", colors[u.side]!);
       this.mini.append(circle);
       this.miniUnits.set(u.id, circle);
     }
+    this.reticle = document.createElement("i");
+    this.reticle.className = "bf-reticle";
+    this.reticle.hidden = true;
+    this.world.append(this.reticle);
     this.camera = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "rect",
@@ -154,6 +162,9 @@ export class View {
     this.world.style.setProperty("--tile", `${this.tile}px`);
     this.world.style.gridTemplateColumns = `repeat(${cols},1fr)`;
     this.world.style.gridTemplateRows = `repeat(${rows},1fr)`;
+    for (const k of this.s.pickups)
+      this.kits.get(k.id)?.style.setProperty("transform", `translate(${k.x * this.tile}px,${k.y * this.tile}px)`);
+    this.reticleKey = "";
     this.measure();
   }
   /** One deliberate layout read after size changes; pointer math uses the cache. */
@@ -239,11 +250,11 @@ export class View {
       if (!alive) continue;
       const move = `translate(${(u.x * this.tile - 24).toFixed(1)}px,${(u.y * this.tile - 24).toFixed(1)}px)`;
       if (v.move !== move) v.node.style.transform = v.move = move;
-      const flags = `${u.id === selected}${u.id === s.side * 4}`;
+      const flags = `${u.id === selected}${u.id === s.side * s.per}`;
       if (v.flags !== flags) {
         v.flags = flags;
         v.node.classList.toggle("selected", u.id === selected);
-        v.node.classList.toggle("commander", u.id === s.side * 4);
+        v.node.classList.toggle("commander", u.id === s.side * s.per);
       }
       const hp = Math.round((u.hp / u.maxHp) * 100);
       if (v.hp !== hp) v.node.style.setProperty("--hp", `${(v.hp = hp)}%`);
@@ -313,6 +324,22 @@ export class View {
       n.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px) scale(${0.5 + t * 1.8})`;
       n.style.opacity = String(p.life / 0.55);
     }
+    live.clear();
+    for (const k of s.pickups) live.add(k.id);
+    for (const [id, n] of this.kits)
+      if (!live.has(id)) {
+        n.remove();
+        this.kits.delete(id);
+      }
+    for (const k of s.pickups)
+      if (!this.kits.has(k.id)) {
+        const n = document.createElement("i");
+        n.className = "bf-kit";
+        n.title = "Repair kit";
+        n.style.transform = `translate(${k.x * this.tile}px,${k.y * this.tile}px)`;
+        this.world.append(n);
+        this.kits.set(k.id, n);
+      }
     const t = this.tile,
       cam = `${(this.sl / t).toFixed(2)} ${(this.st / t).toFixed(2)} ${Math.min(b.cols, this.vw / t).toFixed(2)} ${Math.min(b.rows, this.vh / t).toFixed(2)}`;
     if (cam !== this.camKey) {
@@ -326,8 +353,18 @@ export class View {
     if (this.paused !== paused)
       this.world.dataset.paused = String((this.paused = paused));
   }
+  /** Aim reticle: auto (dashed, follows the auto target), unit lock, or square lock. */
+  aim(mode: string, p: { x: number; y: number } | null) {
+    const key = p ? `${mode}:${(p.x * this.tile).toFixed(1)},${(p.y * this.tile).toFixed(1)}` : "";
+    if (key === this.reticleKey) return;
+    this.reticleKey = key;
+    this.reticle.hidden = !p;
+    if (!p) return;
+    this.reticle.dataset.mode = mode;
+    this.reticle.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px)`;
+  }
   center() {
-    const p = this.s.units.find((u) => u.id === this.s.side * 4)!;
+    const p = this.s.units[this.s.side * this.s.per]!;
     this.viewport.scrollTo({
       left: p.x * this.tile - this.vw / 2,
       top: p.y * this.tile - this.vh / 2,
@@ -346,6 +383,7 @@ export class View {
     this.world.remove();
     this.mini.replaceChildren();
     this.units.clear();
+    this.kits.clear();
     this.shots.clear();
     this.effects.clear();
     this.shotPool.length = this.effectPool.length = 0;

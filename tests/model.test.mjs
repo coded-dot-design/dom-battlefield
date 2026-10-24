@@ -168,3 +168,50 @@ test("damaged tanks slow down but never stop", () => {
   assert.ok(speedOf(u) > full * 0.5);
   assert.ok(ROLES.heavy.speed < ROLES.medium.speed && ROLES.medium.speed < ROLES.scout.speed);
 });
+import { commander, REPAIR, SQUAD_SIZES } from "../src/model.ts";
+test("larger squads deploy on open ground with unique ids and a command tank", () => {
+  for (const per of SQUAD_SIZES)
+    for (let mission = 0; mission < 4; mission++)
+      for (const formation of ["wedge", "line", "column"]) {
+        const b = generate(40, 26, mission, 7);
+        const s = createBattle(b, mission, 1, roles, formation, per);
+        assert.equal(s.units.length, per * 2);
+        assert.equal(new Set(s.units.map((u) => u.id)).size, per * 2);
+        assert.equal(commander(s).id, per);
+        const cells = s.units.map((u) => cell(b, u));
+        assert.equal(new Set(cells).size, cells.length, "no stacked tanks");
+        for (const u of s.units) assert.ok(canMove(b, u), `${per}/${mission}/${formation}`);
+      }
+});
+test("repair kits, HQ repair and kill salvage restore armor", () => {
+  const b = generate(26, 20, 1, 4);
+  const s = createBattle(b, 1, 0, roles);
+  const p = commander(s);
+  p.hp = 20;
+  s.pickups.push({ id: 999, x: p.x, y: p.y });
+  step(s, 0.02, idle);
+  assert.ok(p.hp >= 20 + REPAIR.kit - 1, "kit heals");
+  assert.equal(s.pickups.length, 0);
+  p.hp = 10;
+  const before = p.hp;
+  for (let i = 0; i < 50; i++) step(s, 0.02, idle);
+  assert.ok(p.hp > before + 5, "HQ repairs quickly");
+  for (let i = 0; i < 2000; i++) step(s, 0.02, idle);
+  assert.ok(s.pickups.length <= 3 + s.per / 4 + 6);
+});
+test("attack order focuses a chosen enemy, then hunts when it dies", () => {
+  const b = generate(26, 20, 1, 3);
+  b.tiles.fill("ground");
+  const s = createBattle(b, 1, 0, roles);
+  const enemy = s.units[6];
+  command(s, { type: "focus", ids: [1, 2, 3], target: enemy.id });
+  assert.ok(s.units.slice(1, 4).every((u) => u.order === "attack" && u.focus === enemy.id));
+  const d0 = Math.hypot(s.units[1].x - enemy.x, s.units[1].y - enemy.y);
+  for (let i = 0; i < 60; i++) step(s, 0.02, idle);
+  assert.ok(Math.hypot(s.units[1].x - enemy.x, s.units[1].y - enemy.y) < d0, "closes on target");
+  enemy.hp = 0;
+  step(s, 0.02, idle);
+  assert.ok(s.units.slice(1, 4).every((u) => u.focus === null && u.order === "attack"));
+  assert.equal(command(s, { type: "focus", ids: [0], target: 5 }), true);
+  assert.equal(s.units[0].order, "advance", "command tank is never re-ordered");
+});

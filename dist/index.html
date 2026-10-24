@@ -25,7 +25,7 @@
               fill="#172127"
             /></svg
           ><span>DOM <b>BATTLEFIELD</b></span></a
-        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.2</i></span
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.3</i></span
         ><button id="bf-sound" aria-label="Mute game sound" aria-pressed="true">
           <svg viewBox="0 0 20 20" aria-hidden="true">
             <path d="M3 8h3l4-4v12l-4-4H3ZM14 6q4 4 0 8" />
@@ -60,8 +60,8 @@
           </div>
           <div class="bf-metrics">
             <span>ARMOR <b id="bf-armor">100%</b></span
-            ><span>FRIENDLY <b id="bf-allies">4 / 4</b></span
-            ><span>HOSTILE <b id="bf-enemies">4 / 4</b></span
+            ><span>FRIENDLY <b id="bf-allies">4/4</b></span
+            ><span>HOSTILE <b id="bf-enemies">4/4</b></span
             ><span>ELAPSED <b id="bf-clock">0:00</b></span>
           </div>
         </div>
@@ -81,6 +81,10 @@
             ></svg>
             <p id="bf-progress">OBJECTIVE</p>
           </aside>
+          <div class="bf-aim" data-tip="Auto-aim · lock a tank or square">
+            <button id="bf-auto" class="bf-arcade" aria-pressed="true" aria-label="Auto-aim at the nearest enemy (Q)" title="Q · Auto-aim"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1v4M10 15v4M1 10h4M15 10h4M5.5 5.5l2 2M14.5 5.5l-2 2M5.5 14.5l2-2M14.5 14.5l-2-2" /></svg><span>Auto</span><kbd>Q</kbd></button
+            ><button id="bf-target" class="bf-arcade" aria-pressed="false" aria-label="Lock aim: tap an enemy tank or a square (T)" title="T · Lock target"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4M10 8v4M8 10h4" /></svg><span>Lock</span><kbd>T</kbd></button>
+          </div>
           <div class="bf-map-tools" data-tip="Center camera · drag map">
             <button id="bf-center" class="bf-arcade" aria-label="Center on your tank (C)" title="C · Center on your tank"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v4M10 14v4M2 10h4M14 10h4M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6" /></svg><span>Center</span><kbd>C</kbd></button
             ><button id="bf-pan" class="bf-arcade" aria-pressed="false" aria-label="Toggle map panning (M)" title="M · Toggle map panning"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v16M2 10h16M10 2 7.5 4.5M10 2l2.5 2.5M10 18l-2.5-2.5M10 18l2.5-2.5M2 10l2.5-2.5M2 10l2.5 2.5M18 10l-2.5-2.5M18 10l-2.5 2.5" /></svg><span>Pan</span><kbd>M</kbd></button>
@@ -90,7 +94,7 @@
               <div class="bf-panel-heading">
                 <span class="bf-eyebrow">YOUR NEXT OPERATION</span>
                 <h2>Build a platoon.<br />Break a path.</h2>
-                <p>Four tanks. Twelve points. One shared objective.</p>
+                <p>Pick a squad size. Twelve points shape your first four tanks; larger squads repeat your wingmen.</p>
               </div>
               <div id="bf-missions" class="bf-missions"></div>
               <div class="bf-config">
@@ -108,6 +112,14 @@
                     ><button data-formation="line" aria-pressed="false"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="12" cy="2" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="12" cy="14" r="2"/></svg>Line</button
                     ><button data-formation="column" aria-pressed="false"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="3" cy="8" r="2"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="8" r="2"/><circle cx="21" cy="8" r="2"/></svg>Column</button>
                   </div>
+                </div>
+              </div>
+              <div class="bf-field bf-size-field">
+                <span class="bf-label">SQUAD SIZE · TANKS PER SIDE</span>
+                <div id="bf-size" class="bf-seg" role="group" aria-label="Squad size">
+                  <button data-size="4" aria-pressed="true">4 · SKIRMISH</button
+                  ><button data-size="8" aria-pressed="false">8 · BATTLE</button
+                  ><button data-size="12" aria-pressed="false">12 · WAR</button>
                 </div>
               </div>
               <div class="bf-loadout-heading">
@@ -151,10 +163,10 @@
               ><button id="bf-pause" class="bf-arcade" aria-pressed="false" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4v12M13 4v12" /></svg><span>Pause</span></button>
             </div>
           </div>
-          <div class="bf-orders" data-tip="Squad: fall in · retreat to repair · advance">
+          <div class="bf-orders" data-tip="Squad: fall in · repair · advance · attack">
             <button data-order="follow" class="bf-arcade" aria-label="Fall in (F)" title="F · Fall in"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6" /></svg><span>Fall in</span><kbd>F</kbd></button
             ><button data-order="retreat" class="bf-arcade" aria-label="Retreat to headquarters (R)" title="R · Retreat"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4" /></svg><span>Retreat</span><kbd>R</kbd></button
-            ><button data-order="advance" class="bf-arcade" aria-label="Advance to objective (E)" title="E · Advance"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-3 3.5 3 3.5H5" /></svg><span>Advance</span><kbd>E</kbd></button>
+            ><button data-order="advance" class="bf-arcade" aria-label="Advance to objective (E)" title="E · Advance"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-3 3.5 3 3.5H5" /></svg><span>Advance</span><kbd>E</kbd></button><button data-order="attack" class="bf-arcade" aria-label="Attack your locked target, or hunt the nearest enemy (G)" title="G · Attack"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16 15 5M11 4h5v5M3 13l4 4M6 17l-3-3" /></svg><span>Attack</span><kbd>G</kbd></button>
           </div>
           <div class="bf-command-row" id="bf-tactics">
             <p id="bf-drawer-objective" class="bf-drawer-objective"></p>
@@ -167,7 +179,7 @@
           </div>
           <p class="bf-help">
             <b>WASD / arrows</b> move · <b>Pointer</b> aim ·
-            <b>Click / Space</b> fire · <b>1–3</b> select wingman ·
+            <b>Click / Space</b> fire · <b>Q</b> auto-aim · <b>T</b> lock a tank or square · <b>G</b> attack · <b>1–9</b> select wingman ·
             <b>Click a square</b> send · <b>P</b> pause · <b>Esc</b> deselect /
             pause
           </p>

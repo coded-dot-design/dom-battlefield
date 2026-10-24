@@ -347,14 +347,13 @@ h1 {
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: var(--tile) var(--tile);
 }
-.bf-world[data-terrain="sand"] {
-  --map: #110818;
+.bf-world {
+  --grid-line: #ffffff08;
+  --road: #0e0d22;
 }
-.bf-world[data-terrain="snow"] {
-  --map: #070c1c;
-}
-.bf-world[data-terrain="river"] {
-  --map: #060b17;
+[data-theme="light"] .bf-world {
+  --grid-line: #3b31700f;
+  --road: #dcdcf0;
 }
 [data-theme="light"] .bf-world {
   --map: #e4e6f7;
@@ -367,92 +366,69 @@ h1 {
   position: absolute;
   pointer-events: none;
 }
+/* Terrain is deliberately quiet: flat, low-contrast shapes that sit back so tanks pop. */
 .bf-tile[data-kind="road"] {
   background: var(--road);
 }
-.bf-tile[data-kind="road"]::before {
-  content: "";
-  inset: 46% 30%;
-  background: #19f0ff38;
-}
 .bf-tile[data-kind="water"] {
-  background: repeating-linear-gradient(
-    0deg,
-    #071b4a 0 6px,
-    #0a2a6e 6px 8px
-  );
-  box-shadow: inset 0 0 0 1px #19f0ff66;
+  background: #0a1430;
+  box-shadow: inset 0 0 0 1px #1f3a6655;
 }
-/* Firewall barrier (hedge). */
 .bf-tile[data-kind="hedge"]::before {
   content: "";
-  inset: 10%;
-  background: #062f3a;
-  border: 2px solid var(--cyan);
+  inset: 12%;
+  background: #0f1d2b;
+  border: 1px solid #22465a;
 }
-.bf-tile[data-kind="hedge"]::after {
-  content: "";
-  inset: 42% 22%;
-  border-top: 2px dashed #19f0ff99;
-}
-/* Neon tower (house). */
 .bf-tile[data-kind="house"]::before {
   content: "";
   inset: 8%;
-  background: #33093a;
-  border: 2px solid var(--pink);
-  box-shadow: 3px 3px 0 #ff2e8840;
+  background: #1a1430;
+  border: 1px solid #3c2b55;
 }
 .bf-tile[data-kind="house"]::after {
   content: "";
-  inset: 28% 30%;
-  background:
-    linear-gradient(var(--yellow), var(--yellow)) 0 0 / 35% 35% no-repeat,
-    linear-gradient(var(--yellow), var(--yellow)) 100% 0 / 35% 35% no-repeat,
-    linear-gradient(var(--cyan), var(--cyan)) 50% 100% / 35% 35% no-repeat;
+  inset: 34% 34%;
+  background: #3c2b55;
 }
-/* Data crystal (rock). */
 .bf-tile[data-kind="rock"]::before {
   content: "";
-  inset: 8%;
-  background: var(--violet);
+  inset: 10%;
+  background: #231c40;
   clip-path: polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%);
 }
-.bf-tile[data-kind="rock"]::after {
-  content: "";
-  inset: 22%;
-  background: #241a55;
-  clip-path: polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%);
-}
-/* Laser fence: blocks tanks, shells pass. */
 .bf-tile[data-kind="fence"]::before {
   content: "";
-  inset: 44% 4%;
-  border-top: 3px dashed var(--yellow);
+  inset: 46% 6%;
+  border-top: 2px dashed #4a4330;
 }
-/* Hover car. */
 .bf-tile[data-kind="car"]::before {
   content: "";
-  inset: 28% 10%;
-  background: #1c1440;
-  border: 2px solid var(--yellow);
-  border-radius: 40% 40% 20% 20%;
+  inset: 30% 12%;
+  background: #17132c;
+  border: 1px solid #4a4330;
+  border-radius: 30%;
 }
-.bf-tile[data-kind="car"]::after {
-  content: "";
-  inset: 42% 18% auto auto;
-  width: 14%;
-  height: 14%;
-  background: var(--pink);
-  box-shadow: calc(var(--tile) * -0.38) 0 0 var(--pink);
-}
-/* Destroyed cover: dim pixel debris. */
 .bf-tile[data-kind="rubble"] {
   background:
-    linear-gradient(var(--violet), var(--violet)) 20% 30% / 16% 16% no-repeat,
-    linear-gradient(var(--pink), var(--pink)) 70% 25% / 12% 12% no-repeat,
-    linear-gradient(var(--cyan), var(--cyan)) 45% 75% / 14% 14% no-repeat,
-    #a77bff1a;
+    linear-gradient(#2c2448, #2c2448) 22% 30% / 16% 16% no-repeat,
+    linear-gradient(#2c2448, #2c2448) 70% 62% / 14% 14% no-repeat,
+    #a77bff0d;
+}
+[data-theme="light"] .bf-tile[data-kind="hedge"]::before {
+  background: #d3dcec;
+  border-color: #aab9d6;
+}
+[data-theme="light"] .bf-tile[data-kind="house"]::before {
+  background: #dcd6ee;
+  border-color: #b5a9d8;
+}
+[data-theme="light"] .bf-tile[data-kind="house"]::after,
+[data-theme="light"] .bf-tile[data-kind="rock"]::before {
+  background: #c4bbe2;
+}
+[data-theme="light"] .bf-tile[data-kind="water"] {
+  background: #c9d8f2;
 }
 .bf-tile.planned {
   background-color: #39ffb01c;
@@ -1610,5 +1586,186 @@ h1 {
     scroll-behavior: auto !important;
     transition-duration: 0s !important;
     animation: none !important;
+  }
+}
+
+/* ---------- Tanks pop; aim reticle; repair kits ---------- */
+.bf-tank::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--team) 32%, transparent), transparent);
+  pointer-events: none;
+}
+.picking #bf-viewport,
+.picking .bf-tank.enemy {
+  cursor: crosshair;
+}
+.picking .bf-tank.enemy::before {
+  outline: 2px dashed var(--pink);
+  outline-offset: 4px;
+}
+.bf-reticle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 7;
+  pointer-events: none;
+  font-style: normal;
+}
+.bf-reticle::before,
+.bf-reticle::after {
+  content: "";
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+}
+/* Auto: thin dashed ring on the current auto target. */
+.bf-reticle[data-mode="auto"]::before {
+  border: 1px dashed #fff4ffaa;
+  border-radius: 50%;
+}
+/* Locked tank: bright corner brackets. */
+.bf-reticle[data-mode="unit"]::before {
+  border: 3px solid var(--pink);
+  clip-path: polygon(0 0, 35% 0, 35% 12%, 12% 12%, 12% 35%, 0 35%, 0 65%, 12% 65%, 12% 88%, 35% 88%, 35% 100%, 0 100%, 0 0, 100% 0, 100% 35%, 88% 35%, 88% 12%, 65% 12%, 65% 0, 100% 0, 100% 100%, 65% 100%, 65% 88%, 88% 88%, 88% 65%, 100% 65%, 100% 100%);
+  animation: bf-lock 1.2s linear infinite;
+}
+.bf-reticle[data-mode="unit"]::after {
+  inset: auto;
+  left: -3px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--pink);
+}
+/* Locked square: yellow dashed box. */
+.bf-reticle[data-mode="cell"]::before {
+  left: calc(var(--tile) / -2);
+  top: calc(var(--tile) / -2);
+  width: var(--tile);
+  height: var(--tile);
+  border: 2px dashed var(--yellow);
+  background: #ffe14d14;
+}
+@keyframes bf-lock {
+  to {
+    transform: rotate(90deg);
+  }
+}
+.bf-kit {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(#07060f, #07060f) 50% 50% / 4px 12px no-repeat,
+    linear-gradient(#07060f, #07060f) 50% 50% / 12px 4px no-repeat,
+    var(--green);
+  border: 2px solid #07060f;
+  border-radius: 4px;
+  box-shadow: 0 0 10px #39ffb088;
+  animation: bf-kit 1.6s ease-in-out infinite;
+}
+@keyframes bf-kit {
+  50% {
+    translate: 0 -3px;
+  }
+}
+/* Desktop aim buttons sit with the map tools. */
+.bf-aim {
+  position: absolute;
+  right: 14px;
+  bottom: 70px;
+  display: flex;
+  gap: 8px;
+  z-index: 9;
+}
+.bf-aim button {
+  grid-auto-flow: column;
+  gap: 6px;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+#bf-auto {
+  --c: var(--cyan);
+}
+#bf-target {
+  --c: var(--pink);
+}
+#bf-auto[aria-pressed="false"] {
+  --c: #6d6894;
+}
+#bf-target[aria-pressed="false"] {
+  --c: #8a4a6b;
+}
+[data-order="attack"] {
+  --c: var(--pink);
+}
+.bf-main:has(#bf-setup:not([hidden])) .bf-aim {
+  display: none;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  /* Left rail gains the camera tools; right rail gets aim + a 2x2 order pad. */
+  [data-active="true"] .bf-map-tools {
+    left: calc(-1 * var(--rail) + 8px);
+    right: auto;
+    top: 128px;
+  }
+  [data-active="true"] .bf-aim {
+    left: calc(100% + 8px);
+    right: auto;
+    top: calc(max(8px, env(safe-area-inset-top)) + (var(--rail) - 26px) * 0.5625 + 46px);
+    bottom: auto;
+    width: calc(var(--rail) - 16px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  [data-active="true"] .bf-aim button {
+    min-height: 42px;
+    padding: 4px;
+  }
+  [data-active="true"] :is(.bf-aim span, .bf-aim kbd) {
+    display: none;
+  }
+  [data-active="true"] .bf-aim svg {
+    width: 22px;
+    height: 22px;
+  }
+  [data-active="true"] .bf-orders {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  [data-active="true"] .bf-orders button {
+    min-height: 36px;
+  }
+}
+@media (pointer: coarse) and (max-width: 1400px) and (orientation: portrait),
+  (max-width: 759px) and (orientation: portrait) {
+  [data-active="true"] .bf-aim {
+    left: auto;
+    right: 8px;
+    top: auto;
+    bottom: 84px;
+    width: 104px;
+  }
+  [data-active="true"] .bf-map-tools {
+    left: 8px;
+    top: 128px;
+    bottom: auto;
+    width: 104px;
+  }
+  [data-active="true"] .bf-orders {
+    grid-template-columns: repeat(4, 1fr);
+    width: 190px;
   }
 }

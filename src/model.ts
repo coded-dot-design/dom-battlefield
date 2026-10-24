@@ -10,7 +10,7 @@ export type Tile =
   | "car"
   | "rubble";
 export type Role = "scout" | "medium" | "heavy";
-export type Order = "advance" | "follow" | "retreat";
+export type Order = "advance" | "follow" | "retreat" | "attack";
 export type Point = { x: number; y: number };
 export interface Unit extends Point {
   id: number;
@@ -27,6 +27,11 @@ export interface Unit extends Point {
   waypoint: number | null;
   path: number[];
   plan: number;
+  /** Enemy this tank was ordered to attack (attack order), if still alive. */
+  focus: number | null;
+  /** Cached nearest visible enemy; rescanned every `scan` seconds. */
+  target: number | null;
+  scan: number;
 }
 export interface Shot extends Point {
   id: number;
@@ -35,6 +40,10 @@ export interface Shot extends Point {
   side: number;
   life: number;
   damage: number;
+  owner: number;
+}
+export interface Pickup extends Point {
+  id: number;
 }
 export interface Effect extends Point {
   id: number;
@@ -111,12 +120,20 @@ export interface Board {
 }
 export type Command =
   | { type: "order"; order: Order; ids: number[] }
-  | { type: "move"; id: number; cell: number };
+  | { type: "move"; id: number; cell: number }
+  | { type: "focus"; ids: number[]; target: number | null };
+export const SQUAD_SIZES = [4, 8, 12] as const;
+export const REPAIR = { kit: 45, kill: 15, hq: 8, hqRadius: 2.2, every: 7 };
 export interface Battle {
   board: Board;
   mission: number;
   side: number;
+  /** Tanks per side. Ids are side * per + index; index 0 is the command tank. */
+  per: number;
   units: Unit[];
+  pickups: Pickup[];
+  pickupAt: number;
+  rand: number;
   shots: Shot[];
   effects: Effect[];
   time: number;
@@ -125,6 +142,7 @@ export interface Battle {
   nextId: number;
   events: string[];
 }
+export const commander = (s: Battle, side = s.side) => s.units[side * s.per]!;
 export const point = (b: Board, id: number): Point => ({
   x: (id % b.cols) + 0.5,
   y: Math.floor(id / b.cols) + 0.5,
@@ -167,7 +185,7 @@ export function route(
   b: Board,
   start: number,
   end: number,
-  occupied: number[] = [],
+  occupied: Set<number> = new Set(),
 ) {
   if (start === end) return [];
   if (solid(b.tiles[end]!)) return [];
@@ -177,7 +195,7 @@ export function route(
   for (let n = 0; n < queue.length; n++) {
     const id = queue[n]!;
     for (const next of neighbors(b, id)) {
-      if (prev[next] !== -1 || (next !== end && occupied.includes(next)))
+      if (prev[next] !== -1 || (next !== end && occupied.has(next)))
         continue;
       prev[next] = id;
       queue.push(next);
@@ -196,8 +214,8 @@ export function generate(
   mission: number,
   seed: number,
 ): Board {
-  cols = Math.max(18, Math.min(40, Math.floor(cols)));
-  rows = Math.max(14, Math.min(26, Math.floor(rows)));
+  cols = Math.max(18, Math.min(48, Math.floor(cols)));
+  rows = Math.max(14, Math.min(30, Math.floor(rows)));
   const random = rng(seed),
     tiles: Tile[] = Array(cols * rows).fill("ground");
   const b: Board = {
@@ -268,72 +286,132 @@ export function createBattle(
   side: number,
   roles: Role[],
   formation = "wedge",
+  per = 4,
 ): Battle {
   if (roles.length !== 4 || loadoutCost(roles) > 12)
     throw Error("Choose four tanks within 12 points.");
-  const units: Unit[] = [];
+  per = SQUAD_SIZES.includes(per as 4) ? per : 4;
+  const units: Unit[] = [],
+    taken = new Set<number>();
   for (const team of [0, 1])
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < per; i++) {
+      // Larger squads repeat the wingman pattern; the command tank keeps slot 0.
       const role =
         team === side
-          ? roles[i]!
-          : (["medium", "scout", "medium", "heavy"][i] as Role);
-      const base = point(board, board.bases[team]!);
-      const y = Math.max(
-        1.5,
-        Math.min(
-          board.rows - 1.5,
-          base.y +
-            (formation === "line"
-              ? i * 1.3 - 2
-              : formation === "column"
-                ? 0
-                : (i - 1.5) * 1.4),
+          ? roles[i < 4 ? i : 1 + ((i - 1) % 3)]!
+          : (["medium", "scout", "medium", "heavy"][i % 4] as Role);
+      const base = point(board, board.bases[team]!),
+        dir = team === 0 ? 1 : -1,
+        slot = i % 4,
+        rank = Math.floor(i / 4);
+      const want = {
+        x:
+          formation === "column"
+            ? base.x + dir * (i * 0.8)
+            : base.x + dir * ((slot % 2) * 0.8 + rank * 1.1),
+        y: Math.max(
+          1.5,
+          Math.min(
+            board.rows - 1.5,
+            base.y +
+              (formation === "line"
+                ? slot * 1.3 - 2
+                : formation === "column"
+                  ? 0
+                  : (slot - 1.5) * 1.4),
+          ),
         ),
-      );
-      const x =
-        formation === "column"
-          ? base.x + (team === 0 ? 1 : -1) * (i * 0.8)
-          : base.x + (i % 2) * (team === 0 ? 0.8 : -0.8);
+      };
+      const p = place(board, want, taken);
       units.push({
-        id: team * 4 + i,
+        id: team * per + i,
         side: team,
         role,
-        x,
-        y,
+        ...p,
         hp: ROLES[role].hp,
         maxHp: ROLES[role].hp,
         angle: team ? Math.PI : 0,
         turret: team ? Math.PI : 0,
         tread: 0,
         recoil: 0,
-        cooldown: 0.4 + i * 0.15,
+        cooldown: 0.4 + (i % 4) * 0.15 + rank * 0.1,
         order: "advance",
         waypoint: null,
         path: [],
         plan: 0,
+        focus: null,
+        target: null,
+        scan: (i % 5) * 0.04,
       });
     }
   return {
     board,
     mission,
     side,
+    per,
     units,
     shots: [],
     effects: [],
+    pickups: [],
+    pickupAt: REPAIR.every * 0.6,
+    rand: board.seed ^ 0x9e3779b9,
     time: 0,
     capture: [0, 0],
     winner: null,
-    nextId: 20,
+    nextId: 1000,
     events: [],
   };
 }
+/** Use the formation point when it is open; otherwise the nearest free open cell. */
+function place(b: Board, want: Point, taken: Set<number>) {
+  const start = cell(b, want);
+  if (canMove(b, want) && !taken.has(start)) {
+    taken.add(start);
+    return want;
+  }
+  const seen = new Set([start]),
+    queue = [start];
+  for (let n = 0; n < queue.length; n++) {
+    const id = queue[n]!;
+    if (!solid(b.tiles[id]!) && !taken.has(id) && canMove(b, point(b, id))) {
+      taken.add(id);
+      return point(b, id);
+    }
+    const x = id % b.cols;
+    for (const next of [id - 1, id + 1, id - b.cols, id + b.cols])
+      if (
+        next >= 0 &&
+        next < b.tiles.length &&
+        !seen.has(next) &&
+        Math.abs((next % b.cols) - x) <= 1
+      ) {
+        seen.add(next);
+        queue.push(next);
+      }
+  }
+  return want;
+}
 export function command(s: Battle, c: Command) {
   if (s.winner !== null) return false;
+  const lead = s.side * s.per;
+  if (c.type === "focus") {
+    const t = s.units.find((u) => u.id === c.target && u.side !== s.side && u.hp > 0);
+    for (const u of s.units)
+      if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead && u.hp > 0) {
+        u.order = "attack";
+        u.focus = t ? t.id : null;
+        u.waypoint = null;
+        u.path = [];
+        u.plan = 0;
+      }
+    s.events.push(t ? "Squad attacking your target." : "Squad hunting the nearest enemy.");
+    return true;
+  }
   if (c.type === "order") {
     for (const u of s.units)
-      if (c.ids.includes(u.id) && u.side === s.side && u.id !== s.side * 4) {
+      if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead) {
         u.order = c.order;
+        u.focus = null;
         u.waypoint = null;
         u.path = [];
         u.plan = 0;
@@ -342,15 +420,17 @@ export function command(s: Battle, c: Command) {
       c.order === "follow"
         ? "Squad falling in."
         : c.order === "retreat"
-          ? "Squad returning to headquarters."
-          : "Squad advancing.",
+          ? "Squad returning to headquarters for repairs."
+          : c.order === "attack"
+            ? "Squad hunting the nearest enemy."
+            : "Squad advancing.",
     );
     return true;
   }
   const u = s.units.find((u) => u.id === c.id && u.side === s.side && u.hp > 0);
   if (
     !u ||
-    u.id === s.side * 4 ||
+    u.id === lead ||
     c.cell < 0 ||
     c.cell >= s.board.tiles.length ||
     solid(s.board.tiles[c.cell]!)
@@ -410,11 +490,11 @@ export function moveUnit(s: Battle, u: Unit, dx: number, dy: number) {
   return false;
 }
 function effect(s: Battle, p: Point, color = "#f0bd68") {
-  if (s.effects.length < 64)
+  if (s.effects.length < 96)
     s.effects.push({ ...p, id: s.nextId++, life: 0.55, color });
 }
 export function fire(s: Battle, u: Unit, angle: number) {
-  if (u.cooldown > 0 || s.shots.length >= 80) return;
+  if (u.cooldown > 0 || s.shots.length >= 200) return;
   u.cooldown = ROLES[u.role].reload;
   u.recoil = 3;
   u.turret = angle;
@@ -427,6 +507,7 @@ export function fire(s: Battle, u: Unit, angle: number) {
     life: 2,
     side: u.side,
     damage: ROLES[u.role].damage,
+    owner: u.id,
   });
 }
 /** Nearest living enemy within 10 cells with a clear line of fire. */
@@ -441,6 +522,46 @@ export function nearestVisible(s: Battle, u: Unit) {
   for (const [, v] of near) if (clearShot(s.board, u, v)) return v;
   return undefined;
 }
+function nearestEnemy(s: Battle, u: Unit) {
+  let best: Unit | undefined,
+    d = Infinity;
+  for (const v of s.units) {
+    if (v.side === u.side || v.hp <= 0) continue;
+    const e = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
+    if (e < d) (d = e), (best = v);
+  }
+  return best;
+}
+function nearestKit(s: Battle, u: Unit, range: number) {
+  let best: Pickup | undefined,
+    d = range * range;
+  for (const k of s.pickups) {
+    const e = (k.x - u.x) ** 2 + (k.y - u.y) ** 2;
+    if (e < d) (d = e), (best = k);
+  }
+  return best;
+}
+/** Deterministic per-battle random stream (replays and tests stay reproducible). */
+function roll(s: Battle) {
+  s.rand = (Math.imul(s.rand, 1664525) + 1013904223) >>> 0;
+  return s.rand / 4294967296;
+}
+function spawnPickup(s: Battle) {
+  const b = s.board;
+  if (s.pickups.length >= 3 + s.per / 4) return;
+  for (let tries = 0; tries < 30; tries++) {
+    const id = Math.floor(roll(s) * b.tiles.length),
+      p = point(b, id);
+    if (
+      b.tiles[id] !== "ground" ||
+      b.bases.some((h) => Math.hypot(point(b, h).x - p.x, point(b, h).y - p.y) < 4) ||
+      s.pickups.some((k) => Math.hypot(k.x - p.x, k.y - p.y) < 3)
+    )
+      continue;
+    s.pickups.push({ id: s.nextId++, ...p });
+    return;
+  }
+}
 export interface Input {
   x: number;
   y: number;
@@ -452,16 +573,40 @@ export function step(s: Battle, dt: number, input: Input) {
   dt = Math.min(0.04, Math.max(0, dt));
   s.time += dt;
   const b = s.board,
-    player = s.units.find((u) => u.id === s.side * 4)!;
+    player = commander(s);
+  // Repair kits keep long battles going; a bounded number sit on open ground.
+  s.pickupAt -= dt;
+  if (s.pickupAt <= 0) {
+    s.pickupAt = REPAIR.every;
+    spawnPickup(s);
+  }
+  const occupied = new Set<number>();
+  for (const v of s.units) if (v.hp > 0) occupied.add(cell(b, v));
   for (const u of s.units) {
     if (u.hp <= 0) continue;
     u.cooldown -= dt;
     u.recoil = Math.max(0, u.recoil - dt * 16);
     u.plan -= dt;
+    u.scan -= dt;
     const home = point(b, b.bases[u.side]!);
-    if (Math.hypot(u.x - home.x, u.y - home.y) < 1.6)
-      u.hp = Math.min(u.maxHp, u.hp + dt * 3);
-    const target = nearestVisible(s, u);
+    if (Math.hypot(u.x - home.x, u.y - home.y) < REPAIR.hqRadius)
+      u.hp = Math.min(u.maxHp, u.hp + dt * REPAIR.hq);
+    for (let k = s.pickups.length - 1; k >= 0; k--) {
+      const kit = s.pickups[k]!;
+      if (Math.hypot(kit.x - u.x, kit.y - u.y) < 0.65 && u.hp < u.maxHp) {
+        u.hp = Math.min(u.maxHp, u.hp + REPAIR.kit);
+        s.pickups.splice(k, 1);
+        effect(s, kit, "#39ffb0");
+        if (u.side === s.side) s.events.push("Repair kit collected.");
+      }
+    }
+    // Line-of-sight scans are the costliest check; refresh at 5Hz, not every tick.
+    let target = s.units.find((v) => v.id === u.target && v.hp > 0);
+    if (u.scan <= 0 || !target) {
+      u.scan = 0.2;
+      target = nearestVisible(s, u);
+      u.target = target ? target.id : null;
+    }
     if (u === player) {
       const length = Math.hypot(input.x, input.y);
       if (length)
@@ -475,35 +620,50 @@ export function step(s: Battle, dt: number, input: Input) {
       if (aim) u.turret = Math.atan2(aim.y - u.y, aim.x - u.x);
       if (input.fire) fire(s, u, u.turret);
     } else {
+      let focus = u.focus === null ? undefined : s.units.find((v) => v.id === u.focus && v.hp > 0);
+      if (u.focus !== null && !focus) u.focus = null;
+      // Attack with no assigned target hunts the nearest living enemy anywhere.
+      if (u.order === "attack" && !focus) focus = nearestEnemy(s, u);
+      const kit = u.hp < u.maxHp * 0.35 && u.waypoint === null ? nearestKit(s, u, 9) : undefined;
       let goal =
         u.waypoint ??
-        (u.order === "retreat"
-          ? b.bases[u.side]!
-          : u.order === "follow" && player.hp > 0 && u.side === s.side
-            ? cell(b, player)
-            : MISSIONS[s.mission]!.objective === "hold"
-              ? b.center
-              : b.bases[1 - u.side]!);
+        (kit
+          ? cell(b, kit)
+          : u.order === "retreat"
+            ? b.bases[u.side]!
+            : u.order === "attack" && focus
+              ? cell(b, focus)
+              : u.order === "follow" && player.hp > 0 && u.side === s.side
+                ? cell(b, player)
+                : MISSIONS[s.mission]!.objective === "hold"
+                  ? b.center
+                  : b.bases[1 - u.side]!);
       const objectivePoint = point(b, goal);
+      const focusVisible =
+        focus && Math.hypot(focus.x - u.x, focus.y - u.y) < 10 && clearShot(b, u, focus);
       const stop =
-        (u.waypoint === null &&
+        !kit &&
+        ((u.waypoint === null &&
           Math.hypot(u.x - objectivePoint.x, u.y - objectivePoint.y) < 1.2) ||
-        (u.order === "follow" &&
-          u.waypoint === null &&
-          Math.hypot(u.x - player.x, u.y - player.y) < 2) ||
-        (target &&
-          u.waypoint === null &&
-          u.order === "advance" &&
-          Math.hypot(u.x - target.x, u.y - target.y) < 5);
+          (u.order === "follow" &&
+            u.waypoint === null &&
+            Math.hypot(u.x - player.x, u.y - player.y) < 2) ||
+          (u.order === "attack" &&
+            u.waypoint === null &&
+            focus &&
+            focusVisible &&
+            Math.hypot(u.x - focus.x, u.y - focus.y) < 4.5) ||
+          (target &&
+            u.waypoint === null &&
+            u.order === "advance" &&
+            Math.hypot(u.x - target.x, u.y - target.y) < 5));
       if (!stop) {
         if (u.plan <= 0) {
-          u.path = route(
-            b,
-            cell(b, u),
-            goal,
-            s.units.filter((v) => v !== u && v.hp > 0).map((v) => cell(b, v)),
-          );
-          u.plan = 0.65 + u.id * 0.025;
+          const own = cell(b, u);
+          occupied.delete(own);
+          u.path = route(b, own, goal, occupied);
+          occupied.add(own);
+          u.plan = 0.65 + (u.id % 12) * 0.025;
         }
         const next = u.path[0];
         // A replan from inside the waypoint cell yields no path: that is arrival.
@@ -531,8 +691,9 @@ export function step(s: Battle, dt: number, input: Input) {
             u.plan = Math.min(u.plan, 0.25);
         }
       }
-      if (target) {
-        u.turret = Math.atan2(target.y - u.y, target.x - u.x);
+      const shoot = focusVisible ? focus : target;
+      if (shoot) {
+        u.turret = Math.atan2(shoot.y - u.y, shoot.x - u.x);
         fire(s, u, u.turret);
       }
     }
@@ -563,6 +724,8 @@ export function step(s: Battle, dt: number, input: Input) {
               tile === "car" ? "Vehicle destroyed." : "Cover breached.",
             );
             for (const u of s.units) u.plan = 0;
+            if (tile === "house" && s.pickups.length < 6 && roll(s) < 0.3)
+              s.pickups.push({ id: s.nextId++, ...point(b, id) });
           }
         } else effect(s, p, "#8895ae");
       }
@@ -575,6 +738,13 @@ export function step(s: Battle, dt: number, input: Input) {
           ) {
             u.hp = Math.max(0, u.hp - p.damage);
             effect(s, p, u.hp ? "#fff3bc" : "#ee6875");
+            if (!u.hp) {
+              const killer = s.units.find((v) => v.id === p.owner && v.hp > 0);
+              if (killer) killer.hp = Math.min(killer.maxHp, killer.hp + REPAIR.kill);
+              if (u.side !== s.side) s.events.push("Enemy tank destroyed.");
+              // Wrecks sometimes leave salvage behind.
+              if (s.pickups.length < 6 && roll(s) < 0.35) s.pickups.push({ id: s.nextId++, x: u.x, y: u.y });
+            }
             hit = true;
             break;
           }

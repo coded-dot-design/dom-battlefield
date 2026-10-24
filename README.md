@@ -43,7 +43,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 24KB gzip budget (0.2.0: ~22.6KB).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 28KB gzip budget (0.3.0: ~25.4KB).
 
 ## Boundaries
 
@@ -52,7 +52,7 @@ npm run test:browser
 - `src/client.ts`: input, camera, setup, UI, one animation loop and lifecycle.
 - `shared/`: generated snapshots from owning repositories, with source versions and SHA-256 provenance in `ORIGIN.json`. `node scripts/sync-shared.mjs` refreshes them from sibling checkouts. The tank artwork is not independently maintained here.
 
-Maps cap at 40×26 cells, with 8 tanks, 80 projectiles and 64 effects. One fixed 60Hz simulation clock with bounded catch-up. No timers or extra animation loops. Pause cancels the loop until resume. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
+Maps cap at 48×30 cells, with up to 24 tanks, 200 projectiles and 96 effects. One fixed 60Hz simulation clock with bounded catch-up. No timers or extra animation loops. Pause cancels the loop until resume. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
 
 This is a **single-player** first release. Multiplayer, friend invites, co-op/opposing players, extension overlays and cross-game mashups are future work. Command objects and DOM-independent state provide a boundary for a future authoritative transport; networking, synchronization, authentication and cheat prevention are not implemented or implied. A future entity adapter can add other games' actors without moving their assets into the map engine.
 
@@ -61,6 +61,15 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.3.0 — Aim modes, attack orders, bigger battles, longer fights
+
+- **Aim:** Auto (Q) tracks the nearest visible enemy. Tap any enemy tank to lock onto it; the lock follows it and returns to auto-aim when it is destroyed. Lock (T), then tap a square to keep shooting there (cover, buildings). Esc cancels. Desktop: Auto toggles between auto-aim and mouse aim.
+- **Attack (G):** the squad (or the selected wingman) attacks your locked tank, or hunts the nearest enemy. With a wingman selected, tapping an enemy sends that wingman after it.
+- **Squad size:** 4, 8 or 12 tanks per side, on larger maps. Your four-slot loadout repeats for extra wingmen.
+- **Repairs:** repair kits appear on open ground (+45 armor) and drop from some wrecks and destroyed towers; HQ repair is faster (8/s, wider radius); every kill restores 15 armor to the shooter. Badly damaged AI tanks detour to nearby kits.
+- **Quieter terrain:** low-contrast flat blocks sit in the background; tanks get a soft team glow.
+- **Performance:** line-of-sight targeting refreshes at 5Hz per tank; pathfinding reuses one occupancy set per tick. Budget raised to 28KB gzip (~25.4KB).
 
 ### 0.2.0 — Widescreen touch cockpit, Tron/cyberpunk skin, slower armor
 
