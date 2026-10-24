@@ -62,9 +62,9 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
-### 0.6.1 — Logo: the virus pixel breaks out of the skull
+### 0.6.2 — Logo restored
 
-- Battlefield's skull has a pixel-sized notch on its right side, directly under the floating virus pixel, as if it broke out of the skull. Battlefield only; the DOM Virus parent mark is unchanged.
+- Back to the solid DOM Virus skull on the map grid (the 0.6.1 notch is removed).
 
 ### 0.6.0 — Better touch driving, follow camera, DOM Virus logo
 
