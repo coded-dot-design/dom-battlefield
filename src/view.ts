@@ -1,7 +1,15 @@
 import { tankSprites } from "../shared/sherman-sprites";
 import { point, MISSIONS } from "./model";
 import type { Battle } from "./model";
-const colors = ["#75dca3", "#ee8586"];
+const colors = ["#39ffb0", "#ff5c8f"];
+const MINI: Record<string, string> = {
+  water: "#1d4fb8",
+  rock: "#a77bff",
+  rubble: "#3a2a66",
+  hedge: "#19f0ff",
+  fence: "#ffe14d",
+  car: "#ffe14d",
+};
 export class View {
   world: HTMLElement;
   cells: HTMLElement[] = [];
@@ -12,6 +20,12 @@ export class View {
       canvas: HTMLCanvasElement;
       ctx: CanvasRenderingContext2D;
       key?: string;
+      move?: string;
+      hp?: number;
+      alive?: boolean;
+      flags?: string;
+      mx?: number;
+      my?: number;
     }
   >();
   shots = new Map<number, HTMLElement>();
@@ -21,6 +35,20 @@ export class View {
   tile = 36;
   revision = -1;
   pathStamp = "";
+  planned = new Set<number>();
+  target = -1;
+  paused?: boolean;
+  // Layout reads are cached here and refreshed only on resize/scroll events, never per frame.
+  vw = 0;
+  vh = 0;
+  sl = 0;
+  st = 0;
+  vx = 0;
+  vy = 0;
+  ox = 0;
+  oy = 0;
+  camKey = "";
+  abort = new AbortController();
   mini: SVGSVGElement;
   miniUnits = new Map<number, SVGCircleElement>();
   camera: SVGRectElement;
@@ -41,8 +69,6 @@ export class View {
       const el = document.createElement("div");
       el.className = "bf-tile";
       el.dataset.cell = String(i);
-      el.style.gridColumn = String((i % s.board.cols) + 1);
-      el.style.gridRow = String(Math.floor(i / s.board.cols) + 1);
       this.world.append(el);
       this.cells.push(el);
     }
@@ -104,6 +130,13 @@ export class View {
     this.camera.setAttribute("stroke", "#fff5ce");
     this.camera.setAttribute("stroke-width", ".18");
     this.mini.append(this.camera);
+    const opts = { passive: true, signal: this.abort.signal };
+    viewport.addEventListener("scroll", () => this.scrolled(), opts);
+    addEventListener("scroll", () => this.measure(), opts);
+    // Rails, drawers and fullscreen change the viewport box without a window resize.
+    const ro = new ResizeObserver(() => this.measure());
+    ro.observe(viewport);
+    this.abort.signal.addEventListener("abort", () => ro.disconnect());
     this.resize();
     this.render(-1, false, true);
   }
@@ -121,12 +154,28 @@ export class View {
     this.world.style.setProperty("--tile", `${this.tile}px`);
     this.world.style.gridTemplateColumns = `repeat(${cols},1fr)`;
     this.world.style.gridTemplateRows = `repeat(${rows},1fr)`;
+    this.measure();
+  }
+  /** One deliberate layout read after size changes; pointer math uses the cache. */
+  measure() {
+    const v = this.viewport.getBoundingClientRect(),
+      w = this.world.getBoundingClientRect();
+    this.vw = this.viewport.clientWidth;
+    this.vh = this.viewport.clientHeight;
+    this.scrolled();
+    this.vx = v.left;
+    this.vy = v.top;
+    this.ox = w.left - v.left + this.sl;
+    this.oy = w.top - v.top + this.st;
+  }
+  scrolled() {
+    this.sl = this.viewport.scrollLeft;
+    this.st = this.viewport.scrollTop;
   }
   location(e: { clientX: number; clientY: number }) {
-    const r = this.world.getBoundingClientRect();
     return {
-      x: (e.clientX - r.left) / this.tile,
-      y: (e.clientY - r.top) / this.tile,
+      x: (e.clientX - this.vx - this.ox + this.sl) / this.tile,
+      y: (e.clientY - this.vy - this.oy + this.st) / this.tile,
     };
   }
   render(selected: number, paused: boolean, reduced = false) {
@@ -147,16 +196,7 @@ export class View {
         r.setAttribute("y", String(Math.floor(i / b.cols)));
         r.setAttribute("width", "1");
         r.setAttribute("height", "1");
-        r.setAttribute(
-          "fill",
-          t === "water"
-            ? "#427dac"
-            : t === "rock"
-              ? "#8984bd"
-              : t === "rubble"
-                ? "#665778"
-                : "#ab6597",
-        );
+        r.setAttribute("fill", MINI[t] ?? "#ff2e88");
         map.append(r);
       });
       b.bases.forEach((id, side) => {
@@ -181,23 +221,33 @@ export class View {
       stamp = selected + ":" + path.join(",");
     if (stamp !== this.pathStamp) {
       this.pathStamp = stamp;
-      this.cells.forEach((n, id) =>
-        n.classList.toggle("planned", path.includes(id)),
-      );
+      const next = new Set(path);
+      for (const id of this.planned)
+        if (!next.has(id)) this.cells[id]?.classList.remove("planned");
+      for (const id of next)
+        if (!this.planned.has(id)) this.cells[id]?.classList.add("planned");
+      this.planned = next;
     }
     for (const u of s.units) {
       const v = this.units.get(u.id)!;
-      v.node.hidden = u.hp <= 0;
-      v.node.style.transform = `translate(${u.x * this.tile - 24}px,${u.y * this.tile - 24}px)`;
-      v.node.classList.toggle("selected", u.id === selected);
-      v.node.classList.toggle("commander", u.id === s.side * 4);
-      v.node.style.setProperty("--hp", `${(u.hp / u.maxHp) * 100}%`);
-      const spriteKey = [
-        u.angle.toFixed(3),
-        u.turret.toFixed(3),
-        reduced ? 0 : Math.floor(u.tread) % 2,
-        u.recoil.toFixed(1),
-      ].join(",");
+      const alive = u.hp > 0;
+      if (v.alive !== alive) {
+        v.alive = alive;
+        v.node.hidden = !alive;
+        this.miniUnits.get(u.id)!.style.display = alive ? "" : "none";
+      }
+      if (!alive) continue;
+      const move = `translate(${(u.x * this.tile - 24).toFixed(1)}px,${(u.y * this.tile - 24).toFixed(1)}px)`;
+      if (v.move !== move) v.node.style.transform = v.move = move;
+      const flags = `${u.id === selected}${u.id === s.side * 4}`;
+      if (v.flags !== flags) {
+        v.flags = flags;
+        v.node.classList.toggle("selected", u.id === selected);
+        v.node.classList.toggle("commander", u.id === s.side * 4);
+      }
+      const hp = Math.round((u.hp / u.maxHp) * 100);
+      if (v.hp !== hp) v.node.style.setProperty("--hp", `${(v.hp = hp)}%`);
+      const spriteKey = `${u.angle.toFixed(3)},${u.turret.toFixed(3)},${reduced ? 0 : Math.floor(u.tread) % 2},${u.recoil.toFixed(1)}`;
       if (spriteKey !== v.key) {
         v.key = spriteKey;
         v.ctx.clearRect(0, 0, 64, 64);
@@ -214,13 +264,19 @@ export class View {
           u.role === "heavy" ? 1.2 : u.role === "scout" ? 0.85 : 1,
         );
       }
-      const m = this.miniUnits.get(u.id)!;
-      m.setAttribute("cx", String(u.x));
-      m.setAttribute("cy", String(u.y));
-      m.style.display = u.hp > 0 ? "" : "none";
+      // Minimap dots move in tenth-cell steps; sub-pixel updates are invisible there.
+      const mx = Math.round(u.x * 10),
+        my = Math.round(u.y * 10);
+      if (v.mx !== mx || v.my !== my) {
+        const m = this.miniUnits.get(u.id)!;
+        m.setAttribute("cx", String((v.mx = mx) / 10));
+        m.setAttribute("cy", String((v.my = my) / 10));
+      }
     }
+    const live = new Set<number>();
+    for (const p of s.shots) live.add(p.id);
     for (const [id, n] of this.shots)
-      if (!s.shots.some((p) => p.id === id)) {
+      if (!live.has(id)) {
         n.remove();
         this.shots.delete(id);
         this.shotPool.push(n);
@@ -235,8 +291,10 @@ export class View {
       }
       n.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px) rotate(${Math.atan2(p.vy, p.vx)}rad)`;
     }
+    live.clear();
+    for (const p of s.effects) live.add(p.id);
     for (const [id, n] of this.effects)
-      if (!s.effects.some((p) => p.id === id)) {
+      if (!live.has(id)) {
         n.remove();
         this.effects.delete(id);
         this.effectPool.push(n);
@@ -255,31 +313,36 @@ export class View {
       n.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px) scale(${0.5 + t * 1.8})`;
       n.style.opacity = String(p.life / 0.55);
     }
-    this.camera.setAttribute("x", String(this.viewport.scrollLeft / this.tile));
-    this.camera.setAttribute("y", String(this.viewport.scrollTop / this.tile));
-    this.camera.setAttribute(
-      "width",
-      String(Math.min(b.cols, this.viewport.clientWidth / this.tile)),
-    );
-    this.camera.setAttribute(
-      "height",
-      String(Math.min(b.rows, this.viewport.clientHeight / this.tile)),
-    );
-    this.world.dataset.paused = String(paused);
+    const t = this.tile,
+      cam = `${(this.sl / t).toFixed(2)} ${(this.st / t).toFixed(2)} ${Math.min(b.cols, this.vw / t).toFixed(2)} ${Math.min(b.rows, this.vh / t).toFixed(2)}`;
+    if (cam !== this.camKey) {
+      this.camKey = cam;
+      const [x, y, w, h] = cam.split(" ");
+      this.camera.setAttribute("x", x!);
+      this.camera.setAttribute("y", y!);
+      this.camera.setAttribute("width", w!);
+      this.camera.setAttribute("height", h!);
+    }
+    if (this.paused !== paused)
+      this.world.dataset.paused = String((this.paused = paused));
   }
   center() {
     const p = this.s.units.find((u) => u.id === this.s.side * 4)!;
     this.viewport.scrollTo({
-      left: p.x * this.tile - this.viewport.clientWidth / 2,
-      top: p.y * this.tile - this.viewport.clientHeight / 2,
+      left: p.x * this.tile - this.vw / 2,
+      top: p.y * this.tile - this.vh / 2,
       behavior: "instant",
     });
+    this.scrolled();
   }
   highlight(id: number) {
-    for (const c of this.cells)
-      c.classList.toggle("target", Number(c.dataset.cell) === id);
+    if (id === this.target) return;
+    this.cells[this.target]?.classList.remove("target");
+    this.cells[id]?.classList.add("target");
+    this.target = id;
   }
   destroy() {
+    this.abort.abort();
     this.world.remove();
     this.mini.replaceChildren();
     this.units.clear();

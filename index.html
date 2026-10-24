@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#141b20" />
+    <meta name="theme-color" content="#07060f" />
     <title>DOM Battlefield · Sherman Operations</title>
     <meta
       name="description"
@@ -24,7 +24,7 @@
               fill="#172127"
             /></svg
           ><span>DOM <b>BATTLEFIELD</b></span></a
-        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.1</i></span
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.2</i></span
         ><button id="bf-sound" aria-label="Mute game sound" aria-pressed="true">
           <svg viewBox="0 0 20 20" aria-hidden="true">
             <path d="M3 8h3l4-4v12l-4-4H3ZM14 6q4 4 0 8" />
@@ -43,6 +43,12 @@
             <path d="m5 5 10 10M15 5 5 15" /></svg
         ></a>
       </header>
+      <div id="bf-coach" class="bf-coach" hidden>
+        <div class="bf-coach-card">
+          <b>CONTROLS</b><span>Tap anywhere to play.</span>
+          <button id="bf-coach-off">Don't show again</button>
+        </div>
+      </div>
       <main class="bf-main">
         <div class="bf-topline">
           <div>
@@ -74,16 +80,9 @@
             ></svg>
             <p id="bf-progress">OBJECTIVE</p>
           </aside>
-          <div class="bf-map-tools">
-            <button id="bf-center" title="C · Center on your tank">
-              Center <kbd>C</kbd></button
-            ><button
-              id="bf-pan"
-              aria-pressed="false"
-              title="M · Toggle map panning"
-            >
-              Pan <kbd>M</kbd>
-            </button>
+          <div class="bf-map-tools" data-tip="Center camera · drag map">
+            <button id="bf-center" class="bf-arcade" aria-label="Center on your tank (C)" title="C · Center on your tank"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v4M10 14v4M2 10h4M14 10h4M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6" /></svg><span>Center</span><kbd>C</kbd></button
+            ><button id="bf-pan" class="bf-arcade" aria-pressed="false" aria-label="Toggle map panning (M)" title="M · Toggle map panning"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v16M2 10h16M10 2 7.5 4.5M10 2l2.5 2.5M10 18l-2.5-2.5M10 18l2.5-2.5M2 10l2.5-2.5M2 10l2.5 2.5M18 10l-2.5-2.5M18 10l-2.5 2.5" /></svg><span>Pan</span><kbd>M</kbd></button>
           </div>
           <section id="bf-setup" class="bf-panel">
             <div class="bf-setup-scroll">
@@ -94,21 +93,24 @@
               </div>
               <div id="bf-missions" class="bf-missions"></div>
               <div class="bf-config">
-                <label
-                  >CHOOSE YOUR SIDE<select id="bf-side">
-                    <option value="0">SIDE A / MINT</option>
-                    <option value="1">SIDE B / CORAL</option>
-                  </select></label
-                ><label
-                  >DEPLOYMENT FORMATION<select id="bf-formation">
-                    <option value="wedge">Wedge</option>
-                    <option value="line">Line</option>
-                    <option value="column">Column</option>
-                  </select></label
-                >
+                <div class="bf-field">
+                  <span class="bf-label">CHOOSE YOUR SIDE</span>
+                  <div id="bf-side" class="bf-seg" role="group" aria-label="Choose your side">
+                    <button data-side="0" aria-pressed="true"><i class="bf-swatch"></i>A · MINT</button
+                    ><button data-side="1" aria-pressed="false"><i class="bf-swatch b"></i>B · CORAL</button>
+                  </div>
+                </div>
+                <div class="bf-field">
+                  <span class="bf-label">FORMATION</span>
+                  <div id="bf-formation" class="bf-seg" role="group" aria-label="Deployment formation">
+                    <button data-formation="wedge" aria-pressed="true"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="18" cy="8" r="2.2"/><circle cx="12" cy="4" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="6" cy="8" r="2.2"/></svg>Wedge</button
+                    ><button data-formation="line" aria-pressed="false"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="12" cy="2" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="12" cy="14" r="2"/></svg>Line</button
+                    ><button data-formation="column" aria-pressed="false"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="3" cy="8" r="2"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="8" r="2"/><circle cx="21" cy="8" r="2"/></svg>Column</button>
+                  </div>
+                </div>
               </div>
               <div class="bf-loadout-heading">
-                <span>PLATOON LOADOUT</span
+                <span>PLATOON LOADOUT <small>· scout fast · medium balanced · heavy armored &amp; slow</small></span
                 ><strong id="bf-points">12 / 12 points</strong>
               </div>
               <div id="bf-loadout" class="bf-loadout"></div>
@@ -139,22 +141,28 @@
             </button>
           </section>
         </div>
-        <p class="bf-rotate">Rotate your phone for a wider battlefield.</p>
+        <p class="bf-rotate">Rotate to landscape for the full widescreen battlefield.</p>
         <section id="bf-controls" class="bf-controls" hidden>
           <div class="bf-command-top">
             <span id="bf-order-label">SQUAD ORDERS</span>
-            <div>
-              <button id="bf-squad" aria-expanded="false" aria-controls="bf-tactics">Squad</button><button id="bf-fullscreen" aria-label="Enter fullscreen">Full screen</button><button id="bf-pause" aria-pressed="false">Pause</button
-              ><button id="bf-restart">New operation</button>
+            <div class="bf-quick">
+              <button id="bf-squad" class="bf-arcade" data-tip="Menu · squad · pause beside it" aria-expanded="false" aria-controls="bf-tactics" aria-label="Open squad and menu panel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" /></svg></button
+              ><button id="bf-pause" class="bf-arcade" aria-pressed="false" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4v12M13 4v12" /></svg><span>Pause</span></button>
             </div>
           </div>
+          <div class="bf-orders" data-tip="Squad: fall in · retreat to repair · advance">
+            <button data-order="follow" class="bf-arcade" aria-label="Fall in (F)" title="F · Fall in"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6" /></svg><span>Fall in</span><kbd>F</kbd></button
+            ><button data-order="retreat" class="bf-arcade" aria-label="Retreat to headquarters (R)" title="R · Retreat"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4" /></svg><span>Retreat</span><kbd>R</kbd></button
+            ><button data-order="advance" class="bf-arcade" aria-label="Advance to objective (E)" title="E · Advance"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-3 3.5 3 3.5H5" /></svg><span>Advance</span><kbd>E</kbd></button>
+          </div>
           <div class="bf-command-row" id="bf-tactics">
-            <div class="bf-orders">
-              <button data-order="follow"><kbd>F</kbd> Fall in</button
-              ><button data-order="retreat"><kbd>R</kbd> Retreat</button
-              ><button data-order="advance"><kbd>E</kbd> Advance</button>
-            </div>
+            <p id="bf-drawer-objective" class="bf-drawer-objective"></p>
             <div id="bf-roster" class="bf-roster"></div>
+            <div class="bf-drawer-actions">
+              <button id="bf-tips">Show button tips</button
+              ><button id="bf-fullscreen" aria-label="Enter fullscreen">Full screen</button
+              ><button id="bf-restart">New operation</button>
+            </div>
           </div>
           <p class="bf-help">
             <b>WASD / arrows</b> move · <b>Pointer</b> aim ·
@@ -163,30 +171,14 @@
             pause
           </p>
           <div class="bf-touch">
-            <div class="bf-dpad">
-              <button data-key="ArrowUp" aria-label="Move up">
-                <svg viewBox="0 0 20 20">
-                  <path d="m4 12 6-6 6 6" />
-                </svg></button
-              ><button data-key="ArrowLeft" aria-label="Move left">
-                <svg viewBox="0 0 20 20">
-                  <path d="m12 4-6 6 6 6" />
-                </svg></button
-              ><button data-key="ArrowRight" aria-label="Move right">
-                <svg viewBox="0 0 20 20"><path d="m8 4 6 6-6 6" /></svg></button
-              ><button data-key="ArrowDown" aria-label="Move down">
-                <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6" /></svg>
-              </button>
+            <div class="bf-dpad" data-tip="Drive">
+              <button data-key="ArrowUp" aria-label="Move up"><svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6" /></svg></button
+              ><button data-key="ArrowLeft" aria-label="Move left"><svg viewBox="0 0 20 20"><path d="m12 4-6 6 6 6" /></svg></button
+              ><button data-key="ArrowRight" aria-label="Move right"><svg viewBox="0 0 20 20"><path d="m8 4 6 6-6 6" /></svg></button
+              ><button data-key="ArrowDown" aria-label="Move down"><svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6" /></svg></button>
             </div>
             <div class="bf-fire-area">
-              <span>AUTO-AIM</span
-              ><button
-                data-key="Space"
-                class="bf-fire"
-                aria-label="Hold to fire cannon"
-              >
-                FIRE
-              </button>
+              <button data-key="Space" class="bf-fire" data-tip="Hold to fire · auto-aim" aria-label="Hold to fire cannon (auto-aim)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1v5M10 14v5M1 10h5M14 10h5" /><circle cx="10" cy="10" r="5" /></svg></button>
             </div>
           </div>
         </section>

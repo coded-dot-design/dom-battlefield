@@ -14,6 +14,7 @@ import {
   solid,
   canMove,
   clearShot,
+  speedOf,
 } from "../src/model.ts";
 const roles = ["medium", "scout", "medium", "heavy"];
 const idle = { x: 0, y: 0, fire: false, aim: null };
@@ -155,4 +156,15 @@ test("simulation stays bounded with finite projectiles, debris and event history
           u.y < s.board.rows,
       );
   }
+});
+test("damaged tanks slow down but never stop", () => {
+  const s = createBattle(generate(26, 20, 1, 3), 1, 0, roles);
+  const u = s.units[1];
+  const full = speedOf(u);
+  assert.equal(full, ROLES[u.role].speed);
+  u.hp = u.maxHp / 2;
+  assert.ok(speedOf(u) < full && speedOf(u) > full * 0.7);
+  u.hp = 1;
+  assert.ok(speedOf(u) > full * 0.5);
+  assert.ok(ROLES.heavy.speed < ROLES.medium.speed && ROLES.medium.speed < ROLES.scout.speed);
 });

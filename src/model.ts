@@ -45,10 +45,13 @@ export const ROLES: Record<
   Role,
   { cost: number; hp: number; speed: number; reload: number; damage: number }
 > = {
-  scout: { cost: 2, hp: 65, speed: 3.6, reload: 0.8, damage: 18 },
-  medium: { cost: 3, hp: 100, speed: 2.8, reload: 1, damage: 28 },
-  heavy: { cost: 4, hp: 150, speed: 2.1, reload: 1.35, damage: 42 },
+  scout: { cost: 2, hp: 65, speed: 2.9, reload: 0.8, damage: 18 },
+  medium: { cost: 3, hp: 100, speed: 2.2, reload: 1, damage: 28 },
+  heavy: { cost: 4, hp: 150, speed: 1.6, reload: 1.35, damage: 42 },
 };
+/** Cells per second. Damaged tanks lose up to 45% of their top speed. */
+export const speedOf = (u: Unit) =>
+  ROLES[u.role].speed * (0.55 + 0.45 * Math.max(0, u.hp / u.maxHp));
 export const MISSIONS = [
   {
     id: "bocage",
@@ -426,6 +429,18 @@ export function fire(s: Battle, u: Unit, angle: number) {
     damage: ROLES[u.role].damage,
   });
 }
+/** Nearest living enemy within 10 cells with a clear line of fire. */
+export function nearestVisible(s: Battle, u: Unit) {
+  const near: [number, Unit][] = [];
+  for (const v of s.units) {
+    if (v.side === u.side || v.hp <= 0) continue;
+    const d = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
+    if (d < 100) near.push([d, v]);
+  }
+  near.sort((a, z) => a[0] - z[0]);
+  for (const [, v] of near) if (clearShot(s.board, u, v)) return v;
+  return undefined;
+}
 export interface Input {
   x: number;
   y: number;
@@ -446,23 +461,15 @@ export function step(s: Battle, dt: number, input: Input) {
     const home = point(b, b.bases[u.side]!);
     if (Math.hypot(u.x - home.x, u.y - home.y) < 1.6)
       u.hp = Math.min(u.maxHp, u.hp + dt * 3);
-    const enemies = s.units
-      .filter((v) => v.side !== u.side && v.hp > 0)
-      .sort(
-        (a, z) =>
-          Math.hypot(a.x - u.x, a.y - u.y) - Math.hypot(z.x - u.x, z.y - u.y),
-      );
-    const target = enemies.find(
-      (v) => Math.hypot(v.x - u.x, v.y - u.y) < 10 && clearShot(b, u, v),
-    );
+    const target = nearestVisible(s, u);
     if (u === player) {
       const length = Math.hypot(input.x, input.y);
       if (length)
         moveUnit(
           s,
           u,
-          (input.x / length) * ROLES[u.role].speed * dt,
-          (input.y / length) * ROLES[u.role].speed * dt,
+          (input.x / length) * speedOf(u) * dt,
+          (input.y / length) * speedOf(u) * dt,
         );
       const aim = input.aim ?? target;
       if (aim) u.turret = Math.atan2(aim.y - u.y, aim.x - u.x);
@@ -499,10 +506,14 @@ export function step(s: Battle, dt: number, input: Input) {
           u.plan = 0.65 + u.id * 0.025;
         }
         const next = u.path[0];
-        if (next !== undefined) {
+        // A replan from inside the waypoint cell yields no path: that is arrival.
+        if (next === undefined && u.waypoint !== null && cell(b, u) === u.waypoint) {
+          u.waypoint = null;
+          u.plan = 0;
+        } else if (next !== undefined) {
           const p = point(b, next),
             d = Math.hypot(p.x - u.x, p.y - u.y);
-          const travel = Math.min(d, ROLES[u.role].speed * dt * 0.8);
+          const travel = Math.min(d, speedOf(u) * dt * 0.8);
           if (d < 0.08) {
             u.path.shift();
             if (!u.path.length && u.waypoint !== null) {

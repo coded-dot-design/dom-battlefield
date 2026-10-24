@@ -39,9 +39,12 @@ let state: Battle,
 const audio = createGameAudio(document, "battlefield");
 const input: Input = { x: 0, y: 0, fire: false, aim: null },
   keys = new Set<string>(),
+  held = new Set<string>(),
   touch = new Map<number, string>(),
   lease = createMobileSelectionLock(document),
   abort = new AbortController();
+const coarse = matchMedia("(pointer: coarse)"),
+  TIPS = "dom-battlefield:tips";
 const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
   options = { signal: abort.signal };
 function listen(target: EventTarget, type: string, fn: EventListener) {
@@ -49,6 +52,51 @@ function listen(target: EventTarget, type: string, fn: EventListener) {
 }
 function say(text: string) {
   announcement.textContent = text;
+}
+/** HUD text writes are skipped when unchanged so the 6Hz HUD costs no style work. */
+function text(sel: string, value: string) {
+  const n = $(sel);
+  if (n.textContent !== value) n.textContent = value;
+}
+function tipsOff() {
+  try {
+    return localStorage.getItem(TIPS) === "off";
+  } catch {
+    return false;
+  }
+}
+let coachTimer = 0,
+  coachPaused = false;
+/** First-run tips: dotted rings and labels on each visible control; one layout read when shown. */
+function coach(show: boolean) {
+  const layer = $("#bf-coach");
+  clearTimeout(coachTimer);
+  layer.querySelectorAll(".bf-coach-tip").forEach((n) => n.remove());
+  layer.hidden = !show;
+  if (!show) {
+    if (coachPaused) setPause(false);
+    coachPaused = false;
+    return;
+  }
+  if (playing && !paused) {
+    setPause(true);
+    coachPaused = true;
+  }
+  const mid = innerWidth / 2;
+  for (const n of document.querySelectorAll<HTMLElement>("#battlefield [data-tip]")) {
+    const r = n.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const tip = document.createElement("div");
+    tip.className = "bf-coach-tip";
+    tip.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
+    const left = r.left + r.width / 2 < mid;
+    tip.dataset.at = r.top < 60 ? (left ? "below" : "below-r") : left ? "right" : "left";
+    const label = document.createElement("span");
+    label.textContent = n.dataset.tip!;
+    tip.append(label);
+    layer.append(tip);
+  }
+  coachTimer = window.setTimeout(() => coach(false), 7000);
 }
 function fit() {
   if (!view) return;
@@ -75,6 +123,12 @@ function preview() {
   $("#bf-brief").textContent = MISSIONS[mission]!.brief;
   $("#bf-tip").textContent = MISSIONS[mission]!.tip;
   $("#bf-points").textContent = `${loadoutCost(roles)} / 12 points`;
+  setup.classList.toggle("bf-over", loadoutCost(roles) > 12);
+  for (const n of document.querySelectorAll<HTMLElement>("[data-slot] [data-role]"))
+    n.setAttribute(
+      "aria-pressed",
+      String(roles[Number(n.closest<HTMLElement>("[data-slot]")!.dataset.slot)] === n.dataset.role),
+    );
   const start = $<HTMLButtonElement>("#bf-deploy");
   start.disabled = loadoutCost(roles) > 12;
   $("#bf-cost-error").textContent = start.disabled
@@ -100,9 +154,12 @@ function selectUnit(id: number) {
       ? "Squad selected."
       : `Tank ${(id % 4) + 1}: click an open grid square to move. It will then resume its orders.`,
   );
-  $("#battlefield").classList.remove("squad-open");
-  $("#bf-squad").setAttribute("aria-expanded", "false");
+  setDrawer(false);
   view.render(selected, paused, reduced.matches);
+}
+function setDrawer(open: boolean) {
+  $("#battlefield").classList.toggle("squad-open", open);
+  $("#bf-squad").setAttribute("aria-expanded", String(open));
 }
 function order(order: Order) {
   if (!playing || paused) return;
@@ -119,6 +176,7 @@ function order(order: Order) {
 function clearInput() {
   keys.clear();
   touch.clear();
+  for (const n of document.querySelectorAll(".down")) n.classList.remove("down");
   input.x = input.y = 0;
   input.fire = false;
   input.aim = null;
@@ -136,16 +194,30 @@ function setPause(value: boolean) {
     frame = requestAnimationFrame(loop);
   }
   lease.setActive(!paused);
-  $("#bf-pause").textContent = paused ? "Resume" : "Pause";
-  $("#bf-pause").setAttribute("aria-pressed", String(paused));
+  pauseButton();
   status.textContent = paused ? "PAUSED" : "LIVE";
   say(paused ? "Battle paused." : "Battle resumed.");
+}
+function pauseButton() {
+  const b = $("#bf-pause");
+  b.setAttribute("aria-pressed", String(paused));
+  b.setAttribute("aria-label", paused ? "Resume" : "Pause");
+  b.querySelector("span")!.textContent = paused ? "Resume" : "Pause";
+  b.querySelector("path")!.setAttribute("d", paused ? "M6 4l10 6-10 6Z" : "M7 4v12M13 4v12");
 }
 function fullscreen() {
   if (document.fullscreenElement) {
     void document.exitFullscreen().catch(() => {});
   } else if (document.documentElement.requestFullscreen) {
-    void document.documentElement.requestFullscreen().catch(() => {});
+    void document.documentElement
+      .requestFullscreen({ navigationUI: "hide" })
+      // Widescreen cockpit: lock landscape where the browser allows it (Android Chrome).
+      .then(() =>
+        (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })
+          .lock?.("landscape")
+          .catch(() => {}),
+      )
+      .catch(() => {});
   }
 }
 function deploy() {
@@ -163,7 +235,7 @@ function deploy() {
   setup.hidden = true;
   $("#bf-result").hidden = true;
   $("#bf-controls").hidden = false;
-  $("#bf-pause").textContent = "Pause";
+  pauseButton();
   lease.setActive(true);
   last = 0;
   accumulator = 0;
@@ -173,6 +245,7 @@ function deploy() {
     "Battle started. WASD moves. Aim with the pointer; hold Space or Fire to shoot.",
   );
   frame = requestAnimationFrame(loop);
+  if (coarse.matches && !tipsOff()) requestAnimationFrame(() => coach(true));
 }
 function reset() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -180,8 +253,9 @@ function reset() {
   audio.close();
   playing = false;
   $("#battlefield").dataset.active = "false";
-  $("#battlefield").classList.remove("squad-open");
-  $("#bf-squad").setAttribute("aria-expanded", "false");
+  setDrawer(false);
+  coachPaused = false;
+  coach(false);
   paused = false;
   selected = -1;
   clearInput();
@@ -193,24 +267,37 @@ function reset() {
 }
 function updateHUD() {
   const p = state.units.find((u) => u.id === side * 4)!;
-  $("#bf-armor").textContent = `${Math.ceil((p.hp / p.maxHp) * 100)}%`;
-  $("#bf-allies").textContent =
-    `${state.units.filter((u) => u.side === side && u.hp > 0).length} / 4`;
-  $("#bf-enemies").textContent =
-    `${state.units.filter((u) => u.side !== side && u.hp > 0).length} / 4`;
-  $("#bf-clock").textContent =
-    `${Math.floor(state.time / 60)}:${String(Math.floor(state.time % 60)).padStart(2, "0")}`;
-  $("#bf-progress").textContent =
+  text("#bf-armor", `${Math.ceil((p.hp / p.maxHp) * 100)}%`);
+  text(
+    "#bf-allies",
+    `${state.units.filter((u) => u.side === side && u.hp > 0).length} / 4`,
+  );
+  text(
+    "#bf-enemies",
+    `${state.units.filter((u) => u.side !== side && u.hp > 0).length} / 4`,
+  );
+  text(
+    "#bf-clock",
+    `${Math.floor(state.time / 60)}:${String(Math.floor(state.time % 60)).padStart(2, "0")}`,
+  );
+  text(
+    "#bf-progress",
     MISSIONS[mission]!.objective === "eliminate"
       ? "PLATOON ELIMINATION"
-      : `A ${Math.floor(state.capture[0]!)}s / B ${Math.floor(state.capture[1]!)}s`;
-  status.textContent = !playing
+      : `A ${Math.floor(state.capture[0]!)}s / B ${Math.floor(state.capture[1]!)}s`,
+  );
+  text(
+    "#bf-drawer-objective",
+    `${$("#bf-objective-label").textContent} · ${$("#bf-progress").textContent} · ${$("#bf-clock").textContent}`,
+  );
+  const phase = !playing
     ? "PREPARE"
     : paused
       ? "PAUSED"
       : state.winner === null
         ? "LIVE"
         : "COMPLETE";
+  if (status.textContent !== phase) status.textContent = phase;
   const roster = $("#bf-roster");
   const allies = state.units.filter((u) => u.side === side);
   if (!roster.childElementCount)
@@ -233,7 +320,9 @@ function loop(now: number) {
   const dt = last ? Math.min(0.04, (now - last) / 1000) : 0;
   last = now;
   if (!paused) {
-    const held = new Set([...keys, ...touch.values()]);
+    held.clear();
+    for (const k of keys) held.add(k);
+    for (const k of touch.values()) held.add(k);
     input.x =
       Number(held.has("KeyD") || held.has("ArrowRight")) -
       Number(held.has("KeyA") || held.has("ArrowLeft"));
@@ -303,29 +392,38 @@ for (const [i, m] of MISSIONS.entries()) {
   $("#bf-missions").append(n);
 }
 for (let i = 0; i < 4; i++) {
-  const label = document.createElement("label");
-  label.innerHTML = `<span>${i === 0 ? "YOUR TANK" : `WINGMAN ${i}`}</span><select aria-label="${i === 0 ? "Your tank" : `Wingman ${i}`} loadout">${Object.entries(
+  const slot = document.createElement("div");
+  slot.className = "bf-slot";
+  slot.dataset.slot = String(i);
+  slot.innerHTML = `<span>${i === 0 ? "YOUR TANK" : `WINGMAN ${i}`}</span><div class="bf-seg" role="group" aria-label="${i === 0 ? "Your tank" : `Wingman ${i}`} loadout">${Object.entries(
     ROLES,
   )
     .map(
       ([id, r]) =>
-        `<option value="${id}" ${roles[i] === id ? "selected" : ""}>${id.toUpperCase()} · ${r.cost} PT</option>`,
+        `<button data-role="${id}" aria-pressed="false">${id.toUpperCase()} <small>${r.cost}</small></button>`,
     )
-    .join("")}</select>`;
-  label.querySelector("select")!.onchange = (e) => {
-    roles[i] = (e.target as HTMLSelectElement).value as Role;
-    preview();
-  };
-  $("#bf-loadout").append(label);
+    .join("")}</div>`;
+  $("#bf-loadout").append(slot);
 }
-listen($("#bf-side"), "change", () => {
-  side = Number($<HTMLSelectElement>("#bf-side").value);
+// Segmented pickers share one delegated handler each.
+function picker(sel: string, attr: string, apply: (v: string) => void) {
+  listen($(sel), "click", ((e: MouseEvent) => {
+    const b = (e.target as Element).closest<HTMLElement>(`[data-${attr}]`);
+    if (!b) return;
+    apply(b.dataset[attr]!);
+    for (const n of $(sel).querySelectorAll(`[data-${attr}]`))
+      n.setAttribute("aria-pressed", String(n === b));
+    preview();
+  }) as EventListener);
+}
+picker("#bf-side", "side", (v) => (side = Number(v)));
+picker("#bf-formation", "formation", (v) => (formation = v));
+listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
+  const b = (e.target as Element).closest<HTMLElement>("[data-role]");
+  if (!b) return;
+  roles[Number(b.closest<HTMLElement>("[data-slot]")!.dataset.slot)] = b.dataset.role as Role;
   preview();
-});
-listen($("#bf-formation"), "change", () => {
-  formation = $<HTMLSelectElement>("#bf-formation").value;
-  preview();
-});
+}) as EventListener);
 listen($("#bf-deploy"), "click", deploy);
 listen($("#bf-reroll"), "click", () => {
   seed++;
@@ -338,10 +436,25 @@ listen(document, "fullscreenchange", () => {
   $("#bf-fullscreen").textContent = document.fullscreenElement ? "Window" : "Full screen";
   fit();
 });
-listen($("#bf-squad"), "click", () => {
-  const open = $("#battlefield").classList.toggle("squad-open");
-  $("#bf-squad").setAttribute("aria-expanded", String(open));
+listen($("#bf-squad"), "click", () =>
+  setDrawer(!$("#battlefield").classList.contains("squad-open")),
+);
+// The compact scoreboard expands into the drawer on touch.
+listen($(".bf-metrics"), "click", () => {
+  if (playing && coarse.matches)
+    setDrawer(!$("#battlefield").classList.contains("squad-open"));
 });
+listen($("#bf-tips"), "click", () => {
+  setDrawer(false);
+  coach(true);
+});
+listen($("#bf-coach"), "click", ((e: MouseEvent) => {
+  if ((e.target as Element).closest("#bf-coach-off"))
+    try {
+      localStorage.setItem(TIPS, "off");
+    } catch {}
+  coach(false);
+}) as EventListener);
 listen($("#bf-pause"), "click", () => setPause(!paused));
 listen($("#bf-pan"), "click", () => setPan(!pan));
 listen($("#bf-center"), "click", () => view.center());
@@ -412,10 +525,12 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-key]")) {
     if (!playing || paused) return;
     n.setPointerCapture(e.pointerId);
     touch.set(e.pointerId, n.dataset.key!);
+    n.classList.add("down");
   }) as EventListener);
   for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
     listen(n, event, ((e: PointerEvent) => {
       touch.delete(e.pointerId);
+      n.classList.remove("down");
     }) as EventListener);
 }
 let drag: {
@@ -442,6 +557,7 @@ listen(viewport, "pointermove", ((e: PointerEvent) => {
   if (drag) {
     viewport.scrollLeft = drag.left + drag.x - e.clientX;
     viewport.scrollTop = drag.top + drag.y - e.clientY;
+    view.scrolled();
     view.render(selected, paused, reduced.matches);
     return;
   }
@@ -500,6 +616,7 @@ listen($("#bf-minimap"), "click", ((e: MouseEvent) => {
       viewport.clientHeight / 2,
     behavior: "instant",
   });
+  view.scrolled();
   view.render(selected, paused, reduced.matches);
 }) as EventListener);
 listen($("#bf-theme"), "click", () => {
@@ -522,6 +639,7 @@ listen(window, "resize", () => {
   else preview();
 });
 listen(window, "pagehide", () => {
+  coach(false);
   cancelAnimationFrame(frame);
   audio.close();
   lease.setActive(false);

@@ -40,7 +40,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 24KB gzip budget.
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 24KB gzip budget (0.2.0: ~22.6KB).
 
 ## Boundaries
 
@@ -58,6 +58,18 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.2.0 — Widescreen touch cockpit, Tron/cyberpunk skin, slower armor
+
+- **Landscape cockpit:** the map owns the middle of the screen; two thumb rails (each ≤ ~17% width) hold the controls. Left: menu, pause, minimal scoreboard, D-pad. Right: minimap, camera tools, squad orders, Fire. Nothing overlays the map.
+- **Slide-out panel:** tap the menu or the scoreboard for the full scoreboard, roster, tips, fullscreen, new operation, sound, theme and exit.
+- **Arcade buttons:** icon-only colored caps with a hard drop shadow and springy press; held touch controls stay visibly pressed.
+- **First-run tips:** dotted rings label each control while the battle waits; tap to play, "Don't show again" remembers it, and the panel can show them again.
+- **Fullscreen:** Deploy requests fullscreen and a landscape lock where the browser allows (Android Chrome). iOS falls back to the edge-to-edge layout. Portrait stays playable with a bottom deck.
+- **Setup:** one-tap segmented pickers for side, formation (with diagrams) and each tank's class. Landscape phones see the whole setup on one screen.
+- **Look:** flat neon terrain — firewalls, towers, data crystals, laser fences, hover cars, pixel debris — on a single background grid.
+- **Tanks:** about 20% slower top speed; damaged tanks lose up to 45% of their speed.
+- **Performance:** no per-frame layout reads (viewport/pointer geometry cached on resize/scroll), unit/minimap/camera DOM writes only when values change, diffed path/target highlights, no per-tile inline grid styles, cheaper target search.
 
 ### Mobile cockpit (0.1.1)
 
