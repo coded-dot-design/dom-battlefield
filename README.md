@@ -62,6 +62,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.4.1 — Height-adaptive rails
+
+- Rail controls size from the visible height (`dvh`), so nothing overlaps when Safari's bars leave ~300px in landscape. The D-pad and Fire shrink only when they must; the minimap drops its progress line (it stays in the slide-out panel).
+
 ### 0.4.0 — Mobile game shell: landscape + full screen gate, safe areas
 
 - **Ready gate (touch only):** Deploy requests full screen and a landscape lock. The battle stays paused behind a gate until the phone is landscape and full screen; rotating back to portrait or leaving full screen mid-battle pauses it again, and one tap restores it. Desktop is unaffected.

@@ -266,6 +266,23 @@ try {
         const score = await page.locator(".bf-metrics").boundingBox();
         assert.ok(score.y + score.height <= tools.y, "scoreboard clears camera tools");
         assert.ok(tools.y + tools.height <= pad.y, "camera tools clear the D-pad");
+        // Short screens (iPhone Safari with its bars shows ~300-330px): no rail control may overlap.
+        for (const [w, h] of [[844, 330], [667, 300]]) {
+          await resize(page, { width: w, height: h });
+          const bad = await page.evaluate(() => {
+            const box = [".bf-quick", ".bf-metrics", ".bf-map-tools", ".bf-dpad", ".bf-mini", ".bf-aim", ".bf-orders", ".bf-fire"].map((s) => [s, document.querySelector(s).getBoundingClientRect()]);
+            const out = [];
+            for (let i = 0; i < box.length; i++) {
+              const [a, A] = box[i];
+              if (A.top < 0 || A.bottom > innerHeight + 0.5) out.push(`${a} offscreen`);
+              for (const [b, B] of box.slice(i + 1))
+                if (A.left < B.right - 0.5 && B.left < A.right - 0.5 && A.top < B.bottom - 0.5 && B.top < A.bottom - 0.5) out.push(`${a} x ${b}`);
+            }
+            return out;
+          });
+          assert.deepEqual(bad, [], `${w}x${h} rails`);
+        }
+        await resize(page, { width: 844, height: 390 });
         // Notch / camera cutout: simulated 44px insets push both rails inward.
         await page.locator("#battlefield").evaluate((el) => {
           el.style.setProperty("--sl", "44px");

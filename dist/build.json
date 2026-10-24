@@ -1,9 +1,9 @@
 {
-  "version": "0.4.0",
+  "version": "0.4.1",
   "files": {
-    "index.html": "3935e5d01dce6f98d9fb2554489f7f8de73690dff55f2d2e59bb8fce0df1ec9e",
+    "index.html": "c6e79d68ed937ac3f4eb7a07860381b706ed756cbf44a051c1d95012ffab059c",
     "assets/battlefield.js": "01546e86d8d2ce200218d917bbc0d67167088f006668a830fce92b10a7aae1ea",
-    "assets/battlefield.css": "ee1d691e1678396e4265b2225176dd655428c54b60ed94ef80b5c1f888923ff5",
+    "assets/battlefield.css": "bb375f1bb131f3f63024ab8cb9bf3269de117d86855fd4d4ff938ae384db8fdf",
     "manifest.webmanifest": "121f0156f83c2279863b41b6fac57f2dc19365f71d105eee6374102c9c0ea4ed",
     "icon.svg": "4d21227dfa399edee533e429c0c9f94d11016ec4ec5fee00a5a4150427b3e0eb"
   }

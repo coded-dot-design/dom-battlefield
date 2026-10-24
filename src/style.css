@@ -1861,3 +1861,82 @@ html.bf-playing body {
     transform: rotate(90deg);
   }
 }
+
+/* ---------- Height-adaptive rails: every control is sized from the visible height ----------
+   Safari's bars can leave ~300px in landscape; nothing may overlap at any height. */
+@media (pointer: coarse) and (max-width: 1400px) and (orientation: landscape),
+  (max-width: 759px) and (orientation: landscape) {
+  #battlefield[data-active="true"] {
+    --b: clamp(28px, 9.5dvh, 42px);
+    --g: clamp(4px, 1.4dvh, 8px);
+    --top: max(var(--g), env(safe-area-inset-top, 0px));
+    --bot: max(var(--g), env(safe-area-inset-bottom, 0px));
+    --score: calc(var(--b) * 1.45);
+    /* Left: quick row, scoreboard, camera row, then the D-pad fills what remains. */
+    --left-used: calc(var(--top) + var(--b) * 2 + var(--score) + var(--g) * 4);
+    --pad: min(calc(var(--rail) - 16px), 150px, calc(100dvh - var(--left-used) - var(--bot)));
+    /* Right: minimap, aim row, two order rows, then Fire. */
+    --mini: calc(var(--b) * 1.9);
+    --right-used: calc(var(--top) + var(--mini) + var(--b) * 3 + var(--g) * 5);
+    --fire: max(44px, min(96px, calc(var(--rail) - 26px), calc(100dvh - var(--right-used) - var(--bot))));
+  }
+  [data-active="true"] .bf-quick {
+    top: var(--top);
+    gap: var(--g);
+  }
+  [data-active="true"] :is(.bf-quick, .bf-map-tools, .bf-aim, .bf-orders) button {
+    min-height: 0;
+    height: var(--b);
+  }
+  [data-active="true"] .bf-topline {
+    top: calc(var(--top) + var(--b) + var(--g));
+  }
+  [data-active="true"] .bf-metrics {
+    height: var(--score);
+    overflow: hidden;
+    padding: 3px 7px;
+    gap: 0 6px;
+    align-content: center;
+  }
+  [data-active="true"] .bf-metrics b {
+    font-size: clamp(10px, 3.2dvh, 12px);
+  }
+  [data-active="true"] .bf-map-tools {
+    top: calc(var(--top) + var(--b) + var(--score) + var(--g) * 2);
+    gap: var(--g);
+  }
+  [data-active="true"] .bf-dpad {
+    width: var(--pad);
+    bottom: var(--bot);
+    gap: 3px;
+  }
+  [data-active="true"] .bf-mini {
+    top: var(--top);
+    height: var(--mini);
+    display: flex;
+    flex-direction: column;
+  }
+  [data-active="true"] .bf-mini svg {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    aspect-ratio: auto;
+  }
+  [data-active="true"] .bf-mini p {
+    display: none;
+  }
+  [data-active="true"] .bf-aim {
+    top: calc(var(--top) + var(--mini) + var(--g));
+    gap: var(--g);
+  }
+  [data-active="true"] .bf-orders {
+    top: calc(var(--top) + var(--mini) + var(--b) + var(--g) * 2);
+    gap: var(--g);
+  }
+  [data-active="true"] .bf-fire-area {
+    bottom: var(--bot);
+  }
+  [data-active="true"] .bf-fire {
+    width: var(--fire);
+  }
+}
