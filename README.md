@@ -62,9 +62,9 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
-### 0.6.3 — Logo: the pixel's hole
+### 0.6.4 — Final logo
 
-- Battlefield's skull has a clean square hole in its upper right, exactly the size of the floating virus pixel, as if the pixel came out of it. Battlefield only; the DOM Virus parent mark stays solid.
+- The solid DOM Virus skull on the map grid, with the floating virus pixel. No hole or notch.
 
 ### 0.6.0 — Better touch driving, follow camera, DOM Virus logo
 

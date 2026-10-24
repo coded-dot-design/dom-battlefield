@@ -1,13 +1,13 @@
 {
-  "version": "0.6.3",
+  "version": "0.6.4",
   "files": {
-    "index.html": "27f9e5a019c18b3c05471bb0b7789cf21a406c003a6482437d5615b16df1ee34",
+    "index.html": "fce80d34f87d3196d1e45b60627abe321c860fd5e41deec471d049d20c4281cf",
     "assets/battlefield.js": "f253b0b8eb4b2187a6244f9f9df1a8d374b0c4a8ea9bd45743f4f6e356091656",
     "assets/battlefield.css": "a828787b30b6c7e69ba2df16a23642d4b82560eef86365812d4f63e431517ae2",
     "manifest.webmanifest": "c5bd5094544882f623a50298b23d2675a8ae13a80ceb061c3d2a2ddc2ad7872d",
-    "icon.svg": "e5b9718fbdce7e420a2cb01a27ad2a39960c88154d47175072f8260df2885cc6",
-    "icon-180.png": "66da6f98903c1d9f3d1466b1085e982e5ed478bf9d5c9f1e42baa0cdbc216ce8",
-    "icon-192.png": "20bfdc1afc7a57847e3d0b112898741ca7161ff0d0623af9ff8524de9440d49f",
-    "icon-512.png": "1a9517ba0be469923fa50c11cf8fe788b6162bd2700bf675a50301853491640f"
+    "icon.svg": "01820cbcdcbacf3f2e95715b792da41e857d88ecc0259af6aa8409bdbe9a1e93",
+    "icon-180.png": "fff809311399e70dd1dda33511486b7968139694b5efcfb82b3e9196ea45eb4d",
+    "icon-192.png": "a75f2d8426a0f8a9a990337a26b60e9cb0d8c7feaab714d4e0c4ea547e4776d5",
+    "icon-512.png": "1a93c5640fe155b70dcee5359d56f0f6fae249844444672a87041a5552d88052"
   }
 }
