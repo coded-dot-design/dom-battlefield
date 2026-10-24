@@ -13,6 +13,7 @@ const browser = await chromium.launch({
   args: ["--no-sandbox"],
 });
 mkdirSync("artifacts", { recursive: true });
+let where = "start";
 try {
   for (const mobile of [false, true])
     for (const light of [false, true]) {
@@ -23,6 +24,7 @@ try {
         hasTouch: mobile,
         isMobile: mobile,
       });
+      where = `${mobile ? "mobile" : "desktop"}-${light ? "light" : "dark"}`;
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.goto("http://127.0.0.1:5231");
@@ -260,6 +262,10 @@ try {
       });
       await page.close();
     }
+} catch (e) {
+  // CI annotation: readable from the checks API even when log downloads are not.
+  console.log(`::error title=Battlefield browser test (${where})::${String(e.stack || e).split("\n").slice(0, 4).join(" | ")}`);
+  throw e;
 } finally {
   await browser.close();
   await server.close();
