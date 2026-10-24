@@ -126,6 +126,26 @@ try {
         () => window.battlefield.snapshot().units[0],
       );
       assert.ok(after.x > before.x);
+      if (mobile) {
+        // Thumbstick: a drag to the right drives right; a light push creeps slower than a full one.
+        const st = await page.locator("#bf-stick").boundingBox(),
+          cx = st.x + st.width / 2,
+          cy = st.y + st.height / 2;
+        const drive = async (frac) => {
+          const a = await page.evaluate(() => window.battlefield.snapshot().units[0].x);
+          await page.mouse.move(cx, cy);
+          await page.mouse.down();
+          await page.mouse.move(cx + st.width * 0.36 * frac, cy, { steps: 3 });
+          await page.waitForTimeout(400);
+          await page.mouse.up();
+          return (await page.evaluate(() => window.battlefield.snapshot().units[0].x)) - a;
+        };
+        const full = await drive(1),
+          light = await drive(0.4);
+        assert.ok(full > 0.2, `stick drives: ${full}`);
+        assert.ok(light < full, `analog throttle: ${light} < ${full}`);
+        assert.equal(await page.locator(".bf-knob").evaluate((el) => el.style.transform), "");
+      }
       await page.locator("[data-order=follow]").click();
       assert.ok(
         await page.evaluate(() =>

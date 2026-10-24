@@ -608,13 +608,15 @@ export function step(s: Battle, dt: number, input: Input) {
       u.target = target ? target.id : null;
     }
     if (u === player) {
-      const length = Math.hypot(input.x, input.y);
+      // Analog input: direction from the vector, speed from its length (keyboard/D-pad = full).
+      const length = Math.hypot(input.x, input.y),
+        throttle = Math.min(1, length);
       if (length)
         moveUnit(
           s,
           u,
-          (input.x / length) * speedOf(u) * dt,
-          (input.y / length) * speedOf(u) * dt,
+          (input.x / length) * speedOf(u) * throttle * dt,
+          (input.y / length) * speedOf(u) * throttle * dt,
         );
       const aim = input.aim ?? target;
       if (aim) u.turret = Math.atan2(aim.y - u.y, aim.x - u.x);

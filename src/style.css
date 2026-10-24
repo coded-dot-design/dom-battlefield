@@ -233,7 +233,7 @@ kbd {
 .bf-brand svg {
   width: 30px;
   height: 30px;
-  color: var(--cyan);
+  color: var(--green);
 }
 .bf-brand b {
   display: block;
@@ -2024,4 +2024,58 @@ html.bf-playing body {
   .bf-setup-scroll:has(> .bf-install:not([hidden])) .bf-missions {
     grid-row: 2 / span 4;
   }
+}
+
+/* ---------- Analog thumbstick (replaces the 4-button D-pad on touch) ---------- */
+[data-active="true"] .bf-dpad {
+  display: block;
+  aspect-ratio: 1;
+}
+.bf-stick {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 0 34%, #19f0ff22 34% 35%, transparent 35%),
+    color-mix(in srgb, var(--cyan) 8%, var(--bg));
+  border: 2px solid var(--cyan);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--cyan) 35%, #07060f), inset 0 0 18px #19f0ff22;
+  touch-action: none;
+}
+.bf-stick::before,
+.bf-stick::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-bottom-color: #19f0ff88;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.bf-stick::after {
+  top: auto;
+  bottom: 8%;
+  border-bottom-color: transparent;
+  border-top-color: #19f0ff88;
+}
+.bf-knob {
+  position: absolute;
+  left: 30%;
+  top: 30%;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: 2px solid #07060f;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--cyan) 45%, #07060f), 0 0 14px #19f0ff66;
+  transition: transform 160ms var(--spring);
+  pointer-events: none;
+}
+.bf-stick.down .bf-knob {
+  transition: none;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--cyan) 45%, #07060f), 0 0 22px #19f0ffaa;
 }

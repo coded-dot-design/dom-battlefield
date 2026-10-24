@@ -19,7 +19,7 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 
 | Action | Desktop | Mobile |
 |---|---|---|
-| Move command tank | WASD / arrows | D-pad |
+| Move command tank | WASD / arrows | Analog thumbstick |
 | Aim | Pointer | Nearest visible enemy |
 | Fire | Hold Space / click / right-click | Hold Fire |
 | Fall in / retreat / advance | F / R / E | Labeled buttons |
@@ -43,7 +43,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 30KB gzip budget (0.5.0: ~28.1KB).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 30KB gzip budget (0.6.0: ~29.1KB).
 
 ## Boundaries
 
@@ -61,6 +61,13 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.6.0 — Better touch driving, follow camera, DOM Virus logo
+
+- **Analog thumbstick** replaces the touch D-pad: drive in any direction; push lightly to creep, fully for top speed (dead zone at the centre). Keyboard unchanged.
+- **Follow camera:** the view eases after your tank when it leaves the middle of the screen. Pan or dragging the map pauses it; Center resumes it.
+- **Haptics** (where the browser supports vibration, e.g. Android): light tap on fire, stronger on hits, a double pulse per enemy kill.
+- **Logo:** the DOM Virus skull on a tactical map grid, in Battlefield mint with the virus pixel, for the header, favicon and Home Screen icons.
 
 ### 0.5.0 — Install for true full screen (Battlefield only)
 

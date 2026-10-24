@@ -363,6 +363,28 @@ export class View {
     this.reticle.dataset.mode = mode;
     this.reticle.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px)`;
   }
+  /** Keep the command tank inside the middle of the view; eases toward it, writes only on change. */
+  follow(p: { x: number; y: number }) {
+    const t = this.tile,
+      zx = this.vw * 0.18,
+      zy = this.vh * 0.18,
+      px = p.x * t - this.sl,
+      py = p.y * t - this.st;
+    let dx = 0,
+      dy = 0;
+    if (px < this.vw / 2 - zx) dx = px - (this.vw / 2 - zx);
+    else if (px > this.vw / 2 + zx) dx = px - (this.vw / 2 + zx);
+    if (py < this.vh / 2 - zy) dy = py - (this.vh / 2 - zy);
+    else if (py > this.vh / 2 + zy) dy = py - (this.vh / 2 + zy);
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    const maxX = Math.max(0, this.s.board.cols * t - this.vw),
+      maxY = Math.max(0, this.s.board.rows * t - this.vh),
+      left = Math.max(0, Math.min(maxX, this.sl + dx * 0.2)),
+      top = Math.max(0, Math.min(maxY, this.st + dy * 0.2));
+    if (Math.abs(left - this.sl) < 0.5 && Math.abs(top - this.st) < 0.5) return;
+    this.viewport.scrollLeft = this.sl = left;
+    this.viewport.scrollTop = this.st = top;
+  }
   center() {
     const p = this.s.units[this.s.side * this.s.per]!;
     this.viewport.scrollTo({

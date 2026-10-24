@@ -44,6 +44,12 @@ type Aim =
   | { mode: "auto" | "pointer" }
   | { mode: "unit"; id: number }
   | { mode: "cell"; x: number; y: number };
+let follow = true,
+  stick = { id: -1, x: 0, y: 0, cx: 0, cy: 0, r: 1 };
+/** Short haptic taps where supported (Android); iOS Safari has no vibration API. */
+function buzz(pattern: number | number[]) {
+  if (coarse.matches && "vibrate" in navigator) navigator.vibrate(pattern);
+}
 let aim: Aim = { mode: "auto" },
   picking = false,
   pointer: { x: number; y: number } | null = null;
@@ -249,6 +255,7 @@ function clearInput() {
   input.fire = false;
   input.aim = null;
   pointer = null;
+  stickMove(null);
 }
 function setPause(value: boolean) {
   if (!playing || state.winner !== null || paused === value) return;
@@ -437,6 +444,7 @@ function deploy() {
   paused = false;
   selected = -1;
   setPan(false);
+  follow = true;
   setAim({ mode: coarse.matches ? "auto" : "pointer" });
   $("#bf-order-label").textContent = "SQUAD ORDERS";
   setup.hidden = true;
@@ -449,7 +457,9 @@ function deploy() {
   view.resize();
   view.center();
   say(
-    "Battle started. WASD moves. Aim with the pointer; hold Space or Fire to shoot.",
+    coarse.matches
+      ? "Battle started. Drag the stick to drive; hold Fire. Tap an enemy to lock on."
+      : "Battle started. WASD moves. Aim with the pointer; hold Space or Fire to shoot.",
   );
   frame = requestAnimationFrame(loop);
   keepAwake(true);
@@ -538,11 +548,15 @@ function loop(now: number) {
     for (const k of keys) held.add(k);
     for (const k of touch.values()) held.add(k);
     input.x =
-      Number(held.has("KeyD") || held.has("ArrowRight")) -
-      Number(held.has("KeyA") || held.has("ArrowLeft"));
+      stick.id >= 0
+        ? stick.x
+        : Number(held.has("KeyD") || held.has("ArrowRight")) -
+          Number(held.has("KeyA") || held.has("ArrowLeft"));
     input.y =
-      Number(held.has("KeyS") || held.has("ArrowDown")) -
-      Number(held.has("KeyW") || held.has("ArrowUp"));
+      stick.id >= 0
+        ? stick.y
+        : Number(held.has("KeyS") || held.has("ArrowDown")) -
+          Number(held.has("KeyW") || held.has("ArrowUp"));
     input.fire = held.has("Space") || held.has("MouseFire");
     const previousEvents = state.events.at(-1),
       shots = state.nextId,
@@ -554,11 +568,19 @@ function loop(now: number) {
       step(state, 1 / 60, input);
       accumulator -= 1 / 60;
     }
-    if (state.nextId > shots && input.fire) audio.play("fire");
-    if (commander(state).hp < hp) audio.play("hurt");
+    if (state.nextId > shots && input.fire) {
+      audio.play("fire");
+      buzz(8);
+    }
+    if (commander(state).hp < hp) {
+      audio.play("hurt");
+      buzz(28);
+    }
+    if (state.events.at(-1) !== previousEvents && state.events.at(-1) === "Enemy tank destroyed.") buzz([12, 40, 12]);
     if (state.events.at(-1) !== previousEvents) audio.play("kill");
     if (state.events.at(-1) !== previousEvents && state.events.length)
       say(state.events.at(-1)!);
+    if (follow && !drag && !pan && commander(state).hp > 0) view.follow(commander(state));
     view.render(selected, paused, reduced.matches);
     const lead = commander(state),
       auto = state.units.find((u) => u.id === lead.target && u.hp > 0);
@@ -586,6 +608,7 @@ function loop(now: number) {
 }
 function setPan(value: boolean) {
   pan = value;
+  if (pan) follow = false;
   $("#bf-pan").setAttribute("aria-pressed", String(pan));
   viewport.classList.toggle("panning", pan);
   say(
@@ -699,7 +722,11 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
 }) as EventListener);
 listen($("#bf-pause"), "click", () => setPause(!paused));
 listen($("#bf-pan"), "click", () => setPan(!pan));
-listen($("#bf-center"), "click", () => view.center());
+listen($("#bf-center"), "click", () => {
+  follow = true;
+  view.center();
+  say("Camera following your tank.");
+});
 for (const n of document.querySelectorAll<HTMLElement>("[data-order]"))
   listen(n, "click", () => order(n.dataset.order as Order));
 listen(document, "keydown", ((e: KeyboardEvent) => {
@@ -747,7 +774,10 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
     if (e.code === "KeyG") order("attack");
     if (e.code === "KeyQ") autoAim();
     if (e.code === "KeyT") startPick();
-    if (e.code === "KeyC") view.center();
+    if (e.code === "KeyC") {
+      follow = true;
+      view.center();
+    }
     if (e.code === "KeyM") setPan(!pan);
     if (/^Digit[1-9]$/.test(e.code) && Number(e.code.at(-1)) < state.per)
       selectUnit(commander(state).id + Number(e.code.at(-1)));
@@ -783,6 +813,47 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-key]")) {
       n.classList.remove("down");
     }) as EventListener);
 }
+/* Analog thumbstick: one layout read per touch start; direction + throttle from the drag. */
+function stickMove(e: PointerEvent | null) {
+  const knob = $(".bf-knob");
+  if (!e) {
+    stick.id = -1;
+    stick.x = stick.y = 0;
+    knob.style.transform = "";
+    $("#bf-stick").classList.remove("down");
+    return;
+  }
+  let dx = (e.clientX - stick.cx) / stick.r,
+    dy = (e.clientY - stick.cy) / stick.r;
+  const d = Math.hypot(dx, dy);
+  if (d > 1) (dx /= d), (dy /= d);
+  // Dead zone, then rescale so a light push still creeps forward.
+  const m = Math.min(1, d),
+    k = m < 0.15 ? 0 : (m - 0.15) / 0.85 / (m || 1);
+  stick.x = dx * k;
+  stick.y = dy * k;
+  knob.style.transform = `translate(${(dx * stick.r).toFixed(1)}px,${(dy * stick.r).toFixed(1)}px)`;
+}
+listen($("#bf-stick"), "pointerdown", ((e: PointerEvent) => {
+  e.preventDefault();
+  if (!playing || paused || stick.id >= 0) return;
+  const el = $("#bf-stick"),
+    r = el.getBoundingClientRect();
+  el.setPointerCapture(e.pointerId);
+  el.classList.add("down");
+  stick.id = e.pointerId;
+  stick.cx = r.left + r.width / 2;
+  stick.cy = r.top + r.height / 2;
+  stick.r = r.width * 0.36;
+  stickMove(e);
+}) as EventListener);
+listen($("#bf-stick"), "pointermove", ((e: PointerEvent) => {
+  if (e.pointerId === stick.id) stickMove(e);
+}) as EventListener);
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+  listen($("#bf-stick"), type, ((e: PointerEvent) => {
+    if (e.pointerId === stick.id) stickMove(null);
+  }) as EventListener);
 let drag: {
   x: number;
   y: number;
@@ -794,6 +865,7 @@ listen(viewport, "pointerdown", ((e: PointerEvent) => {
   if (pan || e.button === 1) {
     e.preventDefault();
     viewport.setPointerCapture(e.pointerId);
+    follow = false;
     drag = {
       x: e.clientX,
       y: e.clientY,
