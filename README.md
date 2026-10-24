@@ -62,6 +62,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.6.1 — Logo: the virus pixel breaks out of the skull
+
+- Battlefield's skull has a pixel-sized notch on its right side, directly under the floating virus pixel, as if it broke out of the skull. Battlefield only; the DOM Virus parent mark is unchanged.
+
 ### 0.6.0 — Better touch driving, follow camera, DOM Virus logo
 
 - **Analog thumbstick** replaces the touch D-pad: drive in any direction; push lightly to creep, fully for top speed (dead zone at the centre). Keyboard unchanged.
