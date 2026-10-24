@@ -2,7 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Battlefield" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
     <meta name="theme-color" content="#07060f" />
     <title>DOM Battlefield · Sherman Operations</title>
     <meta
@@ -24,7 +35,7 @@
               fill="#172127"
             /></svg
           ><span>DOM <b>BATTLEFIELD</b></span></a
-        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.3</i></span
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.4</i></span
         ><button id="bf-sound" aria-label="Mute game sound" aria-pressed="true">
           <svg viewBox="0 0 20 20" aria-hidden="true">
             <path d="M3 8h3l4-4v12l-4-4H3ZM14 6q4 4 0 8" />
@@ -43,6 +54,15 @@
             <path d="m5 5 10 10M15 5 5 15" /></svg
         ></a>
       </header>
+      <div id="bf-gate" class="bf-gate" hidden role="dialog" aria-modal="true" aria-labelledby="bf-gate-title">
+        <div class="bf-gate-card">
+          <svg class="bf-gate-phone" viewBox="0 0 48 48" aria-hidden="true"><rect x="15" y="5" width="18" height="38" rx="3" /><path d="M21 38h6" /></svg>
+          <b id="bf-gate-title">Rotate to landscape</b>
+          <p id="bf-gate-copy">Battlefield is a widescreen game. Turn your phone sideways.</p>
+          <button id="bf-gate-go" class="bf-primary">Play full screen</button>
+          <button id="bf-gate-exit">Back to setup</button>
+        </div>
+      </div>
       <div id="bf-coach" class="bf-coach" hidden>
         <div class="bf-coach-card">
           <b>CONTROLS</b><span>Tap anywhere to play.</span>

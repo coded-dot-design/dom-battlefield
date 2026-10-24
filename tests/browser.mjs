@@ -13,6 +13,15 @@ const browser = await chromium.launch({
   args: ["--no-sandbox"],
 });
 mkdirSync("artifacts", { recursive: true });
+// Touch deploys stop at the ready gate until landscape + full screen.
+async function passGate(page) {
+  await page.waitForTimeout(120);
+  if (await page.evaluate(() => window.battlefield.gate === "fullscreen"))
+    await page.locator("#bf-gate-go").click();
+  await page.waitForFunction(() => window.battlefield.gate === null);
+  if (await page.locator("#bf-coach").isVisible())
+    await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
+}
 let where = "start";
 try {
   for (const mobile of [false, true])
@@ -58,8 +67,28 @@ try {
       });
       await page.locator("#bf-deploy").click();
       await page.waitForTimeout(100);
-      if (mobile) await page.evaluate(async () => { if (document.fullscreenElement) await document.exitFullscreen(); });
       assert.equal(await page.evaluate(() => window.battlefield.playing), true);
+      if (mobile) {
+        // Ready gate: portrait holds the battle until the phone is landscape (and full screen).
+        await page.waitForFunction(() => window.battlefield.gate === "rotate");
+        assert.equal(await page.evaluate(() => window.battlefield.paused), true);
+        const frozen = await page.evaluate(() => window.battlefield.snapshot().time);
+        await page.waitForTimeout(150);
+        assert.equal(await page.evaluate(() => window.battlefield.snapshot().time), frozen);
+        assert.equal(await page.locator("#bf-gate-go").isVisible(), false);
+        await page.setViewportSize({ width: 844, height: 390 });
+        await page.waitForFunction(() => window.battlefield.gate !== "rotate");
+        if (await page.evaluate(() => window.battlefield.gate === "fullscreen"))
+          await page.locator("#bf-gate-go").click();
+        await page.waitForFunction(() => window.battlefield.gate === null);
+        // Leaving full screen mid-battle re-locks the gate; one tap restores it.
+        if (await page.evaluate(() => !!document.fullscreenElement)) {
+          await page.evaluate(() => document.exitFullscreen());
+          await page.waitForFunction(() => window.battlefield.gate === "fullscreen");
+          await page.locator("#bf-gate-go").click();
+          await page.waitForFunction(() => window.battlefield.gate === null);
+        }
+      }
       if (mobile) {
         // First-run tips label controls, hold the battle, and can be switched off.
         assert.ok(await page.locator("#bf-coach").isVisible());
@@ -168,7 +197,7 @@ try {
       await page.locator("#bf-pause").click();
       const frozen = await page.evaluate(() => window.battlefield.snapshot());
       await page.setViewportSize(
-        mobile ? { width: 420, height: 844 } : { width: 1280, height: 900 },
+        mobile ? { width: 900, height: 420 } : { width: 1280, height: 900 },
       );
       await page.waitForTimeout(120);
       assert.deepEqual(
@@ -176,7 +205,7 @@ try {
         frozen,
       );
       await page.setViewportSize(
-        mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+        mobile ? { width: 844, height: 390 } : { width: 1440, height: 1000 },
       );
       if (mobile)
         assert.notEqual(
@@ -223,6 +252,23 @@ try {
         const score = await page.locator(".bf-metrics").boundingBox();
         assert.ok(score.y + score.height <= tools.y, "scoreboard clears camera tools");
         assert.ok(tools.y + tools.height <= pad.y, "camera tools clear the D-pad");
+        // Notch / camera cutout: simulated 44px insets push both rails inward.
+        await page.locator("#battlefield").evaluate((el) => {
+          el.style.setProperty("--sl", "44px");
+          el.style.setProperty("--sr", "44px");
+        });
+        await page.waitForTimeout(80);
+        const padSafe = await page.locator(".bf-dpad").boundingBox(),
+          fireSafe = await page.locator('[data-key="Space"]').boundingBox(),
+          miniSafe = await page.locator(".bf-mini").boundingBox(),
+          mapSafe = await page.locator("#bf-viewport").boundingBox();
+        assert.ok(padSafe.x >= 44 && fireSafe.x + fireSafe.width <= 844 - 44, "controls clear the safe area");
+        assert.ok(miniSafe.x + miniSafe.width <= 844 - 44, "minimap clears the safe area");
+        assert.ok(padSafe.x + padSafe.width <= mapSafe.x && fireSafe.x >= mapSafe.x + mapSafe.width, "map stays between rails");
+        await page.locator("#battlefield").evaluate((el) => {
+          el.style.removeProperty("--sl");
+          el.style.removeProperty("--sr");
+        });
         const orders = await page.locator(".bf-orders").boundingBox();
         assert.ok(orders.y + orders.height <= fireBox.y, "orders clear the Fire button");
         assert.equal(await page.locator("#bf-tactics").isVisible(), false);
@@ -258,8 +304,7 @@ try {
       assert.equal(await page.locator(".bf-tank").count(), 8);
       for (let n = 0; n < 3; n++) {
         await page.locator("#bf-deploy").click();
-        if (mobile && (await page.locator("#bf-coach").isVisible()))
-          await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
+        if (mobile) await passGate(page);
         if (mobile) {
           await page.locator("#bf-squad").click();
           await page.waitForTimeout(300);
@@ -275,8 +320,7 @@ try {
       await page.locator('#bf-size [data-size="12"]').click();
       assert.equal(await page.locator(".bf-tank").count(), 24);
       await page.locator("#bf-deploy").click();
-      if (mobile && (await page.locator("#bf-coach").isVisible()))
-        await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
+      if (mobile) await passGate(page);
       await page.waitForTimeout(800);
       assert.equal(await page.evaluate(() => window.battlefield.snapshot().units.length), 24);
       if (mobile) {

@@ -43,7 +43,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 28KB gzip budget (0.3.0: ~25.4KB).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 28KB gzip budget (0.4.0: ~26.8KB).
 
 ## Boundaries
 
@@ -61,6 +61,13 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.4.0 — Mobile game shell: landscape + full screen gate, safe areas
+
+- **Ready gate (touch only):** Deploy requests full screen and a landscape lock. The battle stays paused behind a gate until the phone is landscape and full screen; rotating back to portrait or leaving full screen mid-battle pauses it again, and one tap restores it. Desktop is unaffected.
+- **iPhone:** Safari tabs cannot go full screen, so there the gate only requires landscape and explains Share → Add to Home Screen. The web app manifest (`display: fullscreen`, `orientation: landscape`) makes the home-screen icon launch full screen.
+- **Safe areas:** each rail grows by its side's `safe-area-inset`, so controls and the minimap never sit under a notch or camera cutout; the home-bar inset is respected at the bottom.
+- **Shell hygiene while playing:** no page scroll or bounce, pinch/double-tap zoom blocked (including iOS gesture events), no long-press callouts or context menu, screen wake lock (re-acquired after tab switches).
 
 ### 0.3.0 — Aim modes, attack orders, bigger battles, longer fights
 

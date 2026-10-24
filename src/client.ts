@@ -275,27 +275,95 @@ function pauseButton() {
   b.querySelector("path")!.setAttribute("d", paused ? "M6 4l10 6-10 6Z" : "M7 4v12M13 4v12");
 }
 function fullscreen() {
-  if (document.fullscreenElement) {
-    void document.exitFullscreen().catch(() => {});
-  } else if (document.documentElement.requestFullscreen) {
-    void document.documentElement
-      .requestFullscreen({ navigationUI: "hide" })
-      // Widescreen cockpit: lock landscape where the browser allows it (Android Chrome).
-      .then(() =>
-        (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })
-          .lock?.("landscape")
-          .catch(() => {}),
-      )
-      .catch(() => {});
+  if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  else void enterFullscreen();
+}
+/** Must run inside a tap. Fullscreen first, then a landscape lock where allowed (Android Chrome). */
+function enterFullscreen(): Promise<void> {
+  const root = document.documentElement;
+  if (!canFullscreen() || document.fullscreenElement) return lockLandscape();
+  return root
+    .requestFullscreen({ navigationUI: "hide" })
+    .then(lockLandscape)
+    .catch(() => {});
+}
+function lockLandscape() {
+  return (
+    (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })
+      .lock?.("landscape")
+      .catch(() => {}) ?? Promise.resolve()
+  );
+}
+/* ---------- Touch "ready gate": landscape + full screen before the battle runs ---------- */
+const portrait = matchMedia("(orientation: portrait)"),
+  installed = matchMedia("(display-mode: fullscreen), (display-mode: standalone)");
+function canFullscreen() {
+  return !!document.documentElement.requestFullscreen && document.fullscreenEnabled !== false;
+}
+/** Home-screen apps are already full screen; iOS Safari tabs cannot be, so only rotation is required there. */
+function gateReason(): "rotate" | "fullscreen" | null {
+  if (!coarse.matches || !playing || state.winner !== null) return null;
+  if (portrait.matches) return "rotate";
+  if (canFullscreen() && !document.fullscreenElement && !installed.matches) return "fullscreen";
+  return null;
+}
+let gatePaused = false,
+  readyOnce = false;
+function checkGate() {
+  const reason = gateReason(),
+    gate = $("#bf-gate");
+  if (reason) {
+    const ios = !canFullscreen() && !installed.matches;
+    $("#bf-gate-title").textContent = reason === "rotate" ? "Rotate to landscape" : "Full screen to play";
+    $("#bf-gate-copy").textContent =
+      reason === "rotate"
+        ? ios
+          ? "Turn your phone sideways. For true full screen on iPhone: Share → Add to Home Screen, then play from the icon."
+          : "Battlefield is a widescreen game. Turn your phone sideways."
+        : "The battle waits until it has the whole screen. Tap to go full screen.";
+    $("#bf-gate-go").hidden = reason === "rotate";
+    gate.dataset.reason = reason;
+    gate.hidden = false;
+    setDrawer(false);
+    if (!paused) {
+      setPause(true);
+      gatePaused = true;
+    }
+    return;
   }
+  if (gate.hidden) return;
+  gate.hidden = true;
+  if (gatePaused) {
+    gatePaused = false;
+    setPause(false);
+  }
+  ready();
+}
+/** First time the cockpit is ready: show the button tips (if enabled). */
+function ready() {
+  if (readyOnce || !playing) return;
+  readyOnce = true;
+  if (coarse.matches && !tipsOff()) requestAnimationFrame(() => coach(true));
+}
+/* Keep the screen awake during a battle; browsers release it on tab hide, so re-request. */
+let wake: { release(): Promise<void> } | null = null;
+function keepAwake(on: boolean) {
+  const nav = navigator as Navigator & { wakeLock?: { request(t: "screen"): Promise<{ release(): Promise<void> }> } };
+  if (!on) {
+    void wake?.release().catch(() => {});
+    wake = null;
+  } else if (!wake && nav.wakeLock && document.visibilityState === "visible")
+    nav.wakeLock.request("screen").then((w) => (wake = w), () => {});
 }
 function deploy() {
   if (playing) return;
   if (loadoutCost(roles) > 12) return;
   audio.unlock();
   audio.play("start");
-  if (matchMedia("(pointer: coarse)").matches) fullscreen();
+  const entering = coarse.matches ? enterFullscreen() : Promise.resolve();
   playing = true;
+  readyOnce = false;
+  document.documentElement.classList.add("bf-playing");
   $("#battlefield").dataset.active = "true";
   paused = false;
   selected = -1;
@@ -315,13 +383,20 @@ function deploy() {
     "Battle started. WASD moves. Aim with the pointer; hold Space or Fire to shoot.",
   );
   frame = requestAnimationFrame(loop);
-  if (coarse.matches && !tipsOff()) requestAnimationFrame(() => coach(true));
+  keepAwake(true);
+  // Check the gate once the fullscreen/orientation request settles.
+  void entering.then(() => requestAnimationFrame(checkGate));
+  if (!coarse.matches) ready();
 }
 function reset() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   cancelAnimationFrame(frame);
   audio.close();
   playing = false;
+  gatePaused = false;
+  $("#bf-gate").hidden = true;
+  keepAwake(false);
+  document.documentElement.classList.remove("bf-playing");
   $("#battlefield").dataset.active = "false";
   setDrawer(false);
   coachPaused = false;
@@ -511,6 +586,28 @@ listen($("#bf-fullscreen"), "click", fullscreen);
 listen(document, "fullscreenchange", () => {
   $("#bf-fullscreen").textContent = document.fullscreenElement ? "Window" : "Full screen";
   fit();
+  checkGate();
+});
+listen(portrait, "change", () => {
+  fit();
+  checkGate();
+});
+listen($("#bf-gate-go"), "click", () => {
+  void enterFullscreen().then(() => requestAnimationFrame(checkGate));
+});
+listen($("#bf-gate-exit"), "click", reset);
+// iOS ignores user-scalable=no: block pinch and double-tap zoom while a battle runs.
+for (const type of ["gesturestart", "gesturechange"])
+  document.addEventListener(type, (e) => playing && e.preventDefault(), { signal: abort.signal, passive: false });
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    if (playing && e.touches.length > 1) e.preventDefault();
+  },
+  { signal: abort.signal, passive: false },
+);
+listen(document, "contextmenu", (e) => {
+  if (playing) e.preventDefault();
 });
 listen($("#bf-squad"), "click", () =>
   setDrawer(!$("#battlefield").classList.contains("squad-open")),
@@ -597,7 +694,8 @@ listen(document, "visibilitychange", () => {
   if (document.hidden && playing && !paused) {
     hiddenPause = true;
     setPause(true);
-  } else if (!document.hidden && hiddenPause) {
+  } else if (!document.hidden && playing) keepAwake(true);
+  if (!document.hidden && hiddenPause) {
     hiddenPause = false;
     say("Paused while away. Resume when ready.");
   }
@@ -730,6 +828,7 @@ listen(window, "resize", () => {
 });
 listen(window, "pagehide", () => {
   coach(false);
+  keepAwake(false);
   cancelAnimationFrame(frame);
   audio.close();
   lease.setActive(false);
@@ -747,6 +846,10 @@ Object.defineProperty(window, "battlefield", {
     },
     get paused() {
       return paused;
+    },
+    get gate() {
+      const g = document.querySelector<HTMLElement>("#bf-gate")!;
+      return g.hidden ? null : g.dataset.reason;
     },
     get aim() {
       return { ...aim, picking };

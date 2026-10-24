@@ -59,6 +59,11 @@ a {
   --grid-line: #19f0ff14;
   --road: #141133;
   --rail: clamp(118px, 17vw, 168px);
+  /* Safe areas (notch / camera cutout / home bar). Rails grow by the inset on their side. */
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
+  --rl: calc(var(--rail) + var(--sl));
+  --rr: calc(var(--rail) + var(--sr));
   --spring: cubic-bezier(0.34, 1.7, 0.5, 1);
   min-height: 100dvh;
   background: var(--bg);
@@ -1195,9 +1200,12 @@ h1 {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: var(--rail);
+    width: var(--rl);
     background: var(--surface);
     z-index: 1;
+  }
+  [data-active="true"]::after {
+    width: var(--rr);
   }
   [data-active="true"]::before {
     left: 0;
@@ -1212,7 +1220,7 @@ h1 {
   }
   [data-active="true"] .bf-stage {
     position: absolute;
-    inset: 0 var(--rail);
+    inset: 0 var(--rr) 0 var(--rl);
     height: auto;
     min-height: 0;
     border: 0;
@@ -1236,7 +1244,7 @@ h1 {
     display: flex;
     position: absolute;
     z-index: 21;
-    left: calc(var(--rail) + 12px);
+    left: calc(var(--rl) + 12px);
     bottom: max(12px, env(safe-area-inset-bottom));
     width: calc(min(300px, 52vw) - 24px);
     height: auto;
@@ -1265,7 +1273,7 @@ h1 {
   [data-active="true"] .bf-topline {
     position: absolute;
     z-index: 12;
-    left: max(8px, env(safe-area-inset-left));
+    left: calc(var(--sl) + 8px);
     top: 58px;
     width: calc(var(--rail) - 16px);
     height: auto;
@@ -1306,7 +1314,7 @@ h1 {
   [data-active="true"] .bf-quick {
     position: absolute;
     z-index: 12;
-    left: max(8px, env(safe-area-inset-left));
+    left: calc(var(--sl) + 8px);
     top: max(8px, env(safe-area-inset-top));
     width: calc(var(--rail) - 16px);
     display: grid;
@@ -1334,7 +1342,7 @@ h1 {
   [data-active="true"] .bf-dpad {
     position: absolute;
     z-index: 12;
-    left: max(8px, env(safe-area-inset-left));
+    left: calc(var(--sl) + 8px);
     bottom: max(10px, env(safe-area-inset-bottom));
     width: calc(var(--rail) - 16px);
     max-width: 150px;
@@ -1398,7 +1406,7 @@ h1 {
   [data-active="true"] .bf-orders {
     position: absolute;
     z-index: 12;
-    right: max(8px, env(safe-area-inset-right));
+    right: calc(var(--sr) + 8px);
     top: calc(max(8px, env(safe-area-inset-top)) + (var(--rail) - 26px) * 0.5625 + 96px);
     width: calc(var(--rail) - 16px);
     display: grid;
@@ -1408,7 +1416,7 @@ h1 {
   [data-active="true"] .bf-fire-area {
     position: absolute;
     z-index: 12;
-    right: max(8px, env(safe-area-inset-right));
+    right: calc(var(--sr) + 8px);
     bottom: max(10px, env(safe-area-inset-bottom));
     width: calc(var(--rail) - 16px);
     display: grid;
@@ -1434,7 +1442,7 @@ h1 {
     z-index: 20;
     top: 0;
     bottom: 0;
-    left: var(--rail);
+    left: var(--rl);
     width: min(300px, 52vw);
     padding: max(10px, env(safe-area-inset-top)) 12px 70px;
     display: flex;
@@ -1479,8 +1487,8 @@ h1 {
     position: absolute;
     z-index: 8;
     bottom: max(8px, env(safe-area-inset-bottom));
-    left: calc(var(--rail) + 10px);
-    right: calc(var(--rail) + 10px);
+    left: calc(var(--rl) + 10px);
+    right: calc(var(--rr) + 10px);
     padding: 0;
     text-align: center;
     pointer-events: none;
@@ -1767,5 +1775,89 @@ h1 {
   [data-active="true"] .bf-orders {
     grid-template-columns: repeat(4, 1fr);
     width: 190px;
+  }
+}
+
+/* ---------- Mobile game shell: no page scroll, bounce, zoom, callouts or selection while playing ---------- */
+html.bf-playing,
+html.bf-playing body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100%;
+}
+html.bf-playing body {
+  position: fixed;
+  inset: 0;
+}
+#battlefield {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+[data-active="true"] :is(button, .bf-tank, #bf-viewport) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Ready gate: covers everything until the phone is landscape and full screen. */
+.bf-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: #07060f;
+}
+.bf-gate-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  max-width: 340px;
+  text-align: center;
+}
+.bf-gate-card b {
+  font: 800 20px/1.2 system-ui;
+  color: var(--ink);
+}
+.bf-gate-card p {
+  margin: 0;
+  font: 13px/1.5 system-ui;
+  color: var(--muted);
+}
+.bf-gate-card .bf-primary {
+  min-height: 52px;
+  padding: 10px 26px;
+  font-size: 15px;
+}
+.bf-gate-card #bf-gate-exit {
+  font-size: 11px;
+  min-height: 36px;
+  box-shadow: none;
+}
+.bf-gate-phone {
+  width: 72px;
+  height: 72px;
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.bf-gate[data-reason="rotate"] .bf-gate-phone {
+  animation: bf-rotate 2.2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+.bf-gate[data-reason="fullscreen"] .bf-gate-phone {
+  transform: rotate(90deg);
+  stroke: var(--green);
+}
+@keyframes bf-rotate {
+  0%,
+  25% {
+    transform: rotate(0);
+  }
+  60%,
+  100% {
+    transform: rotate(90deg);
   }
 }
