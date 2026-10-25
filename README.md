@@ -62,6 +62,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.6.7 — Eject
+
+- The header's Exit is now **Eject**: it goes back to DOM VIRUS and plays the board-closing return, ejecting the cartridge from the console.
+
 ### 0.6.6 — Exact 3D button presses
 
 - Every hard-shadow button presses onto its own shadow: hover lifts only the top (the base edge stays put), press and selected states land exactly on the base, with no scale, wobble or overshoot. Selected choices (mission, side, formation, size, loadouts, Auto/Lock/Pan/Pause, roster) rest pressed and don't lift. Fire's touch press matches the mouse press.
