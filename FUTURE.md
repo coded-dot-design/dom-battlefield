@@ -25,6 +25,13 @@ state is in [HANDOFF.md](HANDOFF.md). Move items to the README changelog when th
 - More operations and a seeded "random operation" picker.
 - Show each wingman's standing order and waypoint on the minimap.
 
+### Multiplayer (later version, the Bolo promise)
+
+DOM VIRUS started with Bolo: tanks, two machines, a network, an opponent across the room.
+Battlefield's squads make it the best fit for 2-player team play after Sherman Bytes. Plan (see the
+hub's FUTURE.md): WebRTC data channels, peer to peer, no game server; send orders and inputs, not
+state; a hot-seat/couch mode first.
+
 ### Performance and size
 
 - Win back headroom under the 30 KB budget (29.3 KB now); the CSS is about 8 KB gzip and is the
