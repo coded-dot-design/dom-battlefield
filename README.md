@@ -62,6 +62,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.6.6 — Exact 3D button presses
+
+- Every hard-shadow button presses onto its own shadow: hover lifts only the top (the base edge stays put), press and selected states land exactly on the base, with no scale, wobble or overshoot. Selected choices (mission, side, formation, size, loadouts, Auto/Lock/Pan/Pause, roster) rest pressed and don't lift. Fire's touch press matches the mouse press.
+
 ### 0.6.5 — Home Screen icons without the frame
 
 - PNG app icons drop the cyan border so iOS/Android corner masks never clip it; the browser-tab SVG keeps it.

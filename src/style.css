@@ -87,18 +87,36 @@ a {
   color-scheme: light;
 }
 
-/* ---------- Buttons: flat panel buttons + classic arcade buttons ---------- */
+/* ---------- Buttons: flat panel buttons + classic arcade buttons ----------
+   Every button is a top surface over a hard shadow (its base). The base never moves:
+   - hover (fine pointers) lifts the top by (--hx, --hy) and grows the shadow by the same;
+   - press (:active, .down) and selected (aria-pressed/expanded="true", .active) drop the top
+     exactly onto the base: translate(--px, --py), shadow 0.
+   Families only set the variables below; the state rules further down do the motion. */
 button {
+  --px: 3px; /* base offset x */
+  --py: 3px; /* base offset y */
+  --hx: 1px; /* hover lift x */
+  --hy: 1px; /* hover lift y */
+  --edge: var(--line);
+  --edge-hover: var(--cyan);
+  --border-hover: var(--cyan);
+  --glow: 0 0 0 transparent;
+  --glow-hover: var(--glow);
+  --glow-press: var(--glow);
   color: var(--ink);
   background: var(--surface);
   border: 2px solid var(--line);
   border-radius: 6px;
   min-height: 40px;
   padding: 8px 13px;
-  box-shadow: 3px 3px 0 var(--line);
+  transform: none;
+  box-shadow:
+    var(--px) var(--py) 0 var(--edge),
+    var(--glow);
   transition:
-    transform 260ms var(--spring),
-    box-shadow 260ms var(--spring),
+    transform 120ms ease-out,
+    box-shadow 120ms ease-out,
     background-color 140ms,
     border-color 140ms;
 }
@@ -111,56 +129,53 @@ button svg {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-@media (hover: hover) and (pointer: fine) {
-  button:not(:disabled):hover {
-    border-color: var(--cyan);
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--cyan);
-  }
-}
-button:not(:disabled):active {
-  transform: translate(3px, 3px) scale(0.97);
-  box-shadow: 0 0 0 var(--line);
-  transition-duration: 50ms;
-}
-/* Arcade: solid neon cap, hard drop shadow, springy press. Icon only during play. */
+/* Arcade: solid neon cap over a dark base straight below it. Icon only during play. */
 .bf-arcade,
 .bf-dpad button,
 .bf-fire {
   --c: var(--cyan);
+  --px: 0px;
+  --py: 4px;
+  --hx: 0px;
+  --hy: 2px;
+  --edge: color-mix(in srgb, var(--c) 45%, #07060f);
+  --edge-hover: var(--edge);
+  --border-hover: #07060f;
+  --glow: 0 0 14px color-mix(in srgb, var(--c) 45%, transparent);
+  --glow-hover: 0 0 18px color-mix(in srgb, var(--c) 60%, transparent);
+  --glow-press: 0 0 22px color-mix(in srgb, var(--c) 70%, transparent);
   color: #07060f;
   background: var(--c);
   border: 2px solid #07060f;
   border-radius: 10px;
-  box-shadow:
-    0 4px 0 color-mix(in srgb, var(--c) 45%, #07060f),
-    0 0 14px color-mix(in srgb, var(--c) 45%, transparent);
   display: inline-grid;
   place-items: center;
   gap: 2px;
   font-weight: 700;
 }
+/* The motion. Selected buttons rest pressed and never lift. */
 @media (hover: hover) and (pointer: fine) {
-  .bf-arcade:not(:disabled):hover,
-  .bf-dpad button:hover,
-  .bf-fire:hover {
-    border-color: #07060f;
-    transform: translateY(-2px);
+  button:not(:disabled, [aria-pressed="true"], [aria-expanded="true"], .active):hover {
+    border-color: var(--border-hover);
+    transform: translate(calc(-1 * var(--hx)), calc(-1 * var(--hy)));
     box-shadow:
-      0 6px 0 color-mix(in srgb, var(--c) 45%, #07060f),
-      0 0 18px color-mix(in srgb, var(--c) 60%, transparent);
+      calc(var(--px) + var(--hx)) calc(var(--py) + var(--hy)) 0 var(--edge-hover),
+      var(--glow-hover);
   }
 }
-.bf-arcade:not(:disabled):active,
-.bf-dpad button:active,
-.bf-fire:active,
-.bf-dpad button.down,
-.bf-fire.down {
-  transform: translateY(4px) scale(0.96);
+button:not(:disabled):active,
+button.down,
+button[aria-pressed="true"],
+button[aria-expanded="true"],
+button.active {
+  transform: translate(var(--px), var(--py));
   box-shadow:
-    0 0 0 transparent,
-    0 0 22px color-mix(in srgb, var(--c) 70%, transparent);
-  transition-duration: 45ms;
+    0 0 0 var(--edge),
+    var(--glow-press);
+}
+button:not(:disabled):active,
+button.down {
+  transition-duration: 50ms;
 }
 .bf-arcade[aria-pressed="true"] {
   --c: var(--yellow);
@@ -189,6 +204,16 @@ kbd {
 }
 .bf-primary {
   --c: var(--green);
+  --px: 0px;
+  --py: 4px;
+  --hx: 0px;
+  --hy: 2px;
+  --edge: color-mix(in srgb, var(--green) 45%, #07060f);
+  --edge-hover: var(--edge);
+  --border-hover: #07060f;
+  --glow: 0 0 16px color-mix(in srgb, var(--green) 45%, transparent);
+  --glow-hover: 0 0 0 transparent;
+  --glow-press: 0 0 0 transparent;
   color: #07060f;
   background: var(--green);
   border-color: #07060f;
@@ -198,20 +223,6 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  box-shadow:
-    0 4px 0 color-mix(in srgb, var(--green) 45%, #07060f),
-    0 0 16px color-mix(in srgb, var(--green) 45%, transparent);
-}
-@media (hover: hover) and (pointer: fine) {
-  .bf-primary:not(:disabled):hover {
-    border-color: #07060f;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 0 color-mix(in srgb, var(--green) 45%, #07060f);
-  }
-}
-.bf-primary:not(:disabled):active {
-  transform: translateY(4px) scale(0.98);
-  box-shadow: 0 0 0 transparent;
 }
 
 /* ---------- Page chrome ---------- */
@@ -697,9 +708,9 @@ h1 {
   color: var(--muted);
 }
 .bf-mission[aria-pressed="true"] {
+  --edge: var(--cyan);
   border-color: var(--cyan);
   background: color-mix(in srgb, var(--cyan) 12%, var(--surface));
-  box-shadow: 3px 3px 0 var(--cyan);
 }
 .bf-config {
   display: grid;
@@ -732,13 +743,14 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 2px 2px 0 var(--line);
+  --px: 2px;
+  --py: 2px;
 }
 .bf-seg button[aria-pressed="true"] {
+  --glow-press: 0 0 12px #19f0ff66;
   color: #07060f;
   background: var(--cyan);
   border-color: #07060f;
-  box-shadow: 0 0 12px #19f0ff66;
 }
 .bf-seg svg {
   width: 22px;
@@ -1832,9 +1844,13 @@ html.bf-playing body {
   font-size: 15px;
 }
 .bf-gate-card #bf-gate-exit {
+  /* Flat text button: no base, so nothing to lift or press onto. */
+  --px: 0px;
+  --py: 0px;
+  --hx: 0px;
+  --hy: 0px;
   font-size: 11px;
   min-height: 36px;
-  box-shadow: none;
 }
 .bf-gate-phone {
   width: 72px;
