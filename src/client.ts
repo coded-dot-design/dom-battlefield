@@ -948,6 +948,10 @@ listen($("#bf-minimap"), "click", ((e: MouseEvent) => {
   view.scrolled();
   view.render(selected, paused, reduced.matches);
 }) as EventListener);
+// Eject: back to DOM VIRUS, where the board folds shut and the cartridge pops out of the console.
+listen($("#bf-eject"), "click", () => {
+  location.href = $("#bf-eject").dataset.href!;
+});
 listen($("#bf-theme"), "click", () => {
   const root = $("#battlefield");
   root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";

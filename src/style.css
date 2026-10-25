@@ -262,20 +262,13 @@ kbd {
   color: var(--cyan);
   margin-left: 15px;
 }
+/* Theme and Eject: panel buttons with an icon and a label (label hidden in the phone cockpit). */
 #bf-theme,
-.bf-exit {
+#bf-eject {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 12px;
-}
-.bf-exit svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
 }
 .bf-main {
   padding: 0 24px 12px;
@@ -1037,7 +1030,8 @@ h1 {
     width: 24px;
   }
   .bf-edition,
-  #bf-theme span {
+  #bf-theme span,
+  #bf-eject span {
     display: none;
   }
   #bf-theme {
@@ -1273,12 +1267,7 @@ h1 {
     min-height: 40px;
     padding: 6px;
   }
-  [data-active="true"] .bf-exit {
-    background: var(--surface);
-    border: 2px solid var(--line);
-    border-radius: 6px;
-  }
-  [data-active="true"] #bf-theme span {
+  [data-active="true"] :is(#bf-theme, #bf-eject) span {
     display: none;
   }
   /* Left rail: minimal scoreboard. Tap to expand the drawer. */

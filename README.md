@@ -62,6 +62,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.6.8 — Eject is a real 3D button
+
+- Eject is now a panel button like Sound and Theme (same 3D surface, hover lift and press); in the phone cockpit it is icon-only, like Theme.
+
 ### 0.6.7 — Eject
 
 - The header's Exit is now **Eject**: it goes back to DOM VIRUS and plays the board-closing return, ejecting the cartridge from the console.
