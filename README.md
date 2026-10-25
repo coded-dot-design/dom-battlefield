@@ -62,6 +62,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.6.5 — Home Screen icons without the frame
+
+- PNG app icons drop the cyan border so iOS/Android corner masks never clip it; the browser-tab SVG keeps it.
+
 ### 0.6.4 — Final logo
 
 - The solid DOM Virus skull on the map grid, with the floating virus pixel. No hole or notch.
