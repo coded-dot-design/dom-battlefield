@@ -420,7 +420,7 @@ export class View {
       el("circle", { class: "bf-grab", r: "0.9" }, flag);
       el("path", { d: "M-.05 .35V-.6h.6l-.15.2.15.2h-.6" }, flag);
       const label = el("text", { x: ".02", y: "-.29" }, flag);
-      label.textContent = r.hq ? "HQ" : String(r.n);
+      label.textContent = r.hq ? "HQ" : r.n === 0 ? "★" : String(r.n);
       if (r.selected)
         r.stops.slice(0, -1).forEach((c, i) => {
           const [sx, sy] = at(c).split(",");

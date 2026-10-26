@@ -73,6 +73,8 @@ let state: Battle,
   draft: { id: number; stops: number[] } | null = null;
 /** Wingmen are numbered 1..per-1 (the command tank is 0, "you"). */
 const tankNo = (id: number) => id % state.per;
+/** "Your tank" for the command tank, "Tank n" for a wingman. */
+const tankName = (id: number) => (id === commander(state).id ? "Your tank" : `Tank ${tankNo(id)}`);
 /** While planning, the command card can be tucked away (Hide); a tank tap or Command reopens it. */
 let cmdHidden = false;
 /** A platoon key's inside: the tank number over 1-3 size pips. */
@@ -236,6 +238,7 @@ function preview(resized = false) {
     formation,
     per,
   );
+  $("#battlefield").dataset.side = String(side);
   view = new View(viewport, state, selectUnit);
   view.center();
   mapTools();
@@ -275,7 +278,7 @@ function preview(resized = false) {
     $<HTMLButtonElement>("#bf-start").disabled = loadoutCost(roles) > 12;
   }
 }
-function selectUnit(id: number) {
+function selectUnit(id: number, fromList = false) {
   if (!playing || paused || pan) return;
   cmdHidden = false;
   const u = state.units.find((u) => u.id === id);
@@ -284,7 +287,7 @@ function selectUnit(id: number) {
     // Tapping an enemy: with a wingman selected, it attacks that tank. Outside command mode
     // your own aim locks on too.
     if (!commanding) lockUnit(u.id);
-    if (selected >= 0) {
+    if (selected >= 0 && selected !== commander(state).id) {
       command(state, { type: "focus", ids: [selected], target: u.id });
       draft = { id: selected, stops: [] };
       say(`Tank ${tankNo(selected)} attacking that tank.`);
@@ -293,18 +296,24 @@ function selectUnit(id: number) {
     return;
   }
   if (draft && draft.id !== id) commitDraft();
-  // Tapping one of your wingmen mid-battle opens Command on it: see its route, change it.
-  if (!commanding && !planning && u.id !== commander(state).id) setCommand(true, false);
-  selected = u.id === commander(state).id ? -1 : id;
+  // Your own tank can take a route too: in Command (or from its key in the platoon list).
+  // Outside Command, tapping it on the field just deselects.
+  const own = u.id === commander(state).id,
+    routeOwn = own && (commanding || planning || fromList);
+  // Tapping a tank mid-battle opens Command on it: see its route, change it.
+  if (!commanding && !planning && (!own || fromList)) setCommand(true, false);
+  selected = own && !routeOwn ? -1 : id;
   draft = selected < 0 ? null : { id: selected, stops: [...u.route] };
   $("#bf-order-label").textContent =
-    selected < 0 ? "ORDERS · WHOLE SQUAD" : `ORDERS · TANK ${tankNo(id)}`;
+    selected < 0 || own ? "ORDERS · WHOLE SQUAD" : `ORDERS · TANK ${tankNo(id)}`;
   say(
     selected < 0
       ? "Squad selected."
-      : commanding
-        ? `Tank ${tankNo(id)}: tap a square to send it, or Attack HQ.`
-        : `Tank ${tankNo(id)}: tap a square to move, or an enemy to attack it.`,
+      : own
+        ? "Your tank: tap a square to set its route. Steer any time to take over; let go and it drives on."
+        : commanding
+          ? `Tank ${tankNo(id)}: tap a square to send it, or Attack HQ.`
+          : `Tank ${tankNo(id)}: tap a square to move, or an enemy to attack it.`,
   );
   setDrawer(false);
   cmdPanel();
@@ -412,13 +421,13 @@ function setDest(id: number) {
 function commitDraft() {
   if (draft && dirty() && draft.stops.length && draftCells()) {
     lockRoute();
-    say(`Tank ${tankNo(draft.id)}: route locked.`);
+    say(`${tankName(draft.id)}: route locked.`);
   }
 }
 function lockRoute() {
   if (!draft || !draft.stops.length || !dirty()) return;
   if (command(state, { type: "route", id: draft.id, cells: draft.stops })) {
-    say(`Tank ${tankNo(draft.id)}: ${state.events.at(-1)}`);
+    say(draft.id === commander(state).id ? (state.events.at(-1) ?? "") : `${tankName(draft.id)}: ${state.events.at(-1)}`);
     buzz(12);
   } else say("That route is blocked now. Adjust it.");
   cmdPanel();
@@ -433,13 +442,14 @@ function plan(action: string) {
     if (!draftCells()) draft.stops = [];
     lockRoute();
   } else if (action === "follow") {
+    if (id === commander(state).id) return say("Your tank leads; the others fall in on you.");
     command(state, { type: "order", order: "follow", ids: [id] });
     draft.stops = [];
     say(`Tank ${tankNo(id)} falling in on you.`);
   } else if (action === "clear") {
-    command(state, { type: "order", order: "advance", ids: [id] });
+    command(state, { type: "clear", id });
     draft.stops = [];
-    say(`Tank ${tankNo(id)}: route cleared, back to squad orders.`);
+    say(`${tankName(id)}: ${state.events.at(-1)}`);
   }
   cmdPanel();
 }
@@ -491,7 +501,7 @@ function cmdPanel() {
     key = alive ? `${u!.role}|${tankNo(u!.id)}` : "";
   if (badge.dataset.key !== key) {
     badge.dataset.key = key;
-    badge.innerHTML = alive ? unitKey(u!.role, String(tankNo(u!.id))) : "";
+    badge.innerHTML = alive ? unitKey(u!.role, u!.id === commander(state).id ? "★" : String(tankNo(u!.id))) : "";
   }
   badge.dataset.hp = alive ? healthTone(u!) : "lost";
   text("#bf-cmd-hp", alive ? `${Math.ceil(u!.hp)} HP` : "");
@@ -514,7 +524,7 @@ function cmdPanel() {
             ? "Locked. Next tank, drag your HQ, or Start battle."
             : "Locked. Switch back to Auto to fight.",
   );
-  text("#bf-cmd-tank", alive ? `TANK ${tankNo(u!.id)} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
+  text("#bf-cmd-tank", alive ? `${tankName(u!.id).toUpperCase()} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
   text(
     "#bf-cmd-state",
     !alive
@@ -547,8 +557,9 @@ function routeLines(): RouteLine[] {
   const out: RouteLine[] = [];
   const enemyHq = state.board.bases[1 - side]!;
   for (const u of state.units) {
-    if (u.side !== side || u.hp <= 0 || u.id === commander(state).id) continue;
+    if (u.side !== side || u.hp <= 0) continue;
     const sel = u.id === selected;
+    if (u.id === commander(state).id && !sel && !u.route.length) continue;
     if (!commanding && !sel) continue;
     const own = cell(state.board, u);
     if (sel && draft && dirty()) {
@@ -565,7 +576,7 @@ function routeLines(): RouteLine[] {
 function order(order: Order) {
   if (!playing || paused) return;
   const ids =
-    selected >= 0
+    selected >= 0 && selected !== commander(state).id
       ? [selected]
       : state.units
           .filter((u) => u.side === side && u.id !== commander(state).id)
@@ -606,13 +617,15 @@ function setPause(value: boolean) {
   say(paused ? "Battle paused." : planning ? "Back to planning." : "Battle resumed.");
 }
 function pauseButton() {
-  const b = $("#bf-pause");
-  b.setAttribute("aria-pressed", String(paused));
-  b.setAttribute("aria-label", paused ? "Resume" : "Pause");
-  b.querySelector("span")!.textContent = paused ? "Resume" : "Pause";
-  b.querySelector("path")!.setAttribute("d", paused ? "M6 4l10 6-10 6Z" : "M7 4v12M13 4v12");
-  // The PAUSED sticker is for a pause you chose, not the rotate/full-screen gate or the tips.
-  $("#bf-paused").hidden = !(paused && $("#bf-gate").hidden && $("#bf-coach").hidden && $("#bf-giveup").hidden && state.winner === null);
+  $("#bf-pause").setAttribute("aria-pressed", String(paused));
+  // The white flag pauses the battle and asks: keep fighting or give up. Not for the
+  // rotate / full-screen gate or the tips, which pause on their own.
+  const show = paused && $("#bf-gate").hidden && $("#bf-coach").hidden && state.winner === null,
+    card = $("#bf-giveup");
+  if (card.hidden === show) {
+    card.hidden = !show;
+    if (show) $<HTMLButtonElement>("#bf-giveup-no").focus({ preventScroll: true });
+  }
 }
 function fullscreen() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -808,7 +821,6 @@ function reset() {
   cmdHidden = false;
   dockCard();
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-  $("#bf-paused").hidden = true;
   $("#bf-giveup").hidden = true;
   keysPanel(false);
   $("#bf-expand").hidden = true;
@@ -888,7 +900,7 @@ function updateHUD() {
       const n = document.createElement("button");
       n.className = "bf-arcade bf-unit";
       n.innerHTML = unitKey(u.role, "");
-      n.onclick = () => selectUnit(u.id);
+      n.onclick = () => selectUnit(u.id, true);
       roster.append(n);
     }
   allies.forEach((u, i) => {
@@ -1095,16 +1107,6 @@ listen($("#bf-cmd-close"), "click", () => {
     cmdPanel();
   } else setAim({ mode: "auto" }, "Command off. Auto-aim: nearest visible enemy.");
 });
-/* Desktop docks the command card above the map (in flow, the map rescales to fit) instead of over
-   it; the touch cockpit has no spare room, so there it stays over the field. */
-const cmdHome = $("#bf-cmd").parentElement!,
-  cmdNext = $("#bf-cmd").nextElementSibling;
-function dockCmd() {
-  const c = $("#bf-cmd");
-  if (railLayout.matches) {
-    if (c.parentElement !== cmdHome) cmdHome.insertBefore(c, cmdNext);
-  } else if (c.nextElementSibling !== $(".bf-stage")) $(".bf-stage").before(c);
-}
 /* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
    on the right rail inside the stage (its rail CSS is positioned against the stage). */
 const railLayout = matchMedia("(pointer: coarse) and (max-width: 1400px), (max-width: 759px)"),
@@ -1116,10 +1118,6 @@ function dockAim() {
     if (aim.parentElement !== aimHome) aimHome.insertBefore(aim, aimNext);
   } else if (aim.parentElement !== $(".bf-quick")) $(".bf-quick").prepend(aim);
 }
-// The docked card's real height comes off the stage's, so the page never scrolls.
-new ResizeObserver(([e]) => {
-  if (e) $(".bf-main").style.setProperty("--cmd-h", `${Math.ceil(e.borderBoxSize[0]?.blockSize ?? e.contentRect.height) + 10}px`);
-}).observe($("#bf-cmd"));
 // Desktop tiles scale to the viewport: refit when the docked card (or anything else) resizes it.
 let vpSize = "";
 new ResizeObserver(() => {
@@ -1128,7 +1126,8 @@ new ResizeObserver(() => {
   vpSize = k;
   if (view && !railLayout.matches) requestAnimationFrame(fit);
 }).observe(viewport);
-/* The command card can be dragged anywhere by its grip; double-click (or Enter) docks it again. */
+/* The command card floats over the field; drag it anywhere by its grip or any empty part.
+   Double-click the grip (or Enter on it) puts it back at the top of the field. */
 function floatCmd(x: number, y: number) {
   const c = $("#bf-cmd"),
     w = c.offsetWidth,
@@ -1145,23 +1144,34 @@ function dockCard() {
   const grip = $("#bf-cmd-grip"),
     card = $("#bf-cmd");
   let from: { x: number; y: number; left: number; top: number } | null = null;
-  listen(grip, "pointerdown", ((e: PointerEvent) => {
+  // Drag by the grip or any empty part of the card (not its buttons). It lifts off after 4px.
+  listen(card, "pointerdown", ((e: PointerEvent) => {
+    const t = e.target as Element;
+    if (t.closest("button") && !t.closest("#bf-cmd-grip")) return;
     e.preventDefault();
     e.stopPropagation();
     const r = card.getBoundingClientRect();
-    card.classList.add("floating");
-    floatCmd(r.left, r.top);
-    const f = card.getBoundingClientRect();
-    from = { x: e.clientX, y: e.clientY, left: f.left, top: f.top };
+    from = { x: e.clientX, y: e.clientY, left: r.left, top: r.top };
     try {
-      grip.setPointerCapture(e.pointerId);
+      card.setPointerCapture(e.pointerId);
     } catch {}
   }) as EventListener);
-  listen(grip, "pointermove", ((e: PointerEvent) => {
-    if (from) floatCmd(from.left + e.clientX - from.x, from.top + e.clientY - from.y);
+  listen(card, "pointermove", ((e: PointerEvent) => {
+    if (!from) return;
+    const dx = e.clientX - from.x,
+      dy = e.clientY - from.y;
+    if (!card.classList.contains("floating")) {
+      if (Math.hypot(dx, dy) < 4) return;
+      card.classList.add("floating");
+    }
+    floatCmd(from.left + dx, from.top + dy);
   }) as EventListener);
-  for (const t of ["pointerup", "pointercancel"]) listen(grip, t, () => (from = null));
-  listen(grip, "dblclick", dockCard);
+  for (const t of ["pointerup", "pointercancel"]) listen(card, t, () => (from = null));
+  // Pointer capture retargets the double-click to the card: dock unless it landed on a button.
+  listen(card, "dblclick", ((e: MouseEvent) => {
+    const t = document.elementFromPoint(e.clientX, e.clientY);
+    if (!t?.closest("button") || t.closest("#bf-cmd-grip")) dockCard();
+  }) as EventListener);
   listen(grip, "keydown", ((e: KeyboardEvent) => {
     const step = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] }[e.key];
     if (e.key === "Enter" || e.key === " ") return e.preventDefault(), dockCard();
@@ -1199,29 +1209,11 @@ function dockComms() {
   footer.hidden = !railLayout.matches;
 }
 dockAim();
-dockCmd();
 dockHelp();
 dockComms();
-listen(railLayout, "change", () => (dockAim(), dockCmd(), dockHelp(), dockComms()));
+listen(railLayout, "change", () => (dockAim(), dockHelp(), dockComms()));
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
-let giveupResume = false;
-function giveup(open: boolean) {
-  if (open === !$("#bf-giveup").hidden) return;
-  if (open) {
-    giveupResume = !paused;
-    setDrawer(false);
-    $("#bf-giveup").hidden = false;
-    setPause(true);
-    pauseButton();
-    $<HTMLButtonElement>("#bf-giveup-no").focus();
-  } else {
-    $("#bf-giveup").hidden = true;
-    if (giveupResume) setPause(false);
-    else pauseButton();
-  }
-}
-listen($("#bf-surrender"), "click", () => giveup(true));
-listen($("#bf-giveup-no"), "click", () => giveup(false));
+listen($("#bf-giveup-no"), "click", () => setPause(false));
 listen($("#bf-giveup-yes"), "click", () => {
   const b = $("#bf-giveup-yes");
   b.classList.add("go");
@@ -1243,7 +1235,6 @@ if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
   listen($(".bf-keys"), "mouseenter", () => keysPanel(true));
   listen($(".bf-keys"), "mouseleave", () => keysPanel(false));
 }
-listen($("#bf-resume"), "click", () => setPause(false));
 /* Header ⚙: the less-used options (install as an app, surrender). Closes on pick or outside tap. */
 function settings(open: boolean) {
   $("#bf-settings-menu").hidden = !open;
@@ -1362,7 +1353,7 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
   if (!playing) return;
   if (e.code === "Escape") {
     e.preventDefault();
-    if (!$("#bf-giveup").hidden) return giveup(false);
+    if (!$("#bf-giveup").hidden) return setPause(false);
     if (picking) {
       setAim({ mode: "auto" }, "Lock cancelled. Auto-aim.");
       return;

@@ -127,7 +127,8 @@ export type Command =
   | { type: "order"; order: Order; ids: number[] }
   | { type: "move"; id: number; cell: number }
   | { type: "route"; id: number; cells: number[] }
-  | { type: "focus"; ids: number[]; target: number | null };
+  | { type: "focus"; ids: number[]; target: number | null }
+  | { type: "clear"; id: number };
 export const SQUAD_SIZES = [4, 8, 12] as const;
 export const REPAIR = { kit: 45, kill: 15, hq: 8, hqRadius: 2.2, every: 7 };
 export interface Battle {
@@ -531,19 +532,32 @@ export function command(s: Battle, c: Command) {
     return true;
   }
   const u = s.units.find((u) => u.id === c.id && u.side === s.side && u.hp > 0);
+  if (c.type === "clear") {
+    // Drop the route. Your own tank just stops being driven; a wingman goes back to advancing.
+    if (!u) return false;
+    u.route = [];
+    u.waypoint = u.hold = null;
+    u.path = [];
+    if (u.id !== lead) (u.order = "advance"), (u.focus = null);
+    s.events.push(u.id === lead ? "Route cleared. Your tank is all yours." : "Route cleared, back to squad orders.");
+    return true;
+  }
   const cells = c.type === "move" ? [c.cell] : c.cells;
-  if (!u || u.id === lead || !cells.length || !plot(s.board, cell(s.board, u), cells)) return false;
+  if (!u || !cells.length || !plot(s.board, cell(s.board, u), cells)) return false;
   // A route: drive through each stop in order, then hold the last square (on the enemy HQ that
   // is a capture). Orders and attack commands replace it.
   u.route = cells.slice();
   u.waypoint = u.route[0]!;
   u.hold = u.route.at(-1)!;
-  u.order = "hold";
+  // Your own tank drives the route only while you're not steering; it keeps its order.
+  if (u.id !== lead) u.order = "hold";
   u.focus = null;
   u.path = route(s.board, cell(s.board, u), u.waypoint);
   u.plan = 0.7;
   s.events.push(
-    u.hold === s.board.bases[1 - u.side]
+    u.id === lead
+      ? "Your tank has a route. Steer any time to take over; let go and it drives on to the flag."
+      : u.hold === s.board.bases[1 - u.side]
       ? "Route locked. Tank heading for the enemy HQ."
       : `Route locked: ${cells.length > 1 ? `${cells.length - 1} turn${cells.length > 2 ? "s" : ""}, then ` : ""}hold position.`,
   );
@@ -692,6 +706,28 @@ export interface Input {
   fire: boolean;
   aim: Point | null;
 }
+/** Follow the planned path toward goal (replanning on a timer), arriving at route stops. */
+function drive(s: Battle, u: Unit, goal: number, occupied: Set<number>, dt: number) {
+  const b = s.board;
+  if (u.plan <= 0) {
+    const own = cell(b, u);
+    occupied.delete(own);
+    u.path = route(b, own, goal, occupied);
+    occupied.add(own);
+    u.plan = 0.65 + (u.id % 12) * 0.025;
+  }
+  const next = u.path[0];
+  // A replan from inside the waypoint cell yields no path: that is arrival.
+  if (next === undefined && u.waypoint !== null && cell(b, u) === u.waypoint) return arrive(u);
+  if (next === undefined) return;
+  const p = point(b, next),
+    d = Math.hypot(p.x - u.x, p.y - u.y);
+  const travel = Math.min(d, speedOf(u) * dt * 0.8);
+  if (d < 0.08) {
+    u.path.shift();
+    if (!u.path.length && u.waypoint !== null) arrive(u);
+  } else if (!moveUnit(s, u, ((p.x - u.x) / d) * travel, ((p.y - u.y) / d) * travel)) u.plan = Math.min(u.plan, 0.25);
+}
 export function step(s: Battle, dt: number, input: Input) {
   if (s.winner !== null) return;
   dt = Math.min(0.04, Math.max(0, dt));
@@ -735,13 +771,15 @@ export function step(s: Battle, dt: number, input: Input) {
       // Analog input: direction from the vector, speed from its length (keyboard/D-pad = full).
       const length = Math.hypot(input.x, input.y),
         throttle = Math.min(1, length);
-      if (length)
+      if (length) {
         moveUnit(
           s,
           u,
           (input.x / length) * speedOf(u) * throttle * dt,
           (input.y / length) * speedOf(u) * throttle * dt,
         );
+        u.plan = 0; // steering overrides the route; let go and it replans to its flag
+      } else if (u.waypoint !== null) drive(s, u, u.waypoint, occupied, dt);
       const aim = input.aim ?? target;
       if (aim) u.turret = Math.atan2(aim.y - u.y, aim.x - u.x);
       if (input.fire) fire(s, u, u.turret);
@@ -785,34 +823,7 @@ export function step(s: Battle, dt: number, input: Input) {
             u.waypoint === null &&
             u.order === "advance" &&
             Math.hypot(u.x - target.x, u.y - target.y) < 5));
-      if (!stop) {
-        if (u.plan <= 0) {
-          const own = cell(b, u);
-          occupied.delete(own);
-          u.path = route(b, own, goal, occupied);
-          occupied.add(own);
-          u.plan = 0.65 + (u.id % 12) * 0.025;
-        }
-        const next = u.path[0];
-        // A replan from inside the waypoint cell yields no path: that is arrival.
-        if (next === undefined && u.waypoint !== null && cell(b, u) === u.waypoint) arrive(u); else if (next !== undefined) {
-          const p = point(b, next),
-            d = Math.hypot(p.x - u.x, p.y - u.y);
-          const travel = Math.min(d, speedOf(u) * dt * 0.8);
-          if (d < 0.08) {
-            u.path.shift();
-            if (!u.path.length && u.waypoint !== null) arrive(u);
-          } else if (
-            !moveUnit(
-              s,
-              u,
-              ((p.x - u.x) / d) * travel,
-              ((p.y - u.y) / d) * travel,
-            )
-          )
-            u.plan = Math.min(u.plan, 0.25);
-        }
-      }
+      if (!stop) drive(s, u, goal, occupied, dt);
       const shoot = focusVisible ? focus : target;
       if (shoot) {
         u.turret = Math.atan2(shoot.y - u.y, shoot.x - u.x);

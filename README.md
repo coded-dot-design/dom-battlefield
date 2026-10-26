@@ -31,7 +31,8 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Button tips | ? in the header | First run; ? in the drawer; tap a label for details |
 | Keyboard controls | Keyboard icon beside the battlefield title (hover or click) | — |
 | Move the command card | Drag its grip · double-click to dock | Drag its grip |
-| Full screen · surrender | Corners icon · Pause → Surrender | Same |
+| Pause · surrender | White flag (P): Keep fighting or Surrender | White flag on the rail |
+| Route your own tank | ★ platoon key, then a square, Lock · steer to override | Same |
 | Move HQ (plan only) | Drag your HQ, or Move HQ then a square | Same |
 | Pan / recenter | M + drag / C | Pan + drag / Center |
 | Pause / deselect | P / Esc | Pause / select your tank |
@@ -51,7 +52,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 46KB gzip budget, checked by `npm run size` (0.11.0: ~44.1KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 48KB gzip budget, checked by `npm run size` (0.13.0: ~46.3KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10, 46KB in 0.11–0.12).
 
 ## Boundaries
 
@@ -69,6 +70,15 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.13.0 — Command your own tank, one pause screen, team colours
+
+- **Your tank takes routes too.** Tap its ★ key in the platoon (or tap it in Command / while planning), tap a square, Lock. When you're not steering it drives to its flag; steer any time to take over, let go and it carries on. Clear drops the route. Shoot while it drives, or take the wheel.
+- **Pause is the white flag.** The footer key (and P) pauses and asks GIVE UP? with two matching sticker keys: **Keep fighting** (the DOM VIRUS skull) and **Surrender** (white flag, flashes red). No extra confirm step.
+- **Command card** floats over the field again (the map keeps its full size), two rows, and you can drag it anywhere by its grip or any empty spot; double-click to put it back.
+- **Team colours:** route lines, flags and healthy platoon keys follow your side (mint or coral); the enemy HQ flag is theirs. Hurt is flat amber, critical flat red with hazard stripes.
+- Auto is always blue and burns brighter when on. Keyboard controls and tips sit in the header right after the logo. Sound and full-screen keys lift and press like the rest. Comms text ends in an ellipsis instead of running out. New icons: Attack is a rocket, Advance is a double chevron.
+- Size budget 46KB → 48KB gzip.
 
 ### 0.12.1 — Compact result sticker on phones
 

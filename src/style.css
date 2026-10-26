@@ -1867,14 +1867,16 @@ h1 {
   font-size: 11px;
   padding: 6px 12px;
 }
+/* Auto is always blue; on, it rests pressed and burns brighter. */
 #bf-auto {
-  --c: var(--cyan);
+  --c: #5fd4ff;
+  --glow-press: 0 0 22px #5fd4ffaa;
 }
 #bf-target {
   --c: var(--pink);
 }
 #bf-auto[aria-pressed="false"] {
-  --c: #6d6894;
+  --c: #3a72d6;
 }
 #bf-target[aria-pressed="false"] {
   --c: #8a4a6b;
@@ -2363,7 +2365,7 @@ html.bf-playing body {
 }
 .bf-route {
   fill: none;
-  stroke: var(--green);
+  stroke: var(--team);
   stroke-opacity: 0.4;
   stroke-width: 2px;
   stroke-linejoin: round;
@@ -2379,7 +2381,7 @@ html.bf-playing body {
   animation: bf-march 0.6s linear infinite;
 }
 .bf-route.bad {
-  stroke: var(--pink);
+  stroke: var(--critical);
 }
 @keyframes bf-march {
   to {
@@ -2395,7 +2397,7 @@ html.bf-playing body {
   cursor: grab;
 }
 .bf-flag path {
-  fill: var(--green);
+  fill: var(--team);
   stroke: #07060f;
   stroke-width: 0.07;
 }
@@ -2403,7 +2405,7 @@ html.bf-playing body {
   fill: var(--yellow);
 }
 .bf-flag.hq path {
-  fill: var(--pink);
+  fill: var(--enemy);
 }
 .bf-flag text {
   font: 800 0.3px ui-monospace, monospace;
@@ -2806,16 +2808,6 @@ circle.bf-grab[data-stop] {
 [data-active="false"] #bf-tips {
   display: none;
 }
-/* Surrender: a white flag. */
-.bf-surrender {
-  --edge: #8f8aa8;
-  color: #07060f;
-  background: #f6f3ff;
-  border-color: #07060f;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
 /* ---------- PAUSED: the same sticker family as GAME OVER ---------- */
 .bf-paused {
   --tone: var(--yellow);
@@ -2887,7 +2879,7 @@ circle.bf-grab[data-stop] {
   gap: 8px;
 }
 .bf-unit {
-  --c: #39ffb0;
+  --c: var(--team);
   width: 44px;
   height: 44px;
   min-height: 0;
@@ -2896,10 +2888,11 @@ circle.bf-grab[data-stop] {
   align-content: center;
 }
 .bf-unit[data-hp="hurt"] {
-  --c: #ffe14d;
+  --c: var(--hurt);
 }
 .bf-unit[data-hp="critical"] {
-  --c: #ff3355;
+  --c: var(--critical);
+  background: repeating-linear-gradient(135deg, var(--critical) 0 6px, #b3132a 6px 9px);
 }
 .bf-unit[data-hp="lost"] {
   --c: #4a4566;
@@ -3388,7 +3381,7 @@ circle.bf-grab[data-stop] {
   color: #07060f;
   background: #ff3355;
 }
-#battlefield:has(#bf-giveup:not([hidden]), #bf-paused:not([hidden])) #bf-start {
+#battlefield:has(#bf-giveup:not([hidden])) #bf-start {
   visibility: hidden;
 }
 /* Desktop: Auto / Lock / Command sit in the bottom bar, left of Pause, split by a hairline. */
@@ -3506,14 +3499,14 @@ circle.bf-grab[data-stop] {
   padding: 1px 6px;
   font: 800 9px/1.4 ui-monospace, monospace;
   color: #07060f;
-  background: #39ffb0;
+  background: var(--team);
   border-radius: 3px;
 }
 #bf-cmd-hp[data-hp="hurt"] {
-  background: #ffe14d;
+  background: var(--hurt);
 }
 #bf-cmd-hp[data-hp="critical"] {
-  background: #ff3355;
+  background: var(--critical);
 }
 #bf-cmd-hint {
   margin: 0;
@@ -3532,28 +3525,6 @@ circle.bf-grab[data-stop] {
 }
 #bf-cmd-close[data-plan="true"] {
   --c: #6d6894;
-}
-/* Desktop: docked above the map as a full-width bar; the map rescales into the space left. */
-.bf-main > .bf-cmd {
-  position: static;
-  transform: none;
-  width: auto;
-  margin: 0 0 10px;
-  padding: 10px 12px;
-}
-.bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
-  height: calc(100dvh - 330px - var(--cmd-h, 72px));
-}
-@media (max-width: 1180px) {
-  .bf-main > .bf-cmd {
-    grid-template-columns: 1fr auto;
-    row-gap: 10px;
-  }
-  .bf-main > .bf-cmd .bf-cmd-actions {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: flex-start;
-  }
 }
 /* Touch overlay: badge and text stack tighter; close stays top right. */
 @media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
@@ -3644,11 +3615,6 @@ circle.bf-grab[data-stop] {
 }
 .bf-cmd-grip:active {
   cursor: grabbing;
-}
-.bf-main > .bf-cmd:not(.floating) {
-  position: relative;
-  left: auto;
-  top: auto;
 }
 /* Floating: lifted off the layout, wherever you dropped it. */
 #bf-cmd.floating {
@@ -3840,10 +3806,7 @@ circle.bf-grab[data-stop] {
   .bf-stage {
     height: calc(100dvh - 384px);
   }
-  .bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
-    height: calc(100dvh - 384px - var(--cmd-h, 72px));
-  }
-  .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
+    .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
     height: calc(100dvh - 264px);
   }
 }
@@ -3852,18 +3815,12 @@ circle.bf-grab[data-stop] {
   .bf-stage {
     height: calc(100dvh - 244px);
   }
-  .bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
-    height: calc(100dvh - 244px - var(--cmd-h, 72px));
   }
-}
 @media (max-width: 1250px) and (min-width: 760px) and (pointer: fine), (max-width: 1250px) and (min-width: 1401px) {
   .bf-stage {
     height: calc(100dvh - 290px);
   }
-  .bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
-    height: calc(100dvh - 290px - var(--cmd-h, 72px));
-  }
-  .bf-quick > .bf-aim :is(span, kbd) {
+    .bf-quick > .bf-aim :is(span, kbd) {
     display: none;
   }
 }
@@ -3916,5 +3873,96 @@ circle.bf-grab[data-stop] {
   }
   #bf-result .bf-primary {
     flex-basis: 150px;
+  }
+}
+/* Your team's colour: route lines, flags and healthy platoon keys follow the side you play.
+   Hurt is a flat amber, critical a flat red with hazard stripes (distinct from coral). */
+#battlefield {
+  --team: var(--team-a);
+  --enemy: var(--team-b);
+  --hurt: #ffc21a;
+  --critical: #ff3344;
+}
+#battlefield[data-side="1"] {
+  --team: var(--team-b);
+  --enemy: var(--team-a);
+}
+/* Keep fighting: the same sticker key as Surrender, with the DOM VIRUS skull. */
+#bf-giveup-no.bf-start {
+  position: static;
+  translate: none;
+}
+/* Command card over the field: compact, two rows (who + close, then the actions). */
+.bf-stage .bf-cmd:not(.floating) {
+  width: min(700px, calc(100% - 20px));
+  top: 16px;
+  grid-template-columns: 1fr auto;
+  row-gap: 8px;
+}
+.bf-stage .bf-cmd .bf-cmd-actions {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-content: flex-start;
+}
+.bf-cmd {
+  cursor: move;
+  touch-action: none;
+}
+.bf-cmd button {
+  cursor: pointer;
+}
+/* Comms text stays on its line: long messages end in an ellipsis. */
+.bf-comms-slot {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bf-comms-msg .bf-comms-slot {
+  flex: 1 1 auto;
+}
+/* Header switches (sound, full screen) keep lifting on hover and pressing on click. */
+@media (hover: hover) and (pointer: fine) {
+  .bf-header .bf-hbtn[aria-pressed="true"]:hover {
+    border-color: var(--border-hover);
+    transform: translate(calc(-1 * var(--hx)), calc(-1 * var(--hy)));
+    box-shadow: calc(var(--px) + var(--hx)) calc(var(--py) + var(--hy)) 0 var(--edge-hover), var(--glow-hover);
+  }
+}
+.bf-header .bf-hbtn[aria-pressed="true"]:active {
+  transform: translate(var(--px), var(--py));
+  box-shadow: 0 0 0 var(--edge), var(--glow-press);
+}
+/* Help keys sit in the header right after the logo, split off by a hairline. */
+.bf-header .bf-help-keys {
+  margin: 0 auto 0 0;
+  padding: 0 0 0 18px;
+  align-self: center;
+  border-left: 1px solid var(--line);
+  height: 36px;
+  align-items: center;
+}
+.bf-header .bf-brand {
+  margin-right: 0;
+}
+.bf-header .bf-brand:has(+ .bf-help-keys:empty) {
+  margin-right: auto;
+}
+.bf-giveup .bf-start {
+  width: 150px;
+  justify-self: center;
+}
+@media (max-height: 520px) {
+  .bf-giveup .bf-start {
+    width: 126px;
+  }
+}
+.bf-giveup .bf-start b {
+  white-space: nowrap;
+}
+@media (max-height: 520px) {
+  .bf-giveup .bf-start b {
+    font-size: 10px;
+    letter-spacing: 1px;
   }
 }

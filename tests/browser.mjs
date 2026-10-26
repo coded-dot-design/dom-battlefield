@@ -34,12 +34,10 @@ async function passGate(page) {
   if (await page.locator("#bf-coach").isVisible())
     await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
 }
-// Surrender lives on the PAUSED sticker, then a "you sure?" confirm.
+// The white flag (Pause) pauses the battle and asks: keep fighting or surrender.
 async function restart(page) {
-  if (await page.evaluate(() => !window.battlefield.paused)) await page.locator("#bf-pause").click();
-  await page.locator("#bf-surrender").click();
-  assert.equal(await page.locator("#bf-giveup").isVisible(), true, "surrender asks first");
-  assert.equal(await page.locator("#bf-paused").isVisible(), false);
+  if (!(await page.locator("#bf-giveup").isVisible())) await page.locator("#bf-pause").click();
+  assert.equal(await page.evaluate(() => window.battlefield.paused), true, "the battle holds while asking");
   await page.locator("#bf-giveup-yes").click();
   await page.waitForFunction(() => !window.battlefield.playing);
 }
@@ -307,11 +305,11 @@ try {
       assert.equal(await page.locator(".bf-comms #bf-announcement").count(), mobile ? 0 : 1);
       assert.equal(await page.locator(".bf-comms #bf-objective-label").count(), mobile ? 0 : 1);
       assert.equal(await page.locator(".bf-footer").isVisible(), mobile);
-      // The command card: docked above the map on desktop (over it on touch), with a close key.
+      // The command card: over the field, with a close key.
       assert.equal(
         await page.locator("#bf-cmd").evaluate((n) => !!n.closest(".bf-stage")),
-        mobile,
-        "desktop docks the command card outside the field",
+        true,
+        "the command card floats over the field (the map keeps its size)",
       );
       assert.equal(await page.locator("#bf-cmd-badge b").textContent(), String((await cmd()).selected));
       await page.locator("#bf-cmd-close").click();
@@ -329,6 +327,13 @@ try {
         assert.equal(await page.locator("#bf-cmd").evaluate((n) => n.classList.contains("floating")), true, "the card floats where dropped");
         await page.locator("#bf-cmd-grip").dblclick();
         assert.equal(await page.locator("#bf-cmd").evaluate((n) => n.classList.contains("floating")), false, "double-click docks it");
+      }
+      // Your own tank takes a route too: its platoon key opens command on it.
+      if (!mobile) {
+        await page.locator("#bf-roster .bf-unit").first().click();
+        assert.equal((await cmd()).selected, await page.evaluate(() => window.battlefield.snapshot().units.find((u) => u.side === window.battlefield.snapshot().side)?.id ?? 0));
+        assert.match(await page.locator("#bf-cmd-tank").textContent(), /^YOUR TANK/);
+        await page.locator('[data-plan="next"]').click();
       }
       // Move HQ is a planning-only control; Start is a sticker that flashes red and leaves.
       assert.equal(await page.locator("#bf-move-hq").isVisible(), true);
@@ -497,12 +502,7 @@ try {
         await page.evaluate(() => window.battlefield.snapshot()),
         frozen,
       );
-      assert.equal(await page.locator("#bf-paused").isVisible(), true, "pause shows the sticker");
-      await page.locator("#bf-surrender").click();
-      assert.equal(await page.locator("#bf-giveup").isVisible(), true);
-      await page.locator("#bf-giveup-no").click();
-      assert.equal(await page.locator("#bf-giveup").isVisible(), false, "Keep fighting closes the confirm");
-      assert.equal(await page.locator("#bf-paused").isVisible(), true, "...and returns to the pause sticker");
+      assert.equal(await page.locator("#bf-giveup").isVisible(), true, "pausing asks: keep fighting or give up");
       if (!mobile) {
         await page.locator("#bf-keys").hover();
         assert.equal(await page.locator("#bf-keys-panel").isVisible(), true, "the key icon shows the controls");

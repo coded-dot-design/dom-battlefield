@@ -116,10 +116,11 @@ geometry; diffed highlights; no per-tile inline grid styles; pause cancels the l
 ## 6. Size
 
 `scripts/size.mjs` gzips `dist/index.html`, `assets/battlefield.js` and `assets/battlefield.css`
-and fails above **46,000 B** total. At 0.12.1 it is about **45,960 B** gzip (40 B headroom): the next feature needs a trim pass (desktop-only dock code, duplicate media blocks in style.css) or a documented budget raise. 0.11 trimmed dead drawer CSS and raised the budget for the keycap panel, docked command card and platoon keys.
+and fails above **48,000 B** total. At 0.13.0 it is about **46,300 B** gzip (about 1.7 KB headroom).
 → 40 KB (0.8.0, terrain themes and the two-step setup) → 44 KB (0.9.0, header menu, stickers,
 squad chips, per-terrain roads and city shapes) → 46 KB (0.11.0, keycap panel, docked command card,
-platoon keys, surrender confirm).
+platoon keys, surrender confirm) → 48 KB (0.13.0, own-tank routes, movable command card, comms panel,
+team colours).
 
 Map size: setup and planning size the field to the screen. Entering full screen offers **Expand**
 (`#bf-expand`); until answered the size is held (`mapLock` in client.ts). Multiplayer should pass a
@@ -154,3 +155,11 @@ via `swapHref` (Sherman's page swaps back).
 
 Update HANDOFF.md and FUTURE.md as part of any change that alters behaviour, architecture or
 workflow. Every repo in the ecosystem keeps both files.
+
+## Own-tank routes (0.13.0)
+
+`command(s, {type:"route"})` accepts the command tank. In `step`, the player follows its route via
+`drive()` only while the input vector is zero; any steering moves it directly and resets `plan` so it
+replans when released. `{type:"clear", id}` drops a route (wingmen go back to advancing). The client
+lets the ★ platoon key (or a tap in Command / planning) select your own tank; squad orders still go to
+the whole squad when it is selected.

@@ -291,3 +291,28 @@ test("dashed cover falls faster than solid cover", () => {
   const w = generate(36, 20, 2, 11);
   w.tiles.forEach((t, i) => t === "rock" && assert.equal(w.health[i], variant(i) >= 3 ? 35 : 0));
 });
+
+test("your own tank drives its route when you let go, and steering overrides it", () => {
+  const b = generate(30, 20, 1, 21);
+  const s = createBattle(b, 1, 0, roles);
+  for (const u of s.units) if (u.side === 1) u.cooldown = 1e9; // enemies hold fire
+  const me = s.units[0];
+  const from = cell(b, me);
+  // A reachable open square a few cells east.
+  const dest = [...b.tiles.keys()].find((id) => {
+    const p = point(b, id);
+    return Math.abs(p.y - me.y) < 2 && p.x - me.x > 4 && p.x - me.x < 7 && !solid(b.tiles[id]) && plot(b, from, [id]);
+  });
+  assert.ok(dest !== undefined);
+  assert.equal(command(s, { type: "route", id: me.id, cells: [dest] }), true);
+  // Steering east... then west: the tank obeys the stick, not the route.
+  const x0 = me.x;
+  for (let i = 0; i < 20; i++) step(s, 0.02, { ...idle, x: -1 });
+  assert.ok(me.x < x0, "manual steering overrides the route");
+  assert.notEqual(me.waypoint, null, "the route survives a manual override");
+  // Let go: it drives on to the flag.
+  for (let i = 0; i < 600 && me.waypoint !== null; i++) step(s, 0.02, idle);
+  assert.equal(me.waypoint, null, "arrived");
+  assert.ok(Math.hypot(me.x - point(b, dest).x, me.y - point(b, dest).y) < 1.2);
+  assert.equal(command(s, { type: "clear", id: me.id }), true);
+});
