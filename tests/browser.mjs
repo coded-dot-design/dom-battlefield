@@ -689,6 +689,24 @@ try {
     await desk.close();
     console.log({ install: true });
   }
+  {
+    // Theme and sound are remembered across reloads (theme shared with the DOM VIRUS site).
+    where = "prefs";
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto("http://127.0.0.1:5231");
+    await page.waitForFunction(() => window.battlefield);
+    assert.equal(await page.locator("#battlefield").getAttribute("data-theme"), "dark");
+    await page.locator("#bf-theme").click();
+    await page.locator("#bf-sound").click();
+    assert.equal(await page.locator("#bf-sound").getAttribute("aria-pressed"), "false");
+    await page.reload();
+    await page.waitForFunction(() => window.battlefield);
+    assert.equal(await page.locator("#battlefield").getAttribute("data-theme"), "light", "theme survives a reload");
+    assert.equal(await page.locator("#bf-sound").getAttribute("aria-pressed"), "false", "mute survives a reload");
+    assert.equal(await page.evaluate(() => localStorage.getItem("dom-virus:theme")), "light");
+    await page.close();
+    console.log({ prefs: true });
+  }
 } catch (e) {
   // CI annotation: readable from the checks API even when log downloads are not.
   console.log(`::error title=Battlefield browser test (${where})::${String(e.stack || e).split("\n").slice(0, 4).join(" | ")}`);

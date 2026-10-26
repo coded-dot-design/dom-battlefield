@@ -1663,16 +1663,23 @@ listen($("#bf-eject"), "click", () => {
 listen($("#bf-theme"), "click", () => {
   const root = $("#battlefield");
   root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
+  // Remembered, and shared with the DOM VIRUS site so both stay in the same theme.
+  try {
+    localStorage.setItem("dom-virus:theme", root.dataset.theme);
+  } catch {}
 });
+/* The sound key starts in the saved state (muted stays muted after a reload). */
+function soundButton() {
+  const b = $("#bf-sound");
+  b.setAttribute("aria-pressed", String(audio.enabled));
+  b.setAttribute("aria-label", audio.enabled ? "Mute game sound" : "Enable game sound");
+}
+soundButton();
 listen(document, "pointerdown", (e) => audio.unlock(e));
 listen(document, "keydown", (e) => audio.unlock(e));
 listen($("#bf-sound"), "click", () => {
   audio.toggle();
-  $("#bf-sound").setAttribute("aria-pressed", String(audio.enabled));
-  $("#bf-sound").setAttribute(
-    "aria-label",
-    audio.enabled ? "Mute game sound" : "Enable game sound",
-  );
+  soundButton();
   if (audio.enabled) audio.unlock();
 });
 listen(window, "resize", () => {

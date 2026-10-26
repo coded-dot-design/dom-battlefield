@@ -71,6 +71,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.13.6 — Theme and sound are remembered
+
+- The theme you pick is saved (under the same key as the DOM VIRUS site, so the site and the game stay in sync) and applied before first paint. The mute key now starts in its saved state, so muted stays visibly muted after a reload.
+
 ### 0.13.5 — HQ boundary line
 
 - Your HQ must now stay 7 squares behind the middle of the field (was 3; small fields keep at least 4 columns of room).
