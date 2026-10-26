@@ -351,14 +351,23 @@ export function generate(
   b.health = tiles.map((t, i) => toughness(t, i, mission));
   return b;
 }
-/** Move a side's HQ during planning: its own half, never water, a cleared 3x3 pad, and both
+/** Move a side's HQ during planning: behind its boundary line (hqLimit), never water, a cleared 3x3 pad, and both
  *  HQs plus the objective must stay connected. Returns false (and changes nothing) otherwise. */
+/** How far behind the middle of the field an HQ must stay (in squares). */
+export const HQ_BACK = 7;
+/** The HQ boundary line (map x): side 0's HQ centre must be left of it, side 1's right of it.
+ *  Small fields keep at least 4 columns of room behind it. */
+export function hqLimit(b: Board, side: number) {
+  const half = b.cols / 2,
+    room = Math.min(HQ_BACK, half - 4);
+  return side === 0 ? half - room : half + room;
+}
 export function moveBase(b: Board, side: number, id: number) {
   const x = id % b.cols,
-    y = Math.floor(id / b.cols),
-    half = b.cols / 2;
+    y = Math.floor(id / b.cols);
   if (id < 0 || id >= b.tiles.length || x < 1 || y < 1 || x > b.cols - 2 || y > b.rows - 2) return false;
-  if (side === 0 ? x > half - 3 : x < half + 2) return false;
+  const limit = hqLimit(b, side);
+  if (side === 0 ? x + 0.5 > limit : x + 0.5 < limit) return false;
   const pad: number[] = [];
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) pad.push((y + dy) * b.cols + x + dx);
   if (pad.some((c) => b.tiles[c] === "water")) return false;

@@ -190,6 +190,21 @@ export class View {
     this.resize();
     this.render(-1, false, true);
   }
+  /** Move HQ mode: a dashed line in your team's colour marks how far forward the HQ may go. */
+  private hqLineEl: HTMLElement | null = null;
+  private hqLineX: number | null = null;
+  hqLine(x: number | null) {
+    if (x === this.hqLineX) return;
+    this.hqLineX = x;
+    if (!this.hqLineEl) {
+      this.hqLineEl = document.createElement("i");
+      this.hqLineEl.className = "bf-hq-line";
+      this.hqLineEl.setAttribute("aria-hidden", "true");
+      this.world.append(this.hqLineEl);
+    }
+    this.hqLineEl.hidden = x === null;
+    if (x !== null) this.hqLineEl.style.left = `${x * this.tile}px`;
+  }
   resize() {
     const { cols, rows } = this.s.board;
     this.tile =
@@ -202,6 +217,7 @@ export class View {
     this.world.style.width = `${cols * this.tile}px`;
     this.world.style.height = `${rows * this.tile}px`;
     this.world.style.setProperty("--tile", `${this.tile}px`);
+    if (this.hqLineEl && this.hqLineX !== null) this.hqLineEl.style.left = `${this.hqLineX * this.tile}px`;
     this.world.style.gridTemplateColumns = `repeat(${cols},1fr)`;
     this.world.style.gridTemplateRows = `repeat(${rows},1fr)`;
     for (const k of this.s.pickups)

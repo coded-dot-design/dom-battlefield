@@ -71,6 +71,12 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.13.5 — HQ boundary line
+
+- Your HQ must now stay 7 squares behind the middle of the field (was 3; small fields keep at least 4 columns of room).
+- While Move HQ is on, or while you drag the HQ, a dashed line in your team's colour shows the boundary.
+- Light theme: the GIVE UP? card's hard shadow is ink instead of near-white.
+
 ### 0.13.4 — No more stuck tanks
 
 - Tanks never start on top of each other: deployment keeps them at least 0.85 cells apart, and a tank that ends up too close to another may always drive away (before, two overlapping tanks could never move).

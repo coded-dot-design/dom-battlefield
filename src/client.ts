@@ -12,6 +12,7 @@ import {
   commander,
   plot,
   moveBase,
+  hqLimit,
 } from "./model";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
@@ -536,6 +537,7 @@ function cmdPanel() {
     n.disabled = n.dataset.plan !== "next" && !alive;
   if (planning) $("#bf-start").hidden = false;
   $("#bf-move-hq").setAttribute("aria-pressed", String(hqPick));
+  hqGuide();
 }
 
 /** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
@@ -1526,6 +1528,10 @@ listen(viewport, "click", ((e: MouseEvent) => {
 listen(viewport, "contextmenu", (e) => e.preventDefault());
 /* Command gestures. Drag a stop or the flag to move it; drag the line to add a bend; drag open
    map to pan; tap a square to send the selected tank there. One layout read: the cached view. */
+/** The HQ boundary shows while you're choosing a new spot (Move HQ) or dragging the HQ. */
+function hqGuide() {
+  view?.hqLine(planning && (hqPick || gesture?.kind === "hq") ? hqLimit(state.board, side) : null);
+}
 let gesture: { id: number; kind: "tap" | "pan" | "stop" | "hq"; stop: number; x: number; y: number; left: number; top: number; moved?: boolean } | null = null;
 const cellAt = (e: PointerEvent) => {
   const p = view.location(e);
@@ -1540,6 +1546,7 @@ listen(viewport, "pointerdown", ((e: PointerEvent) => {
   const at = view.location(e),
     base = point(state.board, state.board.bases[side]!);
   if (planning && Math.hypot(at.x - base.x, at.y - base.y) < 1.6) g.kind = "hq";
+  if (g.kind === "hq") queueMicrotask(hqGuide);
   const handle = t.closest("[data-stop]");
   if (g.kind === "hq") {
     // handled on release
@@ -1603,6 +1610,7 @@ for (const type of ["pointerup", "pointercancel"])
     const g = gesture;
     gesture = null;
     view.highlight(-1);
+    if (g.kind === "hq") hqGuide();
     if (type === "pointerup" && g.kind === "hq" && g.moved) {
       const c = cellAt(e);
       if (c >= 0) moveHq(c);

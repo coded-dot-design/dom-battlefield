@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  hqLimit,
   moveUnit,
   variant,
   generate,
@@ -348,4 +349,17 @@ test("an overlapping pair can always separate", () => {
   c.x = a.x + 0.2;
   c.y = a.y;
   assert.ok(moveUnit(s, c, 0.1, 0) || moveUnit(s, c, 0, 0.1) || moveUnit(s, c, 0, -0.1), "moving away is allowed");
+});
+
+test("an HQ stays 7 squares behind the middle (at least 4 columns of room on small fields)", () => {
+  for (const cols of [26, 38, 48]) {
+    const b = generate(cols, 20, 1, 9);
+    for (const side of [0, 1]) {
+      const limit = hqLimit(b, side), mid = cols / 2;
+      assert.equal(Math.abs(limit - mid), Math.min(7, mid - 4));
+      const y = b.bases[side] / cols | 0;
+      const over = y * cols + (side === 0 ? Math.ceil(limit) : Math.floor(limit) - 1);
+      assert.equal(moveBase(structuredClone(b), side, over), false, `beyond the line is refused (${cols}/${side})`);
+    }
+  }
 });

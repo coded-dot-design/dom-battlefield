@@ -3956,3 +3956,30 @@ circle.bf-grab[data-stop] {
     letter-spacing: 1px;
   }
 }
+/* HQ boundary (Move HQ / dragging the HQ): a dashed line in your team's colour. */
+.bf-hq-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 0;
+  border-left: 3px dashed var(--team);
+  translate: -1.5px 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--team) 60%, transparent));
+}
+.bf-hq-line[hidden] {
+  display: none;
+}
+[data-theme="light"] .bf-hq-line {
+  filter: none;
+}
+/* Light theme: the pause / surrender card's hard shadow is ink, not white. */
+[data-theme="light"] .bf-giveup {
+  box-shadow: 8px 8px 0 #07060f;
+}
+@media (max-height: 520px) {
+  [data-theme="light"] .bf-giveup {
+    box-shadow: 5px 5px 0 #07060f;
+  }
+}
