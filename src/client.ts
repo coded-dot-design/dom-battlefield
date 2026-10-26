@@ -109,7 +109,11 @@ function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
 function say(text: string) {
+  if (announcement.textContent === text) return;
   announcement.textContent = text;
+  // The comms LED blinks once per new message: noticed, not distracting.
+  const led = document.querySelector<HTMLElement>(".bf-comms-led");
+  if (led) (led.classList.remove("rx"), void led.offsetWidth, led.classList.add("rx"));
 }
 /** HUD text writes are skipped when unchanged so the 6Hz HUD costs no style work. */
 function text(sel: string, value: string) {
@@ -294,7 +298,7 @@ function selectUnit(id: number) {
   selected = u.id === commander(state).id ? -1 : id;
   draft = selected < 0 ? null : { id: selected, stops: [...u.route] };
   $("#bf-order-label").textContent =
-    selected < 0 ? "SQUAD ORDERS" : `TANK ${tankNo(id)} SELECTED`;
+    selected < 0 ? "ORDERS · WHOLE SQUAD" : `ORDERS · TANK ${tankNo(id)}`;
   say(
     selected < 0
       ? "Squad selected."
@@ -366,7 +370,7 @@ function setCommand(on: boolean, pick = true) {
     // Back to fighting: squad orders go to the whole squad again.
     selected = -1;
     draft = null;
-    $("#bf-order-label").textContent = "SQUAD ORDERS";
+    $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
     $("#bf-cmd").hidden = true;
   } else {
     if (selected < 0 && pick) nextTank();
@@ -458,7 +462,7 @@ function startBattle() {
   // Squad orders go to the whole squad again once the battle starts.
   selected = -1;
   draft = null;
-  $("#bf-order-label").textContent = "SQUAD ORDERS";
+  $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
   setCommand(false);
   setAim({ mode: coarse.matches ? "auto" : "pointer" });
   audio.play("start");
@@ -779,7 +783,7 @@ function deploy(quick = false) {
   setPan(false);
   follow = true;
   setAim({ mode: coarse.matches ? "auto" : "pointer" });
-  $("#bf-order-label").textContent = "SQUAD ORDERS";
+  $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
   // Plan strategy opens a frozen planning step in command mode; Quick battle skips it.
   planning = !quick;
   draft = null;
@@ -859,6 +863,7 @@ function updateHUD() {
       ? "PLATOON ELIMINATION"
       : `A ${Math.floor(state.capture[0]!)}s / B ${Math.floor(state.capture[1]!)}s`,
   );
+  text("#bf-comms-progress", `${$("#bf-progress").textContent}`);
   text(
     "#bf-drawer-objective",
     `${$("#bf-objective-label").textContent} · ${$("#bf-progress").textContent} · ${$("#bf-clock").textContent}`,
@@ -1181,10 +1186,23 @@ function dockHelp() {
     if (tips.parentElement === spot) $("#bf-fullscreen").before(keys, tips);
   } else if (tips.parentElement !== spot) spot.append(keys, tips);
 }
+/* Desktop: the objective and the message line leave the footer for the comms panel above the
+   map, where they read as part of the tank's instruments. Touch keeps its overlay footer. */
+const footer = $(".bf-footer");
+function dockComms() {
+  const obj = $("#bf-objective-label"),
+    msg = announcement,
+    [objSlot, msgSlot] = [...document.querySelectorAll<HTMLElement>(".bf-comms-slot")];
+  if (railLayout.matches) {
+    if (obj.parentElement !== footer) footer.append(obj, msg);
+  } else if (obj.parentElement !== objSlot) (objSlot!.append(obj), msgSlot!.append(msg));
+  footer.hidden = !railLayout.matches;
+}
 dockAim();
 dockCmd();
 dockHelp();
-listen(railLayout, "change", () => (dockAim(), dockCmd(), dockHelp()));
+dockComms();
+listen(railLayout, "change", () => (dockAim(), dockCmd(), dockHelp(), dockComms()));
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
 let giveupResume = false;
 function giveup(open: boolean) {

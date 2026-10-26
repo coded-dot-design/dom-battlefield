@@ -70,6 +70,13 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.12.0 — Comms panel, balanced footer
+
+- Desktop: the objective (with live progress) and the message line moved out of the footer into a slim **comms** panel above the map, beside the title. A small LED blinks once per new message. On narrower windows the panel takes its own row. Touch keeps its overlay line.
+- Footer: three labelled groups, platoon in the middle: **ORDERS · WHOLE SQUAD / TANK n** (Fall in, Retreat, Advance, Attack) · **PLATOON** · **AIM** (Auto, Lock, Command) + Pause. Narrow windows drop button text to icons.
+- The map takes the height the old footer line used.
+- Attack has a clearer icon: a shell in flight.
+
 ### 0.11.1 — Movable command card, header fixes
 
 - The command card has a grip on its top edge: drag it anywhere on screen (arrow keys work too); double-click or Enter on the grip docks it back.

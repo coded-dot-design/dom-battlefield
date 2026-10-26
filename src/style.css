@@ -3676,3 +3676,194 @@ circle.bf-grab[data-stop] {
     top: 14px;
   }
 }
+/* ---------- Comms panel (desktop): mission objective + one radio line, above the map ---------- */
+.bf-comms {
+  flex: 0 1 520px;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 7px 12px;
+  font: 10px/1.35 ui-monospace, monospace;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cyan);
+  border-radius: 6px;
+}
+.bf-comms > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.bf-comms > div > b {
+  flex: none;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+.bf-comms-obj #bf-objective-label {
+  color: var(--cyan);
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+#bf-comms-progress {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.bf-comms-msg #bf-announcement {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.bf-comms-led {
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--green) 35%, var(--line));
+}
+.bf-comms-led.rx {
+  animation: bf-rx 900ms ease-out;
+}
+@keyframes bf-rx {
+  0%,
+  40% {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-comms-led.rx {
+    animation: none;
+  }
+}
+.bf-footer[hidden] {
+  display: none;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  .bf-comms {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .bf-comms #bf-comms-progress {
+    display: none;
+  }
+}
+
+/* ---------- Footer (desktop): three labelled groups, platoon in the middle ----------
+   ORDERS (to the selected tank or the whole squad) · PLATOON · AIM + PAUSE */
+@media (min-width: 760px) and (pointer: fine), (min-width: 1401px) {
+  .bf-controls {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "olabel plat alabel"
+      "orders plat quick";
+    align-items: end;
+    gap: 6px 24px;
+  }
+  .bf-command-top {
+    display: contents;
+  }
+  #bf-order-label {
+    grid-area: olabel;
+  }
+  .bf-orders {
+    grid-area: orders;
+  }
+  #bf-tactics {
+    grid-area: plat;
+    justify-self: center;
+    align-self: end;
+  }
+  .bf-quick {
+    grid-area: quick;
+    justify-self: end;
+  }
+  .bf-quick > .bf-aim {
+    position: relative;
+    right: auto;
+    bottom: auto;
+  }
+  .bf-quick > .bf-aim::before {
+    content: "AIM";
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 8px);
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    color: var(--muted);
+  }
+  #bf-order-label,
+  .bf-platoon-tag {
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    color: var(--muted);
+  }
+  .bf-platoon {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .bf-platoon-tag {
+    writing-mode: horizontal-tb;
+    rotate: none;
+  }
+  .bf-roster {
+    justify-content: center;
+  }
+}
+@media (max-width: 1100px) and (min-width: 760px) {
+  .bf-orders span,
+  .bf-orders kbd {
+    display: none;
+  }
+}
+/* Narrower desktops: the comms panel takes its own row under the title, full width. */
+@media (max-width: 1250px) and (min-width: 760px) and (pointer: fine), (max-width: 1250px) and (min-width: 1401px) {
+  .bf-topline {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 12px 0 10px;
+  }
+  .bf-comms {
+    order: 9;
+    flex: 1 1 100%;
+  }
+  .bf-stage {
+    height: calc(100dvh - 384px);
+  }
+  .bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
+    height: calc(100dvh - 384px - var(--cmd-h, 72px));
+  }
+  .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
+    height: calc(100dvh - 264px);
+  }
+}
+/* Desktop without the old footer line: the map takes that space. */
+@media (min-width: 760px) and (pointer: fine), (min-width: 1401px) {
+  .bf-stage {
+    height: calc(100dvh - 244px);
+  }
+  .bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
+    height: calc(100dvh - 244px - var(--cmd-h, 72px));
+  }
+}
+@media (max-width: 1250px) and (min-width: 760px) and (pointer: fine), (max-width: 1250px) and (min-width: 1401px) {
+  .bf-stage {
+    height: calc(100dvh - 290px);
+  }
+  .bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
+    height: calc(100dvh - 290px - var(--cmd-h, 72px));
+  }
+  .bf-quick > .bf-aim :is(span, kbd) {
+    display: none;
+  }
+}

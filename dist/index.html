@@ -30,7 +30,7 @@
           href="https://coded-dot-design.github.io/dom-virus/#sherman-bytes"
           class="bf-brand"
           ><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><g transform="translate(10 9) scale(.69)" fill="currentColor"><path fill-rule="evenodd" d="M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z" /><path d="M54 0h9v9h-9z" fill="#ff2e88" /></g></svg><span>DOM <b>BATTLEFIELD</b></span></a
-        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.11.1</i></span
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.12.0</i></span
         ><div class="bf-keys"><button id="bf-keys" class="bf-hbtn" aria-expanded="false" aria-controls="bf-keys-panel" aria-label="Keyboard controls" title="Keyboard controls"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="5" width="16" height="10" rx="2" /><path d="M5 8h.01M8 8h.01M11 8h.01M14 8h.01M5 11h.01M15 11h.01M7.5 12h5" /></svg></button
           ><div id="bf-keys-panel" class="bf-keys-panel" role="dialog" aria-label="Keyboard controls" hidden>
             <b class="bf-keys-title">KNOW YOUR CONTROLS</b>
@@ -125,6 +125,10 @@
             <h1 id="bf-operation">Hedgerow breach</h1>
           </div>
           <div class="bf-help-keys" role="group" aria-label="Help"></div>
+          <div class="bf-comms" aria-label="Mission and comms">
+            <div class="bf-comms-obj"><b>OBJECTIVE</b><span class="bf-comms-slot" data-for="objective"></span><i id="bf-comms-progress"></i></div>
+            <div class="bf-comms-msg"><b class="bf-comms-led" aria-hidden="true"></b><b>COMMS</b><span class="bf-comms-slot" data-for="announcement"></span></div>
+          </div>
           <div class="bf-metrics">
             <span>ARMOR <b id="bf-armor">100%</b></span
             ><span>FRIENDLY <b id="bf-allies">4/4</b></span
@@ -259,7 +263,7 @@
         <p class="bf-rotate">Rotate to landscape for the full widescreen battlefield.</p>
         <section id="bf-controls" class="bf-controls" hidden>
           <div class="bf-command-top">
-            <span id="bf-order-label">SQUAD ORDERS</span>
+            <span id="bf-order-label">ORDERS · WHOLE SQUAD</span>
             <div class="bf-quick">
               <button id="bf-squad" class="bf-arcade" data-tip="Menu · squad · pause beside it" data-tip-more="The menu opens the squad list (tap a tank to select it), these tips and full screen. Pause is the button beside it; Surrender is on the pause screen." aria-expanded="false" aria-controls="bf-tactics" aria-label="Open squad and menu panel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" /></svg></button
               ><button id="bf-pause" class="bf-arcade" aria-pressed="false" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4v12M13 4v12" /></svg><span>Pause</span></button>
@@ -268,7 +272,7 @@
           <div class="bf-orders" data-tip="Squad: fall in · repair · advance · attack" data-tip-more="Orders go to the selected tank, or the whole squad when none is selected. Fall in follows you, Retreat repairs at HQ, Advance pushes to the objective, Attack hunts your locked target or the nearest enemy.">
             <button data-order="follow" class="bf-arcade" aria-label="Fall in (F)" title="F · Fall in"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6" /></svg><span>Fall in</span><kbd>F</kbd></button
             ><button data-order="retreat" class="bf-arcade" aria-label="Retreat to headquarters (R)" title="R · Retreat"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4" /></svg><span>Retreat</span><kbd>R</kbd></button
-            ><button data-order="advance" class="bf-arcade" aria-label="Advance to objective (E)" title="E · Advance"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-3 3.5 3 3.5H5" /></svg><span>Advance</span><kbd>E</kbd></button><button data-order="attack" class="bf-arcade" aria-label="Attack your locked target, or hunt the nearest enemy (G)" title="G · Attack"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16 15 5M11 4h5v5M3 13l4 4M6 17l-3-3" /></svg><span>Attack</span><kbd>G</kbd></button>
+            ><button data-order="advance" class="bf-arcade" aria-label="Advance to objective (E)" title="E · Advance"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-3 3.5 3 3.5H5" /></svg><span>Advance</span><kbd>E</kbd></button><button data-order="attack" class="bf-arcade" aria-label="Attack your locked target, or hunt the nearest enemy (G)" title="G · Attack"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 7h7l4 3-4 3H7Z" /><path d="M1.5 8h3.5M1.5 12h3.5M3 10h2" /></svg><span>Attack</span><kbd>G</kbd></button>
           </div>
           <div class="bf-command-row" id="bf-tactics">
             <p id="bf-drawer-objective" class="bf-drawer-objective"></p>

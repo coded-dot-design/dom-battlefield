@@ -116,7 +116,7 @@ geometry; diffed highlights; no per-tile inline grid styles; pause cancels the l
 ## 6. Size
 
 `scripts/size.mjs` gzips `dist/index.html`, `assets/battlefield.js` and `assets/battlefield.css`
-and fails above **46,000 B** total. At 0.11.1 it is about **45,010 B** gzip (about 1 KB headroom). 0.11 trimmed dead drawer CSS and raised the budget for the keycap panel, docked command card and platoon keys.
+and fails above **46,000 B** total. At 0.12.0 it is about **45,830 B** gzip (under 0.2 KB headroom): the next feature needs a trim pass (desktop-only dock code, duplicate media blocks in style.css) or a documented budget raise. 0.11 trimmed dead drawer CSS and raised the budget for the keycap panel, docked command card and platoon keys.
 → 40 KB (0.8.0, terrain themes and the two-step setup) → 44 KB (0.9.0, header menu, stickers,
 squad chips, per-terrain roads and city shapes) → 46 KB (0.11.0, keycap panel, docked command card,
 platoon keys, surrender confirm).

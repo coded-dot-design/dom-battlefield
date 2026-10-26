@@ -303,6 +303,10 @@ try {
       // Next tank, then start: time runs, command mode ends, aim returns.
       await page.locator('[data-plan="next"]').click();
       assert.equal((await cmd()).selected, 2);
+      // Desktop: objective + messages live in the comms panel above the map, not the footer.
+      assert.equal(await page.locator(".bf-comms #bf-announcement").count(), mobile ? 0 : 1);
+      assert.equal(await page.locator(".bf-comms #bf-objective-label").count(), mobile ? 0 : 1);
+      assert.equal(await page.locator(".bf-footer").isVisible(), mobile);
       // The command card: docked above the map on desktop (over it on touch), with a close key.
       assert.equal(
         await page.locator("#bf-cmd").evaluate((n) => !!n.closest(".bf-stage")),
