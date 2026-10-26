@@ -126,10 +126,7 @@ try {
         await page.waitForFunction(() => window.battlefield.gate === null);
         // Leaving full screen mid-battle re-locks the gate; one tap restores it.
         if (await page.evaluate(() => !!document.fullscreenElement)) {
-          await page.evaluate(() => {
-          delete document.fullscreenElement;
-          document.dispatchEvent(new Event("fullscreenchange"));
-        });
+          await page.evaluate(() => document.exitFullscreen());
           await page.waitForFunction(() => window.battlefield.gate === "fullscreen");
           await page.locator("#bf-gate-go").click();
           await page.waitForFunction(() => window.battlefield.gate === null);
