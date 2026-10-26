@@ -13,7 +13,7 @@ const MINI: Record<string, string> = {
 /** Minimap colours follow each operation's climate (see the terrain themes in style.css). */
 const MINI_BY: Record<string, Record<string, string>> = {
   hedge: { hedge: "#39ffb0", house: "#7be0a8", rock: "#2b9a63", fence: "#7aa356", car: "#3d6b4f" },
-  sand: { rock: "#ff8a3c", fence: "#ffb547", car: "#e07a2c", house: "#ffb547", rubble: "#5a2d12" },
+  sand: { rock: "#ff9a1a", fence: "#ffd23f", car: "#ff6a1a", house: "#ff9a1a", hedge: "#ffd23f", rubble: "#3a2208" },
   snow: { rock: "#bfe9ff", house: "#7c8cff", fence: "#b9a8ff", car: "#9fd8ff", water: "#3a6fd8", rubble: "#2b3170" },
   river: { house: "#ff2e88", water: "#19c6d8", car: "#ffe14d", fence: "#ff2e88", rubble: "#2a2a3c" },
 };

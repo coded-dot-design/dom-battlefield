@@ -251,6 +251,7 @@ export function generate(
       if (mission === 1) {
         if (r < 0.11 * d) t = "rock";
         else if (r < 0.15 * d) t = "fence";
+        else if (r < 0.19 * d) t = "hedge"; // desert scrub: soft cover
       }
       if (mission === 2) {
         if (r < 0.12 * d) t = "house";

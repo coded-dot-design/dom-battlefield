@@ -397,21 +397,26 @@ h1 {
   --car-edge: #3d6b4f;
   --rubble: #2a4a37;
 }
-/* Desert spearhead: dusk dunes. Sandstone mesas, barbed wire, burnt wrecks. */
+/* Desert spearhead, Tron style: a black-amber field under a glowing grid. Flat dark shapes with
+   neon outlines (no shading): mesas, barbed wire, wrecks, scrub. Texture is crisp sand dots. */
 [data-terrain="sand"] {
-  --map: #160b05;
-  --grid-line: #ff9a3c0b;
-  --road: #2a160a;
-  --house: #3a200f;
-  --house-edge: #c0702c;
-  --house-mark: #ffb547;
-  --rock: linear-gradient(160deg, #d0702a, #6a2f10 55%, #3a1808);
-  --fence: #ffb547;
-  --car: #2b160a;
-  --car-edge: #e07a2c;
-  --car-glow: 0 0 6px #ff6a1a66;
-  --rubble: #5a2d12;
-  --texture: repeating-linear-gradient(165deg, transparent 0 44px, #ff9a3c0a 44px 52px);
+  --map: #0e0803;
+  --grid-line: #ffb34724;
+  --road: #140b02;
+  --house: #170d03;
+  --house-edge: #ff9a1a;
+  --house-mark: #ffd23f;
+  --rock: #140b02;
+  --mesa: #ff9a1a;
+  --fence: #ffd23f;
+  --car: #120a02;
+  --car-edge: #ff6a1a;
+  --car-glow: 0 0 6px #ff6a1a88;
+  --hedge: #120a02;
+  --hedge-edge: #ffd23f;
+  --hedge-r: 50%;
+  --rubble: #3a2208;
+  --texture: radial-gradient(#ffb34755 1px, transparent 1.6px) 0 0 / 17px 13px;
 }
 /* Winter crossroads: a snowed-in village. Chalets with snow roofs, ice crystals. */
 [data-terrain="snow"] {
@@ -423,7 +428,7 @@ h1 {
   --house-edge: #7c8cff;
   --house-mark: #b9a8ff;
   --house-top: inset 0 3px 0 #e6f4ff;
-  --rock: linear-gradient(135deg, #e2f6ff, #7f8cff 55%, #3b2f96);
+  --rock: #a9b8ff;
   --fence: #b9a8ff;
   --car: #1a2050;
   --car-edge: #9fd8ff;
@@ -473,17 +478,22 @@ h1 {
   --rock: #b8d3c2;
 }
 [data-theme="light"] [data-terrain="sand"] {
-  --map: #f7e8d3;
-  --road: #ecd5b6;
-  --house: #f0d7b4;
-  --house-edge: #c98b4a;
-  --house-mark: #e08a2c;
-  --rock: linear-gradient(160deg, #f0a35c, #c26a2c 60%, #8a4316);
-  --fence: #c07a1a;
-  --car: #e9cfae;
-  --car-edge: #b86a2c;
-  --rubble: #e2c39c;
-  --texture: repeating-linear-gradient(165deg, transparent 0 44px, #c26a2c12 44px 52px);
+  --map: #fbf2e2;
+  --grid-line: #e0860018;
+  --road: #f3e3c8;
+  --house: #fff8ec;
+  --house-edge: #e07a00;
+  --house-mark: #e0a000;
+  --rock: #fff8ec;
+  --mesa: #e07a00;
+  --fence: #d49a00;
+  --car: #fff8ec;
+  --car-edge: #e05a00;
+  --car-glow: none;
+  --hedge: #fff8ec;
+  --hedge-edge: #d49a00;
+  --rubble: #ecd3a8;
+  --texture: radial-gradient(#e0860033 1px, transparent 1.6px) 0 0 / 17px 13px;
 }
 [data-theme="light"] [data-terrain="snow"] {
   --map: #eef3ff;
@@ -493,7 +503,7 @@ h1 {
   --house-edge: #8a96e8;
   --house-mark: #8f7de8;
   --house-top: inset 0 3px 0 #ffffff;
-  --rock: linear-gradient(135deg, #ffffff, #b9c4ff 55%, #7f74e0);
+  --rock: #b9c4ff;
   --fence: #8f7de8;
   --car: #e3e6fb;
   --car-edge: #8aa8e8;
@@ -569,8 +579,28 @@ h1 {
   clip-path: polygon(50% 0, 66% 36%, 100% 50%, 66% 64%, 50% 100%, 34% 64%, 0 50%, 34% 36%);
 }
 .bf-world[data-terrain="sand"] .bf-tile[data-kind="rock"]::before {
-  inset: 18% 6% 8%;
-  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+  inset: 14%;
+  clip-path: none;
+  border: 2px solid var(--mesa);
+  border-radius: 3px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--mesa) 55%, transparent), inset 0 0 0 3px var(--map);
+}
+.bf-world[data-terrain="sand"] .bf-tile[data-kind="rock"]::after {
+  content: "";
+  inset: 40% 28%;
+  border-top: 2px solid var(--fence);
+}
+.bf-world[data-terrain="sand"] .bf-tile[data-kind="hedge"]::before {
+  inset: 26%;
+  border: 2px dotted var(--hedge-edge);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--hedge-edge) 50%, transparent);
+}
+.bf-world[data-terrain="sand"] .bf-tile[data-kind="house"]::before {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--house-edge) 50%, transparent);
+  border-width: 2px;
+}
+.bf-world[data-terrain="sand"] .bf-tile[data-kind="fence"]::before {
+  filter: drop-shadow(0 0 3px var(--fence));
 }
 .bf-tile[data-kind="fence"]::before {
   content: "";
@@ -2777,4 +2807,10 @@ circle.bf-grab[data-stop] {
   [data-plan="true"] .bf-base.own {
     animation: none;
   }
+}
+.bf-world[data-terrain="sand"] .bf-tile[data-kind="road"] {
+  box-shadow: inset 0 1px 0 #ff9a1a40, inset 0 -1px 0 #ff9a1a40;
+}
+[data-theme="light"] .bf-world[data-terrain="sand"] .bf-tile[data-kind="road"] {
+  box-shadow: inset 0 1px 0 #e07a0040, inset 0 -1px 0 #e07a0040;
 }

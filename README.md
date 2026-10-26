@@ -66,6 +66,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.8.2 — Tron desert
+
+- Desert spearhead redrawn flat, Tron style: a black-amber field under a glowing grid with sand dots, roads with amber rails, mesas as neon-outlined blocks, glowing barbed wire, outlined wrecks, and new dotted scrub (soft cover). No shading gradients; winter's ice is flat too.
+
 ### 0.8.1 — Move your HQ
 
 - During the plan step, drag your HQ (it pulses: DRAG TO MOVE) to another open spot on your half. Water and dead ends are refused; the ground under it is cleared and your squad redeploys around it. The move sticks for that map.
