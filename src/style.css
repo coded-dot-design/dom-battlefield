@@ -251,8 +251,10 @@ kbd {
   font-size: 17px;
   letter-spacing: 1.5px;
 }
+.bf-brand {
+  margin-right: auto;
+}
 .bf-edition {
-  margin-left: auto;
   color: var(--muted);
   font-size: 10px;
   letter-spacing: 1.1px;
@@ -262,8 +264,7 @@ kbd {
   color: var(--cyan);
   margin-left: 15px;
 }
-/* Theme and Eject: panel buttons with an icon and a label (label hidden in the phone cockpit). */
-#bf-theme,
+/* Eject: a panel button with an icon and a label (label hidden in the phone cockpit). */
 #bf-eject {
   display: flex;
   align-items: center;
@@ -1217,9 +1218,6 @@ h1 {
   #bf-theme span,
   #bf-eject span {
     display: none;
-  }
-  #bf-theme {
-    margin-left: auto;
   }
   .bf-main {
     padding: 0 14px 14px;
@@ -2253,11 +2251,13 @@ html.bf-playing body {
 /* ---------- Command mode: direct the squad ----------
    One switch with Auto and Lock. The panel says what mode you are in, which tank, and what its
    route is doing; routes draw in map units on one SVG above the tiles, below the tanks. */
+/* Command is always yellow; on, it rests pressed and burns brighter. */
 #bf-command {
-  --c: #8a7bd6;
+  --c: #d9b92e;
 }
 #bf-command[aria-pressed="true"] {
-  --c: var(--yellow);
+  --c: #fff36b;
+  --glow-press: 0 0 22px #ffe14daa;
 }
 .bf-cmd {
   position: absolute;
@@ -3541,7 +3541,7 @@ circle.bf-grab[data-stop] {
   margin: 0 0 10px;
   padding: 10px 12px;
 }
-.bf-main:has(> .bf-cmd:not([hidden])) .bf-stage {
+.bf-main:has(> .bf-cmd:not([hidden], .floating)) .bf-stage {
   height: calc(100dvh - 330px - var(--cmd-h, 72px));
 }
 @media (max-width: 1180px) {
@@ -3569,5 +3569,110 @@ circle.bf-grab[data-stop] {
   [data-active="true"] #bf-cmd-close {
     min-height: 32px;
     padding: 3px 8px;
+  }
+}
+/* Header keys are switches, not toggles you hold: they never rest pressed. State shows in the icon. */
+.bf-header .bf-hbtn[aria-pressed="true"] {
+  transform: none;
+  box-shadow: var(--px) var(--py) 0 var(--edge), var(--glow);
+}
+/* Phones: every key in the drawer header is the same size. */
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-header > :is(button, .bf-settings, .bf-keys) {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 6px;
+  }
+  [data-active="true"] .bf-header .bf-settings > .bf-hbtn,
+  [data-active="true"] .bf-header #bf-eject {
+    width: 100%;
+    min-height: 40px;
+    justify-content: center;
+  }
+}
+/* Theme key shows the theme you're in (moon = dark, sun = light); sound shows waves or a cross. */
+#bf-theme .bf-sun,
+[data-theme="light"] #bf-theme .bf-moon,
+#bf-sound .bf-off,
+#bf-sound[aria-pressed="false"] .bf-on {
+  display: none;
+}
+[data-theme="light"] #bf-theme .bf-sun,
+#bf-sound[aria-pressed="false"] .bf-off {
+  display: inline;
+}
+/* Help keys beside the battlefield title (desktop). */
+.bf-help-keys {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+  margin-left: 6px;
+  align-self: flex-end;
+  padding-bottom: 4px;
+}
+.bf-help-keys:empty {
+  display: none;
+}
+.bf-help-keys .bf-keys-panel {
+  left: 0;
+  right: auto;
+}
+/* Grip: a tab on the card's top edge. */
+.bf-cmd-grip {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  translate: -50% 0;
+  width: 54px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: #07060f;
+  background: var(--yellow);
+  border: 2px solid #07060f;
+  border-radius: 6px;
+  box-shadow: none;
+  cursor: grab;
+  touch-action: none;
+}
+.bf-cmd-grip i {
+  width: 24px;
+  height: 6px;
+  background: radial-gradient(circle, #07060f 1.3px, transparent 1.6px) 0 0 / 6px 3px;
+}
+.bf-cmd-grip:active {
+  cursor: grabbing;
+}
+.bf-main > .bf-cmd:not(.floating) {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+/* Floating: lifted off the layout, wherever you dropped it. */
+#bf-cmd.floating {
+  position: fixed;
+  z-index: 40;
+  margin: 0;
+  transform: none;
+  width: min(720px, calc(100vw - 16px));
+  grid-template-columns: 1fr auto;
+  row-gap: 8px;
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
+}
+#bf-cmd.floating .bf-cmd-actions {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-content: flex-start;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  #bf-cmd.floating {
+    width: min(540px, calc(100vw - 16px));
+  }
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-stage .bf-cmd:not(.floating) {
+    top: 14px;
   }
 }

@@ -59,7 +59,10 @@ try {
       page.on("pageerror", (e) => errors.push(e.message));
       await page.goto("http://127.0.0.1:5231");
       await page.waitForFunction(() => window.battlefield);
-      if (light) await page.locator("#bf-theme").click();
+      if (light) {
+        await page.locator("#bf-theme").click();
+        assert.equal(await page.locator("#bf-theme .bf-sun").isVisible(), true, "the theme key shows the sun in light");
+      } else assert.equal(await page.locator("#bf-theme .bf-moon").isVisible(), true);
       assert.equal(await page.locator(".bf-mission").count(), 4);
       assert.equal(await page.locator(".bf-tank").count(), 8);
       assert.ok(
@@ -312,6 +315,17 @@ try {
       assert.equal((await cmd()).planning, true, "...without leaving the plan step");
       await page.locator("#bf-command").click();
       assert.equal(await page.locator("#bf-cmd").isVisible(), true, "Command brings it back");
+      // Drag the card by its grip; double-click docks it again.
+      {
+        const g = await page.locator("#bf-cmd-grip").boundingBox();
+        await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(g.x + g.width / 2 - 60, g.y + g.height / 2 + 90, { steps: 5 });
+        await page.mouse.up();
+        assert.equal(await page.locator("#bf-cmd").evaluate((n) => n.classList.contains("floating")), true, "the card floats where dropped");
+        await page.locator("#bf-cmd-grip").dblclick();
+        assert.equal(await page.locator("#bf-cmd").evaluate((n) => n.classList.contains("floating")), false, "double-click docks it");
+      }
       // Move HQ is a planning-only control; Start is a sticker that flashes red and leaves.
       assert.equal(await page.locator("#bf-move-hq").isVisible(), true);
       await page.locator("#bf-move-hq").click();

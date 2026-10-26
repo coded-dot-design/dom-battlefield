@@ -29,7 +29,8 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Bend / move a route | Drag the line / the flag | Drag the line / the flag |
 | Lock · clear · next · attack HQ | Enter · Backspace · N · H | Panel buttons |
 | Button tips | ? in the header | First run; ? in the drawer; tap a label for details |
-| Keyboard controls | Keyboard icon in the header (hover or click) | — |
+| Keyboard controls | Keyboard icon beside the battlefield title (hover or click) | — |
+| Move the command card | Drag its grip · double-click to dock | Drag its grip |
 | Full screen · surrender | Corners icon · Pause → Surrender | Same |
 | Move HQ (plan only) | Drag your HQ, or Move HQ then a square | Same |
 | Pan / recenter | M + drag / C | Pan + drag / Center |
@@ -68,6 +69,13 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.11.1 — Movable command card, header fixes
+
+- The command card has a grip on its top edge: drag it anywhere on screen (arrow keys work too); double-click or Enter on the grip docks it back.
+- Command is always yellow and burns brighter while on.
+- Theme key shows a moon in dark and a sun in light, and sits with the other header keys (it was pushed to the far right on narrow windows). Sound shows waves or a cross. Header keys no longer rest pressed.
+- Keyboard controls and button tips moved beside the battlefield title on desktop (they are game-play help); the phone drawer keeps tips with its header keys, now all one size.
 
 ### 0.11.0 — Docked command card, platoon keys
 

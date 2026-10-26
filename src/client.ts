@@ -802,6 +802,7 @@ function deploy(quick = false) {
 }
 function reset() {
   cmdHidden = false;
+  dockCard();
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   $("#bf-paused").hidden = true;
   $("#bf-giveup").hidden = true;
@@ -1122,9 +1123,68 @@ new ResizeObserver(() => {
   vpSize = k;
   if (view && !railLayout.matches) requestAnimationFrame(fit);
 }).observe(viewport);
+/* The command card can be dragged anywhere by its grip; double-click (or Enter) docks it again. */
+function floatCmd(x: number, y: number) {
+  const c = $("#bf-cmd"),
+    w = c.offsetWidth,
+    h = c.offsetHeight;
+  c.style.left = `${Math.max(8, Math.min(innerWidth - w - 8, x))}px`;
+  c.style.top = `${Math.max(8, Math.min(innerHeight - h - 8, y))}px`;
+}
+function dockCard() {
+  const c = $("#bf-cmd");
+  c.classList.remove("floating");
+  c.style.left = c.style.top = "";
+}
+{
+  const grip = $("#bf-cmd-grip"),
+    card = $("#bf-cmd");
+  let from: { x: number; y: number; left: number; top: number } | null = null;
+  listen(grip, "pointerdown", ((e: PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const r = card.getBoundingClientRect();
+    card.classList.add("floating");
+    floatCmd(r.left, r.top);
+    const f = card.getBoundingClientRect();
+    from = { x: e.clientX, y: e.clientY, left: f.left, top: f.top };
+    try {
+      grip.setPointerCapture(e.pointerId);
+    } catch {}
+  }) as EventListener);
+  listen(grip, "pointermove", ((e: PointerEvent) => {
+    if (from) floatCmd(from.left + e.clientX - from.x, from.top + e.clientY - from.y);
+  }) as EventListener);
+  for (const t of ["pointerup", "pointercancel"]) listen(grip, t, () => (from = null));
+  listen(grip, "dblclick", dockCard);
+  listen(grip, "keydown", ((e: KeyboardEvent) => {
+    const step = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] }[e.key];
+    if (e.key === "Enter" || e.key === " ") return e.preventDefault(), dockCard();
+    if (!step) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const r = card.getBoundingClientRect();
+    card.classList.add("floating");
+    floatCmd(r.left + step[0]!, r.top + step[1]!);
+  }) as EventListener);
+  listen(window, "resize", () => {
+    if (card.classList.contains("floating")) floatCmd(card.offsetLeft, card.offsetTop);
+  });
+}
+/* Keyboard controls and button tips are game-play help: on desktop they sit with the battlefield
+   title, not in the header; the phone drawer keeps tips with its header keys. */
+function dockHelp() {
+  const keys = $(".bf-keys"),
+    tips = $("#bf-tips"),
+    spot = $(".bf-help-keys");
+  if (railLayout.matches) {
+    if (tips.parentElement === spot) $("#bf-fullscreen").before(keys, tips);
+  } else if (tips.parentElement !== spot) spot.append(keys, tips);
+}
 dockAim();
 dockCmd();
-listen(railLayout, "change", () => (dockAim(), dockCmd()));
+dockHelp();
+listen(railLayout, "change", () => (dockAim(), dockCmd(), dockHelp()));
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
 let giveupResume = false;
 function giveup(open: boolean) {
