@@ -43,7 +43,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 30KB gzip budget (0.6.0: ~29.1KB).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 30KB gzip budget, checked by `npm run size` (0.6.8: ~29.3KB).
 
 ## Boundaries
 
