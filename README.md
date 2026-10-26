@@ -66,6 +66,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.7.1 — Header clears the status bar
+
+- Full screen and Home Screen app on phones: the setup header (Theme, Eject) sat under the status bar and could not be tapped, so there was no way out. It now pads by the safe-area insets (top, and the notch side in landscape).
+
 ### 0.7.0 — Command your squad
 
 - **Plan step:** every battle opens frozen in command mode with your first wingman selected. Tap a numbered tank, tap a square (or Attack HQ), drag the line to add a turn or the flag to move the destination, Lock, Next tank, then Start battle.

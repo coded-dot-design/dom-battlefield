@@ -2343,3 +2343,25 @@ circle.bf-grab[data-stop] {
     height: 15px;
   }
 }
+/* Full screen / Home Screen app on phones: the setup header (Theme, Eject) sits below the status
+   bar and clear of the notch, so it can always be tapped. The battle header lives in the drawer. */
+#battlefield:not([data-active="true"]) .bf-header {
+  height: calc(var(--hh, 64px) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: max(var(--hp, 28px), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--hp, 28px), env(safe-area-inset-right, 0px));
+}
+@media (max-width: 759px) {
+  #battlefield {
+    --hh: 56px;
+    --hp: 16px;
+  }
+}
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  #battlefield {
+    --hh: 46px;
+  }
+  .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
+    height: calc(100dvh - 56px - env(safe-area-inset-top, 0px));
+  }
+}
