@@ -28,7 +28,9 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Send a tank | Command: click tank, then a square | Command: tap tank, then a square |
 | Bend / move a route | Drag the line / the flag | Drag the line / the flag |
 | Lock · clear · next · attack HQ | Enter · Backspace · N · H | Panel buttons |
-| Button tips | Menu → Show button tips | First run; tap a label for details |
+| Button tips | ? in the header | First run; ? in the drawer; tap a label for details |
+| Full screen · surrender | Corners icon · gear → Surrender | Same, in the drawer |
+| Move HQ (plan only) | Drag your HQ, or Move HQ then a square | Same |
 | Pan / recenter | M + drag / C | Pan + drag / Center |
 | Pause / deselect | P / Esc | Pause / select your tank |
 
@@ -47,7 +49,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 40KB gzip budget, checked by `npm run size` (0.8.0: ~37.5KB; 30KB until 0.7.0, 36KB in 0.7.x).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 44KB gzip budget, checked by `npm run size` (0.9.0: ~41.3KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x).
 
 ## Boundaries
 
@@ -65,6 +67,18 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.9.0 — Cleaner controls, new ground every map
+
+- Header: tips, full screen, sound and theme are icon keys; less-used options live under a gear menu (in the drawer on phones). New operation is now **Surrender** with a white flag.
+- Pause shows a PAUSED sticker with Resume and Surrender. Start battle is its own sticker on the staging area (skull grid, flashes red on press).
+- Command panel groups: ROUTE (Clear, Next, Lock), ORDERS (Attack HQ, Follow) and PLAN (strategy, Move HQ — planning only).
+- Squad roster: small square chips with a number circle and HP bar; tapping one opens command on that tank.
+- Formations are now distinct shapes: wedge (arrowhead), line (abreast) and column (file).
+- Roads change by terrain and seed: winding lanes and a farm track (hedgerow), a highway and a diagonal track (desert), a true crossroads (winter); twin bridges keeps its avenues.
+- Lone bushes in the hedgerow, street trees in the city, and flat city blocks in five shapes (square, slab, round tower, dashed triangle, dashed ring); winter adds dashed peaks and rings.
+- Full screen asks before growing the map during setup and planning (multiplayer will fix the size). Center and Pan hide when the whole field fits.
+- Size budget 40KB → 44KB gzip.
 
 ### 0.8.2 — Tron desert
 

@@ -247,6 +247,7 @@ export function generate(
       if (mission === 0) {
         if ((x % 6 === 0 || y % 6 === 0) && r < Math.min(0.95, 0.78 * d)) t = "hedge";
         else if (r < 0.07 * d) t = "house";
+        else if (r < 0.12 * d) t = "hedge"; // lone bushes in the fields
       }
       if (mission === 1) {
         if (r < 0.11 * d) t = "rock";
@@ -262,22 +263,71 @@ export function generate(
         if (Math.abs(x - Math.floor(cols / 2)) <= 1) t = "water";
         else if (x % 4 !== 1 && y % 4 !== 1 && r < 0.3 * d) t = "house";
         else if (r < 0.025 * d) t = "car";
+        else if (r < 0.06 * d) t = "hedge"; // street trees
       }
       tiles[y * cols + x] = t;
     }
-  // Guaranteed alternate routes, deployment zones and a reachable objective.
-  const lanes = [Math.floor(rows * 0.3), Math.floor(rows * 0.7)];
-  for (const y of lanes)
-    for (let x = 1; x < cols - 1; x++) tiles[y * cols + x] = "road";
+  // Guaranteed routes, deployment zones and a reachable objective. Each terrain lays its
+  // roads differently and the seed shifts them, so no two fields share the same lanes.
+  const mid = Math.floor(rows / 2),
+    cx = Math.floor(cols / 2),
+    pave = (x: number, y: number) => {
+      if (x > 0 && x < cols - 1 && y > 0 && y < rows - 1) tiles[y * cols + x] = "road";
+    },
+    /** A full-width lane that drifts up or down by a row now and then, always 4-connected. */
+    lane = (start: number, lo: number, hi: number, drift: number) => {
+      let y = start;
+      const path: number[] = [];
+      for (let x = 1; x < cols - 1; x++) {
+        pave(x, y);
+        path.push(y * cols + x);
+        if (x > 4 && x < cols - 5 && random() < drift) {
+          const ny = Math.max(lo, Math.min(hi, y + (random() < 0.5 ? -1 : 1)));
+          pave(x, ny);
+          y = ny;
+        }
+      }
+      return path;
+    };
   for (let y = 1; y < rows - 1; y++)
     for (const x of [2, 3, cols - 4, cols - 3]) tiles[y * cols + x] = "road";
-  if (mission !== 3) {
-    for (let x = 1; x < cols - 1; x++)
-      tiles[Math.floor(rows / 2) * cols + x] = "road";
-  } else b.center = lanes[0]! * cols + Math.floor(cols / 2);
-  for (let x = 4; x < cols - 4; x += 5) {
-    const y = lanes[0]! - 1;
-    if (tiles[y * cols + x] === "ground") tiles[y * cols + x] = "car";
+  let carLane: number[];
+  if (mission === 0) {
+    // Hedgerow: two winding country lanes and a farm track between them.
+    carLane = lane(Math.floor(rows * 0.25), 2, mid - 2, 0.22);
+    lane(Math.floor(rows * 0.75), mid + 2, rows - 3, 0.22);
+    const fx = cx + Math.floor(random() * 7) - 3;
+    for (let y = 1; y < rows - 1; y++) pave(fx, y);
+    b.center = mid * cols + fx;
+  } else if (mission === 1) {
+    // Desert: a two-lane highway on a random row and a diagonal track across the dunes.
+    const hy = 3 + Math.floor(random() * (rows - 7));
+    carLane = lane(hy, hy, hy, 0);
+    lane(hy + 1, hy + 1, hy + 1, 0);
+    const down = random() < 0.5,
+      slope = (rows - 4) / (cols - 10);
+    let py = down ? 2 : rows - 3;
+    for (let x = 5; x < cols - 5; x++) {
+      const ty = Math.round(down ? 2 + (x - 5) * slope : rows - 3 - (x - 5) * slope);
+      while (py !== ty) (pave(x, py), (py += ty > py ? 1 : -1));
+      pave(x, py);
+    }
+    b.center = hy * cols + cx;
+  } else if (mission === 2) {
+    // Winter: a true crossroads at the centre, plus one outer lane above or below it.
+    carLane = lane(mid, mid, mid, 0);
+    for (let y = 1; y < rows - 1; y++) pave(cx, y);
+    const outer = random() < 0.5 ? Math.floor(rows * 0.22) : Math.floor(rows * 0.78);
+    lane(outer, outer - 1, outer + 1, 0.15);
+  } else {
+    // River city: two straight avenues; the canal is crossed only at the bridges.
+    carLane = lane(Math.floor(rows * 0.3), 0, rows, 0);
+    lane(Math.floor(rows * 0.7), 0, rows, 0);
+    b.center = Math.floor(rows * 0.3) * cols + cx;
+  }
+  for (let i = 3; i < carLane.length - 3; i += 5) {
+    const c = carLane[i]! - cols;
+    if (tiles[c] === "ground") tiles[c] = "car";
   }
   for (const base of b.bases) {
     const p = point(b, base);
@@ -338,21 +388,25 @@ export function createBattle(
         dir = team === 0 ? 1 : -1,
         slot = i % 4,
         rank = Math.floor(i / 4);
+      // Wedge: an arrowhead (you at the tip, two flanks, one trailing). Line: abreast, all side
+      // by side facing the enemy. Column: single file. Bigger squads repeat the shape behind.
       const want = {
         x:
           formation === "column"
             ? base.x + dir * (i * 0.8)
-            : base.x + dir * ((slot % 2) * 0.8 + rank * 1.1),
+            : formation === "line"
+              ? base.x + dir * (rank * 1.2)
+              : base.x + dir * ([1.6, 0.8, 0.8, 0][slot]! + rank * 1.4),
         y: Math.max(
           1.5,
           Math.min(
             board.rows - 1.5,
             base.y +
               (formation === "line"
-                ? slot * 1.3 - 2
+                ? slot * 1.3 - 1.95
                 : formation === "column"
                   ? 0
-                  : (slot - 1.5) * 1.4),
+                  : [0, -1.3, 1.3, 0][slot]! * (1 + rank * 0.35)),
           ),
         ),
       };

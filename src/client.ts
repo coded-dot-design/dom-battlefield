@@ -47,7 +47,8 @@ try {
   }
 } catch {}
 /** A moved HQ belongs to one map: same location, layout, density, squad size and side. */
-let hqMove: { key: string; cell: number } | null = null;
+let hqMove: { key: string; cell: number } | null = null,
+  hqPick = false;
 const mapKey = () => `${mission}:${seed}:${density}:${per}:${side}`;
 function remember() {
   try {
@@ -174,18 +175,46 @@ function fit() {
   if (!view) return;
   view.resize();
   view.render(selected, paused, reduced.matches);
+  mapTools();
 }
-function preview() {
-  // Setup, or a strategy change during the plan step (same seed, so the same ground).
-  if (playing && !planning) return;
-  view?.destroy();
-  $("#bf-roster").replaceChildren();
-  // Bigger squads get a bigger field; the camera already scrolls on touch.
+/** Center and Pan only matter when the map is bigger than the screen. */
+function mapTools() {
+  const w = view.world, v = viewport;
+  $("#battlefield").classList.toggle("map-fits", w.offsetWidth <= v.clientWidth + 1 && w.offsetHeight <= v.clientHeight + 1);
+}
+/** The field size the screen allows (clamped like generate()). Touch maps are fixed and scroll. */
+function mapSize() {
   const touchMap = innerWidth < 760 || coarse.matches,
     grow = per === 12 ? 12 : per === 8 ? 6 : 0,
     unit = per === 12 ? 28 : per === 8 ? 32 : 36,
     cols = touchMap ? 26 + grow : Math.floor(viewport.clientWidth / unit),
     rows = touchMap ? 20 + grow / 2 : Math.floor(viewport.clientHeight / unit);
+  return { cols: Math.max(18, Math.min(48, cols)), rows: Math.max(14, Math.min(30, rows)) };
+}
+/** Set when the player keeps the current field size after entering full screen. */
+let mapLock: { cols: number; rows: number } | null = null,
+  expandAsked = false;
+function offerExpand() {
+  const next = mapSize(),
+    ask = !!state && (!playing || planning) && !mapLock && !expandAsked &&
+      (next.cols > state.board.cols || next.rows > state.board.rows);
+  if (!ask) return;
+  expandAsked = true;
+  mapLock = { cols: state.board.cols, rows: state.board.rows };
+  $("#bf-expand").hidden = false;
+  text("#bf-expand-size", `${state.board.cols}×${state.board.rows} → ${next.cols}×${next.rows}`);
+}
+function preview(resized = false) {
+  // Setup, or a strategy change during the plan step (same seed, so the same ground).
+  if (playing && !planning) return;
+  // Entering full screen may resize before fullscreenchange fires: ask before growing.
+  if (resized && document.fullscreenElement) offerExpand();
+  // Bigger squads get a bigger field; the camera already scrolls on touch.
+  const { cols, rows } = mapLock ?? mapSize();
+  // Planning: a resize that doesn't change the map size (address bars, rails) just re-fits.
+  if (resized && planning && state && state.board.cols === cols && state.board.rows === rows) return fit();
+  view?.destroy();
+  $("#bf-roster").replaceChildren();
   const b = generate(cols, rows, mission, seed, density);
   if (hqMove && hqMove.key === mapKey()) moveBase(b, side, hqMove.cell);
   state = createBattle(
@@ -198,6 +227,7 @@ function preview() {
   );
   view = new View(viewport, state, selectUnit);
   view.center();
+  mapTools();
   $("#bf-operation").textContent = MISSIONS[mission]!.name;
   $("#bf-brief").textContent = MISSIONS[mission]!.brief;
   $("#bf-tip").textContent = MISSIONS[mission]!.tip;
@@ -414,9 +444,9 @@ function startBattle() {
   if (!planning) return;
   if (loadoutCost(roles) > 12) return say("Over budget: downgrade a tank in Strategy first.");
   commitDraft();
+  hqPick = false;
   planning = false;
   strategy(false);
-  $("#bf-start").hidden = true;
   // Squad orders go to the whole squad again once the battle starts.
   selected = -1;
   draft = null;
@@ -478,7 +508,8 @@ function cmdPanel() {
   $<HTMLButtonElement>("#bf-lock").disabled = !alive || !dirty() || !cells || !draft!.stops.length;
   for (const n of document.querySelectorAll<HTMLButtonElement>("[data-plan]"))
     n.disabled = n.dataset.plan !== "next" && !alive;
-  $("#bf-start").hidden = !planning;
+  if (planning) $("#bf-start").hidden = false;
+  $("#bf-move-hq").setAttribute("aria-pressed", String(hqPick));
 }
 
 /** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
@@ -550,6 +581,8 @@ function pauseButton() {
   b.setAttribute("aria-label", paused ? "Resume" : "Pause");
   b.querySelector("span")!.textContent = paused ? "Resume" : "Pause";
   b.querySelector("path")!.setAttribute("d", paused ? "M6 4l10 6-10 6Z" : "M7 4v12M13 4v12");
+  // The PAUSED sticker is for a pause you chose, not the rotate/full-screen gate or the tips.
+  $("#bf-paused").hidden = !(paused && $("#bf-gate").hidden && $("#bf-coach").hidden && state.winner === null);
 }
 function fullscreen() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -687,6 +720,7 @@ listen($("#bf-install-later"), "click", () => {
   if (floating && playing && paused && !gatePaused) setPause(false);
 });
 listen($("#bf-install-help"), "click", () => {
+  settings(false);
   setDrawer(false);
   if (installPrompt) return void install();
   if (playing && !paused) setPause(true);
@@ -740,6 +774,11 @@ function deploy(quick = false) {
 }
 function reset() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  $("#bf-paused").hidden = true;
+  $("#bf-expand").hidden = true;
+  mapLock = null;
+  expandAsked = false;
+  settings(false);
   cancelAnimationFrame(frame);
   audio.close();
   playing = false;
@@ -755,6 +794,8 @@ function reset() {
   selected = -1;
   planning = commanding = false;
   draft = null;
+  hqPick = false;
+  $("#bf-start").hidden = true;
   strategy(false);
   aimButtons();
   cmdPanel();
@@ -802,19 +843,32 @@ function updateHUD() {
   if (status.textContent !== phase) status.textContent = phase;
   const roster = $("#bf-roster");
   const allies = state.units.filter((u) => u.side === side);
+  // Squad chips: number in a circle, role letter, a health bar. Tap one to command it.
   if (!roster.childElementCount)
     for (const u of allies) {
       const n = document.createElement("button");
       n.className = "bf-roster-unit";
+      n.innerHTML = "<b></b><small></small><i></i>";
       n.onclick = () => selectUnit(u.id);
       roster.append(n);
     }
   allies.forEach((u, i) => {
     const n = roster.children[i] as HTMLButtonElement;
     n.classList.toggle("active", selected === u.id);
+    n.classList.toggle("you", u.id === commander(state).id);
     n.disabled = u.hp <= 0;
-    const text = `${u.id === commander(state).id ? "YOU" : u.id % state.per} · ${u.role} · ${Math.ceil(u.hp)} HP`;
-    if (n.textContent !== text) n.textContent = text;
+    const no = u.id === commander(state).id ? "YOU" : String(u.id % state.per),
+      hp = Math.max(0, Math.ceil((u.hp / u.maxHp) * 100));
+    const b = n.firstElementChild!;
+    if (b.textContent !== no) b.textContent = no;
+    const role = n.children[1]!;
+    if (role.textContent !== u.role[0]!.toUpperCase()) role.textContent = u.role[0]!.toUpperCase();
+    const label = `${no === "YOU" ? "Your tank" : `Tank ${no}`}, ${u.role}, ${Math.ceil(u.hp)} HP${u.hp <= 0 ? ", lost" : ""}`;
+    if (n.getAttribute("aria-label") !== label) {
+      n.setAttribute("aria-label", label);
+      n.title = label;
+      n.style.setProperty("--hp", `${hp}%`);
+    }
   });
 }
 function loop(now: number) {
@@ -996,11 +1050,38 @@ listen($("#bf-rematch"), "click", () => {
   reset();
   deploy();
 });
-listen($("#bf-restart"), "click", reset);
+listen($("#bf-restart"), "click", () => {
+  settings(false);
+  reset();
+});
+listen($("#bf-surrender"), "click", reset);
+listen($("#bf-resume"), "click", () => setPause(false));
+/* Header ⚙: the less-used options (install as an app, surrender). Closes on pick or outside tap. */
+function settings(open: boolean) {
+  $("#bf-settings-menu").hidden = !open;
+  $("#bf-settings").setAttribute("aria-expanded", String(open));
+}
+listen($("#bf-settings"), "click", ((e: MouseEvent) => {
+  e.stopPropagation();
+  settings($("#bf-settings-menu").hidden === true);
+}) as EventListener);
+listen(document, "click", ((e: MouseEvent) => {
+  if (!(e.target as Element).closest(".bf-settings")) settings(false);
+}) as EventListener);
 listen($("#bf-new-operation"), "click", reset);
 listen($("#bf-fullscreen"), "click", fullscreen);
+listen($("#bf-expand-yes"), "click", () => {
+  mapLock = null;
+  $("#bf-expand").hidden = true;
+  preview();
+});
+listen($("#bf-expand-no"), "click", () => ($("#bf-expand").hidden = true));
 listen(document, "fullscreenchange", () => {
-  $("#bf-fullscreen").textContent = document.fullscreenElement ? "Window" : "Full screen";
+  const full = !!document.fullscreenElement;
+  $("#bf-fullscreen").setAttribute("aria-pressed", String(full));
+  $("#bf-fullscreen").setAttribute("aria-label", full ? "Leave full screen" : "Enter full screen");
+  if (full) offerExpand();
+  else ($("#bf-expand").hidden = true), (expandAsked = false);
   fit();
   checkGate();
 });
@@ -1055,7 +1136,24 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
 listen($("#bf-pause"), "click", () => setPause(!paused));
 listen($("#bf-command"), "click", () => setCommand(!commanding));
 listen($("#bf-lock"), "click", lockRoute);
-listen($("#bf-start"), "click", startBattle);
+// START BATTLE: the sticker flashes red as the battle begins, then peels away.
+listen($("#bf-start"), "click", () => {
+  const b = $("#bf-start");
+  if (!planning) return;
+  b.classList.add("go");
+  startBattle();
+  if (planning) return b.classList.remove("go");
+  setTimeout(() => {
+    b.hidden = true;
+    b.classList.remove("go");
+  }, reduced.matches ? 0 : 450);
+});
+// Move HQ (planning): the next tap on the map moves your HQ, and your platoon with it.
+listen($("#bf-move-hq"), "click", () => {
+  hqPick = !hqPick;
+  say(hqPick ? "Tap where your HQ should go. Your platoon moves with it." : "HQ stays put.");
+  cmdPanel();
+});
 for (const n of document.querySelectorAll<HTMLElement>("[data-plan]"))
   listen(n, "click", () => plan(n.dataset.plan!));
 listen($("#bf-pan"), "click", () => setPan(!pan));
@@ -1350,7 +1448,10 @@ for (const type of ["pointerup", "pointercancel"])
       if (c >= 0) moveHq(c);
     } else if (type === "pointerup" && (g.kind === "tap" || g.kind === "hq")) {
       const c = cellAt(e);
-      if (c >= 0) setDest(c);
+      if (c >= 0 && hqPick) {
+        hqPick = false;
+        moveHq(c);
+      } else if (c >= 0) setDest(c);
     }
     cmdPanel();
   }) as EventListener);
@@ -1407,8 +1508,9 @@ listen($("#bf-sound"), "click", () => {
   if (audio.enabled) audio.unlock();
 });
 listen(window, "resize", () => {
-  if (playing) fit();
-  else preview();
+  // Setup and planning use a bigger screen (full screen) for a bigger map; a live battle re-fits.
+  if (playing && !planning) fit();
+  else preview(true);
   if (!$("#bf-coach").hidden) coach(true);
 });
 listen(window, "pagehide", () => {

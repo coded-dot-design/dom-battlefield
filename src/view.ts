@@ -94,6 +94,8 @@ export class View {
       const el = document.createElement("div");
       el.className = "bf-tile";
       el.dataset.cell = String(i);
+      // A stable per-cell variant so the city mixes building shapes.
+      el.dataset.v = String(((i * 2654435761) >>> 0) % 5);
       this.world.append(el);
       this.cells.push(el);
     }
@@ -265,6 +267,14 @@ export class View {
       this.mini.prepend(map);
       this.cells.forEach((n, i) => {
         n.dataset.kind = b.tiles[i];
+        // A hedge with no hedge beside it is a lone bush (drawn round, not as a row).
+        n.toggleAttribute(
+          "data-lone",
+          b.tiles[i] === "hedge" &&
+            ![i - 1, i + 1, i - b.cols, i + b.cols].some(
+              (c, k) => b.tiles[c] === "hedge" && (k > 1 || Math.floor(c / b.cols) === Math.floor(i / b.cols)),
+            ),
+        );
         n.setAttribute("aria-label", b.tiles[i]!);
       });
     }

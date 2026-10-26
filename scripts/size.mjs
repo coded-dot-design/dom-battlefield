@@ -13,5 +13,6 @@ for (const file of [
 }
 console.log(`Total: ${total} gzip bytes`);
 // 30 KB -> 36 KB in 0.7.0 (command mode); 40 KB in 0.8.0 (terrain themes, two-step setup,
-// strategy drawer, after-action sticker).
-if (total > 40000) throw Error("40KB compressed app budget exceeded");
+// strategy drawer, after-action sticker); 44 KB in 0.9.0 (header icons + settings menu, pause and
+// start stickers, squad chips, per-terrain roads, city shapes, full-screen expand prompt).
+if (total > 44000) throw Error("44KB compressed app budget exceeded");

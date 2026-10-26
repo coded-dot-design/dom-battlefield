@@ -443,8 +443,8 @@ h1 {
   --road: #13131f linear-gradient(90deg, #ffe14d55 50%, transparent 0) center / 8px 2px repeat-x;
   --water: #05262f;
   --water-edge: #19f0ff40;
-  --house: #14142a radial-gradient(#ffd27acc 0.9px, transparent 1.3px) 2px 2px / 5px 5px;
-  --house-edge: #ff2e8888;
+  --house: #12122a;
+  --house-edge: #ff2e88;
   --house-mark: #19f0ff;
   --rock: #232336;
   --fence: #ff2e88;
@@ -514,7 +514,7 @@ h1 {
   --map: #e7e7ef;
   --road: #d6d6e2 linear-gradient(90deg, #c9a21a88 50%, transparent 0) center / 8px 2px repeat-x;
   --water: #bfe6ec;
-  --house: #d4d4e6 radial-gradient(#8a7bd6aa 0.9px, transparent 1.3px) 2px 2px / 5px 5px;
+  --house: #e2e2f0;
   --house-edge: #c95a8f;
   --house-mark: #1aa8b8;
   --car: #dcdaf0;
@@ -2813,4 +2813,396 @@ circle.bf-grab[data-stop] {
 }
 [data-theme="light"] .bf-world[data-terrain="sand"] .bf-tile[data-kind="road"] {
   box-shadow: inset 0 1px 0 #e07a0040, inset 0 -1px 0 #e07a0040;
+}
+
+/* ---------- Header controls: one row of square icon keys ---------- */
+.bf-hbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+.bf-settings {
+  position: relative;
+}
+.bf-settings-menu {
+  position: absolute;
+  z-index: 45;
+  right: 0;
+  top: calc(100% + 8px);
+  display: grid;
+  gap: 6px;
+  min-width: 230px;
+  padding: 8px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--line);
+}
+.bf-settings-menu[hidden] {
+  display: none;
+}
+.bf-settings-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  font-size: 11px;
+  text-align: left;
+}
+[data-active="false"] #bf-tips {
+  display: none;
+}
+/* Surrender: a white flag. */
+.bf-surrender {
+  --edge: #8f8aa8;
+  color: #07060f;
+  background: #f6f3ff;
+  border-color: #07060f;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+/* ---------- PAUSED: the same sticker family as GAME OVER ---------- */
+.bf-paused {
+  --tone: var(--yellow);
+  position: absolute;
+  z-index: 24;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100% - 24px));
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 24px 20px 20px;
+  background: var(--surface);
+  border: 3px solid #07060f;
+  border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--tone);
+}
+.bf-paused[hidden] {
+  display: none;
+}
+.bf-paused .bf-primary {
+  flex: 1 1 140px;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-settings-menu {
+    top: auto;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: auto;
+  }
+  [data-active="true"] .bf-header .bf-hbtn,
+  [data-active="true"] .bf-header .bf-settings {
+    flex: 1;
+  }
+  [data-active="true"] .bf-header .bf-settings {
+    position: static;
+    padding: 0;
+  }
+  [data-active="true"] .bf-header .bf-settings > .bf-hbtn {
+    width: 100%;
+  }
+  /* In the drawer the menu spans the header row, just above it. */
+  [data-active="true"] .bf-header .bf-settings-menu {
+    left: 0;
+    right: 0;
+    min-width: 0;
+  }
+}
+.map-fits .bf-map-tools {
+  display: none;
+}
+/* Squad chips: small squares instead of long text buttons. */
+.bf-roster {
+  flex-wrap: wrap;
+}
+.bf-roster-unit {
+  --px: 2px;
+  --py: 2px;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 46px;
+  min-height: 46px;
+  padding: 4px 3px 7px;
+}
+.bf-roster-unit b {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 3px;
+  font: 800 11px/1 ui-monospace, monospace;
+  color: #07060f;
+  background: var(--team-a);
+  border: 2px solid #07060f;
+  border-radius: 999px;
+}
+.bf-roster-unit.you b {
+  font-size: 8px;
+  background: var(--yellow);
+}
+.bf-roster-unit small {
+  font: 700 8px/1 ui-monospace, monospace;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.bf-roster-unit i {
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--team-a) var(--hp, 100%), var(--line) 0);
+}
+.bf-roster-unit:disabled {
+  opacity: 0.35;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  [data-active="true"] .bf-roster-unit {
+    width: 46px;
+    min-height: 46px;
+    padding: 4px 3px 7px;
+  }
+}
+/* Command panel groups: ROUTE (clear, next, lock), ORDERS (attack HQ, follow), PLAN (planning). */
+.bf-cmd-actions {
+  gap: 8px 14px;
+}
+.bf-cmd-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bf-cmd-group > span {
+  font: 700 8px/1 ui-monospace, monospace;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+}
+[data-plan="false"] .bf-plan-only {
+  display: none;
+}
+#bf-move-hq {
+  --c: var(--green);
+}
+#bf-move-hq[aria-pressed="true"] {
+  --c: var(--yellow);
+}
+/* START BATTLE: a sticker of the Battlefield cartridge icon. It flashes red as the fight begins. */
+.bf-start {
+  --px: 0px;
+  --py: 5px;
+  --hx: 0px;
+  --hy: 2px;
+  --edge: #f6f3ff;
+  --edge-hover: #f6f3ff;
+  --border-hover: #f6f3ff;
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: 16px;
+  translate: -50% 0;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 14px 9px;
+  color: #19f0ff;
+  background: #10233f;
+  border: 3px solid #f6f3ff;
+  border-radius: 16px;
+}
+#bf-start.bf-start {
+  display: grid;
+  grid-auto-flow: row;
+}
+#bf-start.bf-start[hidden] {
+  display: none;
+}
+.bf-start-icon svg {
+  display: block;
+  width: 58px;
+  height: 58px;
+  fill: currentColor;
+}
+.bf-start b {
+  font: 900 11px/1 ui-monospace, monospace;
+  letter-spacing: 2px;
+  color: #f6f3ff;
+}
+.bf-start:disabled {
+  opacity: 0.5;
+}
+.bf-start.go {
+  color: #07060f;
+  background: #ff3355;
+  transform: translate(var(--px), var(--py));
+  box-shadow: 0 0 0 var(--edge), 0 0 24px #ff2e8899;
+  transition: none;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-start {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 7px 10px 6px;
+  }
+  [data-active="true"] .bf-start-icon svg {
+    width: 42px;
+    height: 42px;
+  }
+  [data-active="true"] .bf-cmd-group > span {
+    display: none;
+  }
+}
+
+/* ---------- City blocks: three flat neon shapes, plus street trees ---------- */
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"]::before {
+  inset: 10%;
+  border-width: 2px;
+  border-radius: 2px;
+  box-shadow: 0 0 6px #ff2e8855;
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"]::after {
+  inset: 34%;
+  width: auto;
+  height: auto;
+  border-radius: 1px;
+  background: none;
+  border: 1px solid var(--house-mark);
+  box-shadow: none;
+}
+/* Low warehouse: a wide slab with a roof stripe. */
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="1"]::before {
+  inset: 24% 6%;
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="1"]::after {
+  inset: 46% 18% auto;
+  height: 0;
+  border-width: 1px 0 0;
+}
+/* Round tower with a beacon. */
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="2"]::before {
+  inset: 12%;
+  border-radius: 50%;
+  border-color: #b98bff;
+  box-shadow: 0 0 6px #b98bff55;
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="2"]::after {
+  inset: 42%;
+  border: 0;
+  border-radius: 50%;
+  background: var(--house-mark);
+  box-shadow: 0 0 5px var(--house-mark);
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="hedge"]::before {
+  inset: 28%;
+  border-radius: 50%;
+  background: #0b2a22;
+  border: 2px solid #39ffb0;
+  box-shadow: 0 0 5px #39ffb066;
+}
+/* Hedgerow: lone bushes are round clumps, not row segments. */
+.bf-world[data-terrain="hedge"] .bf-tile[data-kind="hedge"][data-lone]::before {
+  inset: 22%;
+  border-radius: 50%;
+  border-width: 2px;
+  box-shadow: 9px -6px 0 -5px var(--hedge-edge);
+}
+[data-theme="light"] .bf-world[data-terrain="river"] .bf-tile[data-kind="house"]::before {
+  box-shadow: none;
+}
+
+/* ---------- More random flat shapes: dashed triangles and dashed rings (city + winter) ---------- */
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="3"]::before,
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"][data-v="3"]::before {
+  inset: 10%;
+  border: 0;
+  border-radius: 0;
+  clip-path: none;
+  box-shadow: none;
+  background: var(--house-edge);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 2 18.5 17.5h-17Z' fill='none' stroke='%23000' stroke-width='2' stroke-dasharray='3 2'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 2 18.5 17.5h-17Z' fill='none' stroke='%23000' stroke-width='2' stroke-dasharray='3 2'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"][data-v="3"]::before {
+  background: var(--rock);
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="3"]::after {
+  inset: 52% 44% 28%;
+  border: 0;
+  background: var(--house-mark);
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="4"]::before,
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"][data-v="4"]::before {
+  inset: 14%;
+  clip-path: none;
+  background: none;
+  border: 2px dashed var(--house-mark);
+  border-radius: 50%;
+  box-shadow: none;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"][data-v="4"]::before {
+  border-color: var(--rock);
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"][data-v="4"]::after,
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"][data-v="4"]::after {
+  content: "";
+  inset: 38%;
+  border: 0;
+  border-radius: 50%;
+  background: var(--house-edge);
+  box-shadow: none;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"][data-v="4"]::after {
+  background: var(--house);
+}
+/* Twin bridges reads as streets: curbs on every road edge. */
+.bf-world[data-terrain="river"] .bf-tile[data-kind="road"] {
+  box-shadow: inset 0 1px 0 #ffffff1c, inset 0 -1px 0 #ffffff1c;
+}
+[data-theme="light"] .bf-world[data-terrain="river"] .bf-tile[data-kind="road"] {
+  box-shadow: inset 0 1px 0 #3b31701c, inset 0 -1px 0 #3b31701c;
+}
+/* Full screen: offer a bigger field (setup and planning only). */
+.bf-expand {
+  position: absolute;
+  z-index: 23;
+  top: 12px;
+  left: 50%;
+  translate: -50% 0;
+  width: min(460px, calc(100% - 24px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 2px solid #07060f;
+  border-radius: 10px;
+  box-shadow: 5px 5px 0 var(--cyan, #19f0ff);
+}
+.bf-expand[hidden] {
+  display: none;
+}
+.bf-expand p {
+  flex: 1 1 200px;
+  margin: 0;
+  font-size: 12px;
+}
+.bf-expand small {
+  display: block;
+  opacity: 0.7;
+  font-family: ui-monospace, monospace;
 }

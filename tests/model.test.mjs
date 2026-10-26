@@ -199,6 +199,18 @@ test("an HQ can move within its own half, never onto water or into a dead end", 
   const s = createBattle(b, 3, 0, roles);
   assert.ok(Math.hypot(s.units[0].x - 5.5, s.units[0].y - 4.5) < 4, "squad deploys at the new HQ");
 });
+test("wedge, line and column are different shapes", () => {
+  const b = generate(30, 20, 1, 2);
+  b.tiles.fill("ground");
+  const shape = (f) => createBattle(b, 1, 0, roles, f).units.slice(0, 4).map((u) => [u.x.toFixed(1), u.y.toFixed(1)].join());
+  const wedge = shape("wedge"), line = shape("line"), column = shape("column");
+  assert.notDeepEqual(wedge, line);
+  assert.notDeepEqual(line, column);
+  const lx = createBattle(b, 1, 0, roles, "line").units.slice(0, 4).map((u) => u.x);
+  assert.ok(Math.max(...lx) - Math.min(...lx) < 0.6, "line is abreast");
+  const w = createBattle(b, 1, 0, roles, "wedge").units.slice(0, 4);
+  assert.ok(w[0].x > w[1].x && w[0].x > w[3].x, "you lead the wedge");
+});
 test("terrain density makes maps lighter or heavier", () => {
   const solidCount = (b) => b.tiles.filter((t) => t !== "ground" && t !== "road").length;
   for (let mission = 0; mission < 4; mission++) {
@@ -252,4 +264,18 @@ test("attack order focuses a chosen enemy, then hunts when it dies", () => {
   assert.ok(s.units.slice(1, 4).every((u) => u.focus === null && u.order === "attack"));
   assert.equal(command(s, { type: "focus", ids: [0], target: 5 }), true);
   assert.equal(s.units[0].order, "advance", "command tank is never re-ordered");
+});
+
+test("each terrain lays different roads, and every field stays connected", () => {
+  const roads = (m, s) => generate(36, 20, m, s).tiles.map((t) => (t === "road" ? 1 : 0)).join("");
+  assert.notEqual(roads(0, 7), roads(1, 7));
+  assert.notEqual(roads(1, 7), roads(2, 7));
+  assert.notEqual(roads(0, 7), roads(0, 8), "the seed moves the lanes");
+  for (let m = 0; m < 4; m++)
+    for (let s = 1; s < 60; s++)
+      for (const [c, r] of [[18, 14], [48, 30]]) {
+        const b = generate(c, r, m, s * 7919, 1.45);
+        assert.ok(route(b, b.bases[0], b.bases[1]).length, `bases connect (${m}/${s})`);
+        assert.ok(route(b, b.bases[0], b.center).length, `objective reachable (${m}/${s})`);
+      }
 });

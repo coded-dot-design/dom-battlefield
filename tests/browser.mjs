@@ -34,6 +34,11 @@ async function passGate(page) {
   if (await page.locator("#bf-coach").isVisible())
     await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
 }
+// Surrender lives in the settings menu now.
+async function restart(page) {
+  if (!(await page.locator("#bf-restart").isVisible())) await page.locator("#bf-settings").click();
+  await page.locator("#bf-restart").click();
+}
 let where = "start";
 try {
   for (const mobile of [false, true])
@@ -79,6 +84,23 @@ try {
       await page.screenshot({
         path: `artifacts/setup-${mobile ? "mobile" : "desktop"}-${light ? "light" : "dark"}.png`,
       });
+      if (!mobile) {
+        // Full screen asks before growing the field; Keep size holds it, Expand grows it.
+        const cols = () => page.evaluate(() => window.battlefield.snapshot().board.cols);
+        await page.setViewportSize({ width: 1100, height: 760 });
+        await page.waitForTimeout(150);
+        const small = await cols();
+        await page.evaluate(() => document.documentElement.requestFullscreen());
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        await page.waitForTimeout(250);
+        assert.equal(await page.locator("#bf-expand").isVisible(), true, "full screen offers a bigger map");
+        assert.equal(await cols(), small, "the field waits for an answer");
+        await page.locator("#bf-expand-yes").click();
+        assert.ok((await cols()) > small, "Expand grows the field");
+        assert.equal(await page.locator("#bf-expand").isVisible(), false);
+        await page.evaluate(() => document.exitFullscreen());
+        await page.waitForTimeout(100);
+      }
       await page.locator("#bf-deploy").click();
       await page.waitForTimeout(100);
       assert.equal(await page.evaluate(() => window.battlefield.playing), true);
@@ -262,7 +284,16 @@ try {
       // Next tank, then start: time runs, command mode ends, aim returns.
       await page.locator('[data-plan="next"]').click();
       assert.equal((await cmd()).selected, 2);
+      // Move HQ is a planning-only control; Start is a sticker that flashes red and leaves.
+      assert.equal(await page.locator("#bf-move-hq").isVisible(), true);
+      await page.locator("#bf-move-hq").click();
+      assert.equal(await page.locator("#bf-move-hq").getAttribute("aria-pressed"), "true");
+      await page.locator("#bf-move-hq").click();
+      assert.equal(await page.locator("#bf-move-hq").getAttribute("aria-pressed"), "false");
       await page.locator("#bf-start").click();
+      assert.equal(await page.locator("#bf-start").evaluate((n) => n.classList.contains("go")), true);
+      await page.waitForFunction(() => document.querySelector("#bf-start").hidden);
+      assert.equal(await page.locator("#bf-move-hq").isVisible(), false, "Move HQ is planning only");
       assert.deepEqual(
         { on: (await cmd()).on, planning: (await cmd()).planning, aim: await page.evaluate(() => window.battlefield.aim.mode) },
         { on: false, planning: false, aim: mobile ? "auto" : "pointer" },
@@ -415,6 +446,7 @@ try {
         await page.evaluate(() => window.battlefield.snapshot()),
         frozen,
       );
+      assert.equal(await page.locator("#bf-paused").isVisible(), true, "pause shows the sticker");
       await resize(page, 
         mobile ? { width: 844, height: 390 } : { width: 1440, height: 1000 },
       );
@@ -524,7 +556,7 @@ try {
         await page.locator("#bf-squad").click();
         await page.waitForTimeout(300);
       }
-      await page.locator("#bf-restart").click();
+      await restart(page);
       assert.equal(
         await page.evaluate(() => window.battlefield.playing),
         false,
@@ -537,7 +569,7 @@ try {
           await page.locator("#bf-squad").click();
           await page.waitForTimeout(300);
         }
-        await page.locator("#bf-restart").click();
+        await restart(page);
       }
       assert.equal(await page.locator(".bf-tank").count(), 8);
       assert.equal(
@@ -558,7 +590,7 @@ try {
         await page.locator("#bf-squad").click();
         await page.waitForTimeout(300);
       }
-      await page.locator("#bf-restart").click();
+      await restart(page);
       // The strategy stuck: still 12 a side on the next setup.
       assert.equal(await page.locator(".bf-tank").count(), 24);
       // Quick battle skips the plan step entirely.
@@ -569,7 +601,7 @@ try {
         await page.locator("#bf-squad").click();
         await page.waitForTimeout(300);
       }
-      await page.locator("#bf-restart").click();
+      await restart(page);
       assert.deepEqual(errors, []);
       console.log({
         mobile,
