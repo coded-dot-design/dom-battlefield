@@ -27,7 +27,7 @@ state is in [HANDOFF.md](HANDOFF.md). Move items to the README changelog when th
 
 ### Multiplayer (later version, the Bolo promise)
 
-DOM VIRUS started with Bolo: tanks, two machines, a network, an opponent across the room.
+DOM VIRUS started with Bolo: tanks, two machines, a network, a human opponent.
 Battlefield's squads make it the best fit for 2-player team play after Sherman Bytes. Plan (see the
 hub's FUTURE.md): WebRTC data channels, peer to peer, no game server; send orders and inputs, not
 state; a hot-seat/couch mode first.
