@@ -473,8 +473,8 @@ function setPause(value: boolean) {
   }
   lease.setActive(!paused);
   pauseButton();
-  status.textContent = paused ? "PAUSED" : "LIVE";
-  say(paused ? "Battle paused." : "Battle resumed.");
+  status.textContent = paused ? "PAUSED" : planning ? "PLAN" : "LIVE";
+  say(paused ? "Battle paused." : planning ? "Back to planning." : "Battle resumed.");
 }
 function pauseButton() {
   const b = $("#bf-pause");
