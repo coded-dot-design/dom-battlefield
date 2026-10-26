@@ -71,6 +71,11 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.13.4 — No more stuck tanks
+
+- Tanks never start on top of each other: deployment keeps them at least 0.85 cells apart, and a tank that ends up too close to another may always drive away (before, two overlapping tanks could never move).
+- Deployment clears the ground: every starting tank gets a one-square ring of open ground (cover is removed; water stays), so the formation, squad size and HQ position shape the map instead of trapping the platoon. Changing them while planning (or moving the HQ) rebuilds the field and clears around the new spots.
+
 ### 0.13.3 — Team-coloured shells that read in light mode
 
 - Shells are in their team's colour (mint for A, coral for B) with an ink rim and a tracer tail. Dark maps keep a soft glow; light maps use deeper team shades with a crisp dark outline, so they stay visible on every terrain.

@@ -422,7 +422,10 @@ export function createBattle(
           ),
         ),
       };
-      const p = place(board, want, taken);
+      // Clear the ground where the formation wants the tank first, then find a free spot.
+      clearAround(board, want);
+      const p = place(board, want, taken, units);
+      clearAround(board, p);
       units.push({
         id: team * per + i,
         side: team,
@@ -465,9 +468,13 @@ export function createBattle(
   };
 }
 /** Use the formation point when it is open; otherwise the nearest free open cell. */
-function place(b: Board, want: Point, taken: Set<number>) {
+/** Nearest free spot to `want`: open ground, not a cell another tank took, and at least
+ *  SPACING from every tank already placed (so no two start overlapping). */
+const SPACING = 0.85;
+function place(b: Board, want: Point, taken: Set<number>, placed: Point[]) {
+  const clear = (p: Point) => canMove(b, p) && placed.every((q) => Math.hypot(q.x - p.x, q.y - p.y) >= SPACING);
   const start = cell(b, want);
-  if (canMove(b, want) && !taken.has(start)) {
+  if (clear(want) && !taken.has(start)) {
     taken.add(start);
     return want;
   }
@@ -475,7 +482,7 @@ function place(b: Board, want: Point, taken: Set<number>) {
     queue = [start];
   for (let n = 0; n < queue.length; n++) {
     const id = queue[n]!;
-    if (!solid(b.tiles[id]!) && !taken.has(id) && canMove(b, point(b, id))) {
+    if (!solid(b.tiles[id]!) && !taken.has(id) && clear(point(b, id))) {
       taken.add(id);
       return point(b, id);
     }
@@ -492,6 +499,18 @@ function place(b: Board, want: Point, taken: Set<number>) {
       }
   }
   return want;
+}
+/** Deployment buffer: clear the cover (never water) in a ring around a starting tank, so the
+ *  formation, squad size and HQ position decide the ground, not the other way round. */
+function clearAround(b: Board, p: Point) {
+  const cx = Math.floor(p.x),
+    cy = Math.floor(p.y);
+  for (let y = cy - 1; y <= cy + 1; y++)
+    for (let x = cx - 1; x <= cx + 1; x++) {
+      if (x < 0 || y < 0 || x >= b.cols || y >= b.rows) continue;
+      const id = y * b.cols + x;
+      if (solid(b.tiles[id]!) && b.tiles[id] !== "water") (b.tiles[id] = "ground"), (b.health[id] = 0);
+    }
 }
 export function command(s: Battle, c: Command) {
   if (s.winner !== null) return false;
@@ -613,11 +632,15 @@ export function canMove(b: Board, p: Point) {
 }
 export function moveUnit(s: Battle, u: Unit, dx: number, dy: number) {
   const p = { x: u.x + dx, y: u.y + dy };
+  // Tanks keep 0.55 apart, but a tank that is already too close may always move away
+  // (otherwise two overlapping tanks could never separate).
   if (
     canMove(s.board, p) &&
-    !s.units.some(
-      (v) => v !== u && v.hp > 0 && Math.hypot(v.x - p.x, v.y - p.y) < 0.55,
-    )
+    !s.units.some((v) => {
+      if (v === u || v.hp <= 0) return false;
+      const after = Math.hypot(v.x - p.x, v.y - p.y);
+      return after < 0.55 && after <= Math.hypot(v.x - u.x, v.y - u.y);
+    })
   ) {
     u.x = p.x;
     u.y = p.y;

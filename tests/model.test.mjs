@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  moveUnit,
   variant,
   generate,
   route,
@@ -315,4 +316,36 @@ test("your own tank drives its route when you let go, and steering overrides it"
   assert.equal(me.waypoint, null, "arrived");
   assert.ok(Math.hypot(me.x - point(b, dest).x, me.y - point(b, dest).y) < 1.2);
   assert.equal(command(s, { type: "clear", id: me.id }), true);
+});
+
+test("every formation and squad size deploys tanks apart, on open ground, free to move", () => {
+  const nudge = [[0.12, 0], [-0.12, 0], [0, 0.12], [0, -0.12]];
+  for (let m = 0; m < 4; m++)
+    for (const formation of ["wedge", "line", "column"])
+      for (const per of [4, 8, 12])
+        for (let seed = 1; seed < 12; seed++)
+          for (const side of [0, 1]) {
+            const b = generate(per === 12 ? 38 : per === 8 ? 32 : 26, per === 12 ? 26 : per === 8 ? 23 : 20, m, seed * 7919, 1.45);
+            const s = createBattle(b, m, side, roles, formation, per);
+            const where = `${m}/${formation}/${per}/${seed}/${side}`;
+            for (const u of s.units) {
+              assert.ok(canMove(b, u), `open ground ${where} #${u.id}`);
+              for (const v of s.units) if (v !== u) assert.ok(Math.hypot(u.x - v.x, u.y - v.y) >= 0.85, `apart ${where} #${u.id}/#${v.id}`);
+              const x0 = u.x, y0 = u.y;
+              assert.ok(nudge.some(([dx, dy]) => {
+                const ok = moveUnit(s, u, dx, dy);
+                if (ok) (u.x = x0), (u.y = y0);
+                return ok;
+              }), `can move ${where} #${u.id}`);
+              assert.ok(route(b, cell(b, u), b.bases[1 - u.side]).length, `has a way out ${where} #${u.id}`);
+            }
+          }
+});
+test("an overlapping pair can always separate", () => {
+  const b = generate(26, 20, 1, 5);
+  const s = createBattle(b, 1, 0, roles);
+  const [a, c] = [s.units[1], s.units[2]];
+  c.x = a.x + 0.2;
+  c.y = a.y;
+  assert.ok(moveUnit(s, c, 0.1, 0) || moveUnit(s, c, 0, 0.1) || moveUnit(s, c, 0, -0.1), "moving away is allowed");
 });
