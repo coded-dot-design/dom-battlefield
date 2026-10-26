@@ -102,9 +102,13 @@ try {
         }
       }
       if (mobile) {
-        // First-run tips label controls, hold the battle, and can be switched off.
+        // First-run tips label controls (once the layout settles), hold the battle, open details on
+        // tap, and can be switched off.
         assert.ok(await page.locator("#bf-coach").isVisible());
-        assert.ok((await page.locator(".bf-coach-tip").count()) >= 4);
+        await page.waitForFunction(() => document.querySelectorAll(".bf-coach-tip").length >= 4);
+        await page.locator(".bf-tip-label").first().click();
+        assert.equal(await page.locator(".bf-tip-label").first().getAttribute("aria-expanded"), "true");
+        assert.ok(await page.locator("#bf-coach").isVisible(), "tapping a label keeps the tips open");
         assert.equal(await page.evaluate(() => window.battlefield.paused), true);
         if (light) await page.locator("#bf-coach-off").click();
         else await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
@@ -116,6 +120,102 @@ try {
           await page.evaluate(() => getComputedStyle(document.body).userSelect),
           "none",
         );
+      // Plan step: every battle opens frozen, in command mode, with the first wingman selected.
+      const cmd = () => page.evaluate(() => window.battlefield.command);
+      assert.deepEqual(
+        await page.evaluate(() => ({ ...window.battlefield.command, draft: undefined })),
+        { on: true, planning: true, selected: 1, draft: undefined },
+      );
+      assert.equal(await page.locator("#bf-status").textContent(), "PLAN");
+      const t0 = await page.evaluate(() => window.battlefield.snapshot().time);
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => window.battlefield.snapshot().time), t0, "time frozen while planning");
+      // Tap a reachable square that is on screen and not under a panel: a dashed draft appears.
+      const spot = await page.evaluate(async () => {
+        const { plot, cell, point } = await import("/src/model.ts");
+        const s = window.battlefield.snapshot(),
+          u = s.units[1],
+          from = cell(s.board, u);
+        const ok = (id) => {
+          const r = document.querySelector(`[data-cell="${id}"]`).getBoundingClientRect(),
+            x = r.left + r.width / 2,
+            y = r.top + r.height / 2,
+            hit = document.elementFromPoint(x, y);
+          return hit && hit.closest("#bf-viewport") && !hit.closest(".bf-tank") ? { id, x, y } : null;
+        };
+        for (const [id] of s.board.tiles.entries()) {
+          const q = point(s.board, id),
+            d = Math.hypot(u.x - q.x, u.y - q.y);
+          if (d < 4 || d > 7 || !plot(s.board, from, [id]) || s.units.some((v) => Math.hypot(v.x - q.x, v.y - q.y) < 1.2)) continue;
+          const at = ok(id);
+          if (at) return at;
+        }
+        return null;
+      });
+      assert.ok(spot, "found an open square on screen");
+      await page.mouse.click(spot.x, spot.y);
+      assert.deepEqual((await cmd()).draft.stops, [spot.id]);
+      await page.waitForFunction(() => document.querySelectorAll(".bf-route.draft").length === 1);
+      assert.equal(await page.locator("#bf-cmd-state").textContent(), "DRAFT");
+      assert.equal(await page.locator("#bf-lock").isDisabled(), false);
+      // Drag the middle of the line to an open square nearby: that adds a turn.
+      const bend = await page.evaluate(async () => {
+        const { plot, cell } = await import("/src/model.ts");
+        const s = window.battlefield.snapshot(),
+          c = window.battlefield.command,
+          line = document.querySelector(".bf-route-hit"),
+          pts = line.getAttribute("points").split(" ").map((p) => p.split(",").map(Number)),
+          [mx, my] = pts[Math.floor(pts.length / 2)],
+          world = document.querySelector(".bf-world").getBoundingClientRect(),
+          tile = world.width / s.board.cols;
+        for (const dy of [2, -2, 3, -3])
+          for (const dx of [0, 1, -1]) {
+            const x = Math.floor(mx) + dx,
+              y = Math.floor(my) + dy,
+              id = y * s.board.cols + x;
+            if (x < 0 || y < 0 || x >= s.board.cols || y >= s.board.rows) continue;
+            if (!plot(s.board, cell(s.board, s.units[c.selected]), [id, ...c.draft.stops])) continue;
+            const to = { x: world.left + (x + 0.5) * tile, y: world.top + (y + 0.5) * tile },
+              hit = document.elementFromPoint(to.x, to.y);
+            if (!hit?.closest("#bf-viewport")) continue;
+            return { from: { x: world.left + mx * tile, y: world.top + my * tile }, to, id };
+          }
+        return null;
+      });
+      if (bend) {
+        await page.mouse.move(bend.from.x, bend.from.y);
+        await page.mouse.down();
+        await page.mouse.move(bend.to.x, bend.to.y, { steps: 6 });
+        await page.mouse.up();
+        const stops = (await cmd()).draft.stops;
+        assert.equal(stops.length, 2, `bend adds a stop: ${JSON.stringify(stops)}`);
+        assert.equal(stops.at(-1), spot.id, "destination unchanged");
+      }
+      const drafted = (await cmd()).draft.stops;
+      await page.locator("#bf-lock").click();
+      const locked = await page.evaluate(() => window.battlefield.snapshot().units[1]);
+      assert.deepEqual(locked.route, drafted, "Lock sends the route to the tank");
+      assert.equal(locked.order, "hold");
+      assert.match(await page.locator("#bf-cmd-state").textContent(), /^EN ROUTE/);
+      await page.waitForFunction(() => !document.querySelector(".bf-route.draft"), null, { timeout: 2000 });
+      // Next tank, then start: time runs, command mode ends, aim returns.
+      await page.locator('[data-plan="next"]').click();
+      assert.equal((await cmd()).selected, 2);
+      await page.locator("#bf-start").click();
+      assert.deepEqual(
+        { on: (await cmd()).on, planning: (await cmd()).planning, aim: await page.evaluate(() => window.battlefield.aim.mode) },
+        { on: false, planning: false, aim: mobile ? "auto" : "pointer" },
+      );
+      await page.waitForTimeout(200);
+      assert.ok((await page.evaluate(() => window.battlefield.snapshot().time)) > t0, "battle runs after Start");
+      // Mid-battle: Command is one of the aim modes; Auto switches it off again.
+      await page.locator("#bf-command").click();
+      assert.equal((await cmd()).on, true);
+      assert.equal(await page.locator("#bf-auto").getAttribute("aria-pressed"), "false");
+      assert.equal(await page.locator("#bf-cmd").isVisible(), true);
+      await page.locator("#bf-auto").click();
+      assert.equal((await cmd()).on, false);
+      assert.equal(await page.locator("#bf-cmd").isVisible(), false);
       const before = await page.evaluate(
         () => window.battlefield.snapshot().units[0],
       );
@@ -211,14 +311,14 @@ try {
           new MouseEvent("click", { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }),
         );
       });
+      // Outside command mode a tap on a square still sends the selected tank (and it holds there).
       assert.equal(
         await page.evaluate(() => window.battlefield.snapshot().units[1].order),
-        "retreat",
+        "hold",
       );
-      // The wingman may already have arrived; either way the click reached the model.
       const moved = await page.evaluate(() => {
         const s = window.battlefield.snapshot();
-        return { waypoint: s.units[1].waypoint, assigned: s.events.some((e) => e.startsWith("Waypoint assigned")) };
+        return { waypoint: s.units[1].hold, assigned: s.events.some((e) => e.startsWith("Route locked")) };
       });
       assert.ok(
         moved.waypoint === target || moved.assigned,
@@ -378,6 +478,7 @@ try {
       assert.equal(await page.locator(".bf-tank").count(), 24);
       await page.locator("#bf-deploy").click();
       if (mobile) await passGate(page);
+      await page.locator("#bf-start").click();
       await page.waitForTimeout(800);
       assert.equal(await page.evaluate(() => window.battlefield.snapshot().units.length), 24);
       if (mobile) {

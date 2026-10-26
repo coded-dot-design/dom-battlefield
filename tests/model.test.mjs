@@ -15,6 +15,7 @@ import {
   canMove,
   clearShot,
   speedOf,
+  plot,
 } from "../src/model.ts";
 const roles = ["medium", "scout", "medium", "heavy"];
 const idle = { x: 0, y: 0, fire: false, aim: null };
@@ -53,7 +54,7 @@ test("loadout budget is enforced at simulation boundary", () => {
     ]),
   );
 });
-test("orders target only own wingmen and move orders preserve standing orders", () => {
+test("orders target only own wingmen; a move becomes a hold at that square", () => {
   const s = createBattle(generate(26, 20, 1, 3), 1, 0, roles);
   command(s, { type: "order", ids: [0, 1, 4], order: "retreat" });
   assert.equal(s.units[0].order, "advance");
@@ -62,8 +63,12 @@ test("orders target only own wingmen and move orders preserve standing orders", 
   const dest = cell(s.board, s.units[1]);
   assert.equal(command(s, { type: "move", id: 4, cell: dest }), false);
   assert.equal(command(s, { type: "move", id: 1, cell: dest }), true);
-  assert.equal(s.units[1].waypoint, null);
-  assert.equal(s.units[1].order, "retreat");
+  assert.equal(s.units[1].order, "hold");
+  assert.equal(s.units[1].hold, dest);
+  // A new squad order replaces the route and the hold.
+  command(s, { type: "order", ids: [1], order: "advance" });
+  assert.equal(s.units[1].hold, null);
+  assert.deepEqual(s.units[1].route, []);
 });
 test("tank-blocking fence allows fire; permanent rock stops shells and destructible cover becomes rubble", () => {
   const b = generate(18, 14, 1, 5);
@@ -93,7 +98,7 @@ test("tank-blocking fence allows fire; permanent rock stops shells and destructi
   for (let i = 0; i < 10; i++) step(s, 0.02, idle);
   assert.equal(b.tiles[id], "rock");
 });
-test("waypoint arrival resumes standing order without teleportation", () => {
+test("a route drives through every stop in order, then holds the destination", () => {
   const b = generate(26, 20, 0, 3);
   b.tiles.fill("ground");
   const s = createBattle(b, 0, 0, roles);
@@ -102,21 +107,32 @@ test("waypoint arrival resumes standing order without teleportation", () => {
   s.units[4].x = 24;
   s.units[4].y = 18;
   const u = s.units[1];
-  u.order = "retreat";
-  const target = cell(b, { x: u.x + 3, y: u.y });
-  assert.ok(command(s, { type: "move", id: 1, cell: target }));
-  let arrived = false;
-  for (let i = 0; i < 300; i++) {
+  u.hp = u.maxHp = 1e6; // never low enough to detour for a repair kit
+  const start = cell(b, u),
+    via = cell(b, { x: u.x, y: u.y + 4 }),
+    dest = cell(b, { x: u.x + 4, y: u.y + 4 });
+  // The plotted path bends through the stop instead of cutting the corner.
+  const full = plot(b, start, [via, dest]);
+  assert.ok(full.includes(via));
+  assert.equal(full.at(-1), dest);
+  assert.equal(plot(b, start, [-1]), null);
+  assert.ok(command(s, { type: "route", id: 1, cells: [via, dest] }));
+  let sawVia = false;
+  for (let i = 0; i < 900 && !(u.waypoint === null && cell(b, u) === dest); i++) {
     const before = { x: u.x, y: u.y };
     step(s, 0.02, idle);
-    assert.ok(Math.hypot(u.x - before.x, u.y - before.y) < 0.1);
-    if (u.waypoint === null) {
-      arrived = true;
-      break;
-    }
+    assert.ok(Math.hypot(u.x - before.x, u.y - before.y) < 0.1, "no teleporting");
+    if (cell(b, u) === via) sawVia = true;
   }
-  assert.ok(arrived);
-  assert.equal(u.order, "retreat");
+  assert.ok(sawVia, "drove through the stop");
+  assert.equal(cell(b, u), dest);
+  // Holding: it stays put instead of drifting back to an old order.
+  for (let i = 0; i < 200; i++) step(s, 0.02, idle);
+  assert.equal(cell(b, u), dest);
+  assert.equal(u.order, "hold");
+  // Blocked stops are refused.
+  b.tiles[dest] = "rock";
+  assert.equal(command(s, { type: "route", id: 1, cells: [dest] }), false);
 });
 test("capture and player loss end the battle; end state stops simulation", () => {
   const s = createBattle(generate(26, 20, 0, 1), 0, 0, roles);

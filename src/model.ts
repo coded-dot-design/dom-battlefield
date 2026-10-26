@@ -10,7 +10,7 @@ export type Tile =
   | "car"
   | "rubble";
 export type Role = "scout" | "medium" | "heavy";
-export type Order = "advance" | "follow" | "retreat" | "attack";
+export type Order = "advance" | "follow" | "retreat" | "attack" | "hold";
 export type Point = { x: number; y: number };
 export interface Unit extends Point {
   id: number;
@@ -24,8 +24,13 @@ export interface Unit extends Point {
   recoil: number;
   cooldown: number;
   order: Order;
+  /** The stop the tank is driving to now (route[0]), or null. */
   waypoint: number | null;
   path: number[];
+  /** Planned stops, in order; the last one is the destination. Each leg is pathed on the way. */
+  route: number[];
+  /** The square a "hold" order keeps; it is the route's destination once arrived. */
+  hold: number | null;
   plan: number;
   /** Enemy this tank was ordered to attack (attack order), if still alive. */
   focus: number | null;
@@ -121,6 +126,7 @@ export interface Board {
 export type Command =
   | { type: "order"; order: Order; ids: number[] }
   | { type: "move"; id: number; cell: number }
+  | { type: "route"; id: number; cells: number[] }
   | { type: "focus"; ids: number[]; target: number | null };
 export const SQUAD_SIZES = [4, 8, 12] as const;
 export const REPAIR = { kit: 45, kill: 15, hq: 8, hqRadius: 2.2, every: 7 };
@@ -338,6 +344,8 @@ export function createBattle(
         order: "advance",
         waypoint: null,
         path: [],
+        route: [],
+        hold: null,
         plan: 0,
         focus: null,
         target: null,
@@ -400,7 +408,8 @@ export function command(s: Battle, c: Command) {
       if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead && u.hp > 0) {
         u.order = "attack";
         u.focus = t ? t.id : null;
-        u.waypoint = null;
+        u.waypoint = u.hold = null;
+        u.route = [];
         u.path = [];
         u.plan = 0;
       }
@@ -412,7 +421,8 @@ export function command(s: Battle, c: Command) {
       if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead) {
         u.order = c.order;
         u.focus = null;
-        u.waypoint = null;
+        u.waypoint = u.hold = null;
+        u.route = [];
         u.path = [];
         u.plan = 0;
       }
@@ -428,21 +438,42 @@ export function command(s: Battle, c: Command) {
     return true;
   }
   const u = s.units.find((u) => u.id === c.id && u.side === s.side && u.hp > 0);
-  if (
-    !u ||
-    u.id === lead ||
-    c.cell < 0 ||
-    c.cell >= s.board.tiles.length ||
-    solid(s.board.tiles[c.cell]!)
-  )
-    return false;
-  const path = route(s.board, cell(s.board, u), c.cell);
-  if (!path.length && cell(s.board, u) !== c.cell) return false;
-  u.waypoint = path.length ? c.cell : null;
-  u.path = path;
+  const cells = c.type === "move" ? [c.cell] : c.cells;
+  if (!u || u.id === lead || !cells.length || !plot(s.board, cell(s.board, u), cells)) return false;
+  // A route: drive through each stop in order, then hold the last square (on the enemy HQ that
+  // is a capture). Orders and attack commands replace it.
+  u.route = cells.slice();
+  u.waypoint = u.route[0]!;
+  u.hold = u.route.at(-1)!;
+  u.order = "hold";
+  u.focus = null;
+  u.path = route(s.board, cell(s.board, u), u.waypoint);
   u.plan = 0.7;
-  s.events.push("Waypoint assigned. Previous orders resume on arrival.");
+  s.events.push(
+    u.hold === s.board.bases[1 - u.side]
+      ? "Route locked. Tank heading for the enemy HQ."
+      : `Route locked: ${cells.length > 1 ? `${cells.length - 1} turn${cells.length > 2 ? "s" : ""}, then ` : ""}hold position.`,
+  );
   return true;
+}
+/** The full square-by-square path from start through every stop, or null if a leg is blocked. */
+export function plot(b: Board, start: number, stops: number[]) {
+  const out: number[] = [];
+  let from = start;
+  for (const stop of stops) {
+    if (stop < 0 || stop >= b.tiles.length || solid(b.tiles[stop]!)) return null;
+    const leg = route(b, from, stop);
+    if (!leg.length && from !== stop) return null;
+    out.push(...leg);
+    from = stop;
+  }
+  return out;
+}
+/** Reached the current stop: on to the next one, or hold the destination. */
+function arrive(u: Unit) {
+  u.route.shift();
+  u.waypoint = u.route[0] ?? null;
+  u.plan = 0;
 }
 export function clearShot(b: Board, a: Point, z: Point) {
   const d = Math.hypot(z.x - a.x, z.y - a.y);
@@ -631,7 +662,9 @@ export function step(s: Battle, dt: number, input: Input) {
         u.waypoint ??
         (kit
           ? cell(b, kit)
-          : u.order === "retreat"
+          : u.order === "hold" && u.hold !== null
+            ? u.hold
+            : u.order === "retreat"
             ? b.bases[u.side]!
             : u.order === "attack" && focus
               ? cell(b, focus)
@@ -669,19 +702,13 @@ export function step(s: Battle, dt: number, input: Input) {
         }
         const next = u.path[0];
         // A replan from inside the waypoint cell yields no path: that is arrival.
-        if (next === undefined && u.waypoint !== null && cell(b, u) === u.waypoint) {
-          u.waypoint = null;
-          u.plan = 0;
-        } else if (next !== undefined) {
+        if (next === undefined && u.waypoint !== null && cell(b, u) === u.waypoint) arrive(u); else if (next !== undefined) {
           const p = point(b, next),
             d = Math.hypot(p.x - u.x, p.y - u.y);
           const travel = Math.min(d, speedOf(u) * dt * 0.8);
           if (d < 0.08) {
             u.path.shift();
-            if (!u.path.length && u.waypoint !== null) {
-              u.waypoint = null;
-              u.plan = 0;
-            }
+            if (!u.path.length && u.waypoint !== null) arrive(u);
           } else if (
             !moveUnit(
               s,

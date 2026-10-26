@@ -10,6 +10,18 @@ const MINI: Record<string, string> = {
   fence: "#ffe14d",
   car: "#ffe14d",
 };
+/** A route as drawn: square ids from the tank's square to its destination, plus its stops. */
+export interface RouteLine {
+  id: number;
+  cells: number[];
+  stops: number[];
+  n: number;
+  selected: boolean;
+  draft: boolean;
+  bad: boolean;
+  hq: boolean;
+}
+const SVG = "http://www.w3.org/2000/svg";
 export class View {
   world: HTMLElement;
   cells: HTMLElement[] = [];
@@ -37,8 +49,8 @@ export class View {
   reticleKey = "";
   tile = 36;
   revision = -1;
-  pathStamp = "";
-  planned = new Set<number>();
+  routeLayer: SVGSVGElement;
+  routeKey = "";
   target = -1;
   paused?: boolean;
   // Layout reads are cached here and refreshed only on resize/scroll events, never per frame.
@@ -100,6 +112,12 @@ export class View {
       node.dataset.unit = String(u.id);
       node.style.setProperty("--team", colors[u.side]!);
       if (u.side !== s.side) node.classList.add("enemy");
+      else if (u.id !== s.side * s.per) {
+        const n = document.createElement("b");
+        n.className = "bf-n";
+        n.textContent = String(u.id % s.per);
+        node.append(n);
+      }
       node.setAttribute(
         "aria-label",
         `${u.side === s.side ? "Friendly" : "Enemy"} ${u.role} tank ${(u.id % s.per) + 1}`,
@@ -126,6 +144,13 @@ export class View {
       this.mini.append(circle);
       this.miniUnits.set(u.id, circle);
     }
+    // Routes: one SVG in map units (viewBox = cols x rows), so lines never need a layout read.
+    this.routeLayer = document.createElementNS(SVG, "svg");
+    this.routeLayer.classList.add("bf-routes");
+    this.routeLayer.setAttribute("viewBox", `0 0 ${s.board.cols} ${s.board.rows}`);
+    this.routeLayer.setAttribute("preserveAspectRatio", "none");
+    this.routeLayer.setAttribute("aria-hidden", "true");
+    this.world.append(this.routeLayer);
     this.reticle = document.createElement("i");
     this.reticle.className = "bf-reticle";
     this.reticle.hidden = true;
@@ -227,17 +252,6 @@ export class View {
         n.dataset.kind = b.tiles[i];
         n.setAttribute("aria-label", b.tiles[i]!);
       });
-    }
-    const path = s.units.find((u) => u.id === selected)?.path ?? [],
-      stamp = selected + ":" + path.join(",");
-    if (stamp !== this.pathStamp) {
-      this.pathStamp = stamp;
-      const next = new Set(path);
-      for (const id of this.planned)
-        if (!next.has(id)) this.cells[id]?.classList.remove("planned");
-      for (const id of next)
-        if (!this.planned.has(id)) this.cells[id]?.classList.add("planned");
-      this.planned = next;
     }
     for (const u of s.units) {
       const v = this.units.get(u.id)!;
@@ -352,6 +366,43 @@ export class View {
     }
     if (this.paused !== paused)
       this.world.dataset.paused = String((this.paused = paused));
+  }
+  /** Draw routes; rebuilt only when something about them changes (stops, squares, selection). */
+  routes(list: RouteLine[]) {
+    const key = JSON.stringify(list);
+    if (key === this.routeKey) return;
+    this.routeKey = key;
+    const cols = this.s.board.cols,
+      at = (c: number) => `${(c % cols) + 0.5},${Math.floor(c / cols) + 0.5}`,
+      el = (tag: string, attrs: Record<string, string>, parent: Element = this.routeLayer) => {
+        const n = document.createElementNS(SVG, tag);
+        for (const k in attrs) n.setAttribute(k, attrs[k]!);
+        parent.append(n);
+        return n;
+      };
+    this.routeLayer.replaceChildren();
+    // Selected last, so it draws on top.
+    for (const r of [...list].sort((a, b) => Number(a.selected) - Number(b.selected))) {
+      if (r.cells.length < 2) continue;
+      const points = r.cells.map(at).join(" "),
+        cls = `bf-route${r.selected ? " sel" : ""}${r.draft ? " draft" : ""}${r.bad ? " bad" : ""}`;
+      if (r.selected) el("polyline", { class: "bf-route-hit", points });
+      el("polyline", { class: cls, points, "vector-effect": "non-scaling-stroke" });
+      const end = r.cells.at(-1)!,
+        [x, y] = at(end).split(","),
+        flag = el("g", { class: `bf-flag${r.selected ? " sel" : ""}${r.hq ? " hq" : ""}`, transform: `translate(${x} ${y})` });
+      if (r.selected) flag.setAttribute("data-stop", String(r.stops.length - 1));
+      el("circle", { class: "bf-grab", r: "0.9" }, flag);
+      el("path", { d: "M-.05 .35V-.6h.6l-.15.2.15.2h-.6" }, flag);
+      const label = el("text", { x: ".02", y: "-.29" }, flag);
+      label.textContent = r.hq ? "HQ" : String(r.n);
+      if (r.selected)
+        r.stops.slice(0, -1).forEach((c, i) => {
+          const [sx, sy] = at(c).split(",");
+          el("circle", { class: "bf-grab", cx: sx!, cy: sy!, r: "0.8", "data-stop": String(i) });
+          el("circle", { class: "bf-stop", cx: sx!, cy: sy!, r: ".3", "data-stop": String(i) });
+        });
+    }
   }
   /** Aim reticle: auto (dashed, follows the auto target), unit lock, or square lock. */
   aim(mode: string, p: { x: number; y: number } | null) {

@@ -439,10 +439,6 @@ h1 {
 [data-theme="light"] .bf-tile[data-kind="water"] {
   background: #c9d8f2;
 }
-.bf-tile.planned {
-  background-color: #39ffb01c;
-  box-shadow: inset 0 0 0 1px #39ffb066;
-}
 .bf-tile.target {
   background: #39ffb040;
   outline: 2px solid var(--green);
@@ -948,12 +944,14 @@ h1 {
 .bf-coach-card {
   position: absolute;
   left: 50%;
-  top: max(12px, env(safe-area-inset-top));
+  bottom: max(12px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: grid;
-  gap: 8px;
+  gap: 5px;
   justify-items: center;
-  padding: 14px 18px;
+  width: max-content;
+  max-width: min(300px, 48vw);
+  padding: 8px 12px;
   background: var(--surface);
   border: 2px dashed var(--cyan);
   border-radius: 8px;
@@ -975,33 +973,75 @@ h1 {
   border-radius: 12px;
   pointer-events: none;
 }
-.bf-coach-tip span {
+.bf-coach-tip > :is(button, p) {
   position: absolute;
+  pointer-events: auto;
+}
+.bf-tip-label {
+  --px: 0px;
+  --py: 2px;
+  --hx: 0px;
+  --hy: 1px;
+  --edge: #8a7414;
+  --edge-hover: var(--edge);
+  --border-hover: #07060f;
+  min-height: 0;
   white-space: nowrap;
   font-size: 10px;
   font-weight: 700;
   color: #07060f;
   background: var(--yellow);
-  padding: 3px 7px;
+  border: 1px solid #07060f;
+  padding: 4px 8px;
   border-radius: 4px;
 }
-.bf-coach-tip[data-at="right"] span {
+.bf-tip-label::after {
+  content: " +";
+}
+.bf-tip-label[aria-expanded="true"]::after {
+  content: " −";
+}
+.bf-coach-tip > p {
+  display: none;
+  z-index: 2;
+  width: min(240px, 60vw);
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px solid var(--yellow);
+  border-radius: 6px;
+}
+.bf-tip-label[aria-expanded="true"] + p {
+  display: block;
+}
+.bf-coach-tip[data-at="right"] > * {
   left: calc(100% + 8px);
   top: 50%;
-  transform: translateY(-50%);
+  translate: 0 -50%;
 }
-.bf-coach-tip[data-at="left"] span {
+.bf-coach-tip[data-at="left"] > * {
   right: calc(100% + 8px);
   top: 50%;
-  transform: translateY(-50%);
+  translate: 0 -50%;
 }
-.bf-coach-tip[data-at="below"] span {
+.bf-coach-tip[data-at="right"] > p,
+.bf-coach-tip[data-at="left"] > p {
+  top: calc(50% + 16px);
+  translate: none;
+}
+.bf-coach-tip[data-at="below"] > * {
   top: calc(100% + 6px);
   left: 0;
 }
-.bf-coach-tip[data-at="below-r"] span {
+.bf-coach-tip[data-at="below-r"] > * {
   top: calc(100% + 6px);
   right: 0;
+}
+.bf-coach-tip[data-at^="below"] > p {
+  top: calc(100% + 34px);
 }
 @keyframes bf-fade {
   from {
@@ -2083,4 +2123,223 @@ html.bf-playing body {
 .bf-stick.down .bf-knob {
   transition: none;
   box-shadow: 0 1px 0 color-mix(in srgb, var(--cyan) 45%, #07060f), 0 0 22px #19f0ffaa;
+}
+
+/* ---------- Command mode: direct the squad ----------
+   One switch with Auto and Lock. The panel says what mode you are in, which tank, and what its
+   route is doing; routes draw in map units on one SVG above the tiles, below the tanks. */
+#bf-command {
+  --c: #8a7bd6;
+}
+#bf-command[aria-pressed="true"] {
+  --c: var(--yellow);
+}
+.bf-cmd {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 12;
+  width: min(580px, calc(100% - 20px));
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  padding: 9px 11px 10px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 2px solid var(--yellow);
+  border-radius: 10px;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
+  font-size: 11px;
+}
+.bf-cmd-head,
+.bf-cmd-tank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.bf-cmd-head b {
+  color: var(--yellow);
+  letter-spacing: 1.5px;
+  font-size: 10px;
+}
+.bf-cmd-head span {
+  color: var(--muted);
+}
+.bf-cmd-tank b {
+  letter-spacing: 1px;
+}
+.bf-cmd-tank span:not(:empty) {
+  padding: 1px 6px;
+  color: #07060f;
+  background: var(--cyan);
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.bf-cmd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.bf-cmd-actions button {
+  grid-auto-flow: column;
+  gap: 5px;
+  min-height: 34px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+.bf-cmd-actions button:disabled {
+  opacity: 0.4;
+}
+#bf-lock {
+  --c: var(--green);
+}
+[data-plan="hq"] {
+  --c: var(--pink);
+}
+[data-plan="follow"] {
+  --c: var(--violet);
+}
+[data-plan="clear"] {
+  --c: #9b97c4;
+}
+[data-plan="next"] {
+  --c: var(--cyan);
+}
+#bf-start {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#bf-start[hidden] {
+  display: none;
+}
+.commanding #bf-viewport {
+  cursor: crosshair;
+}
+.commanding .bf-fire {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+}
+.bf-n {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: none;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  font: 800 10px/1 ui-monospace, monospace;
+  color: #07060f;
+  background: var(--yellow);
+  border: 2px solid #07060f;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.commanding .bf-n,
+.bf-tank.selected .bf-n {
+  display: grid;
+}
+.bf-routes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  overflow: visible;
+  pointer-events: none;
+}
+.bf-route {
+  fill: none;
+  stroke: var(--green);
+  stroke-opacity: 0.4;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.bf-route.sel {
+  stroke-opacity: 1;
+  stroke-width: 3.5px;
+}
+.bf-route.draft {
+  stroke: var(--yellow);
+  stroke-dasharray: 7 5;
+  animation: bf-march 0.6s linear infinite;
+}
+.bf-route.bad {
+  stroke: var(--pink);
+}
+@keyframes bf-march {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+.bf-route-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  pointer-events: stroke;
+  cursor: grab;
+}
+.bf-flag path {
+  fill: var(--green);
+  stroke: #07060f;
+  stroke-width: 0.07;
+}
+.bf-flag.sel path {
+  fill: var(--yellow);
+}
+.bf-flag.hq path {
+  fill: var(--pink);
+}
+.bf-flag text {
+  font: 800 0.3px ui-monospace, monospace;
+  fill: #07060f;
+}
+.bf-grab {
+  fill: transparent;
+}
+.bf-flag.sel .bf-grab,
+circle.bf-grab[data-stop] {
+  pointer-events: all;
+  cursor: grab;
+}
+.bf-stop {
+  fill: var(--yellow);
+  stroke: #07060f;
+  stroke-width: 0.08;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-route.draft {
+    animation: none;
+  }
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-aim {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  [data-active="true"] .bf-cmd {
+    top: 6px;
+    gap: 4px;
+    padding: 6px 8px 7px;
+    font-size: 10px;
+  }
+  [data-active="true"] .bf-cmd-head span {
+    display: none;
+  }
+  [data-active="true"] .bf-cmd-actions {
+    gap: 5px;
+  }
+  [data-active="true"] .bf-cmd-actions button {
+    min-height: 32px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+  [data-active="true"] .bf-cmd-actions svg {
+    width: 15px;
+    height: 15px;
+  }
 }

@@ -40,6 +40,8 @@ and it is the special-edition cartridge 02 on the shelf. Ecosystem context is in
   in `View`), never per frame or per `pointermove`; DOM writes happen only on change.
 - Respect reduced motion (`prefers-reduced-motion` is passed to `view.render` and styled).
 - Mobile must stay smooth and fit: landscape rails must not overlap at 844x330 or 667x300.
+- Button tips (`coach()`) place only after the `[data-tip]` targets stop moving for 8 frames; any
+  control can set `data-tip-more` (tap-to-expand detail) and `data-tip-at` (label side).
 
 **Verify before you push**
 
@@ -56,8 +58,19 @@ git status               # dist/ must be committed and match the build
 Pick one of four seeded operations (Hedgerow breach, Desert spearhead, Winter crossroads, Twin
 bridges), a side, a formation, a squad size (4/8/12 per side) and scout/medium/heavy loadouts
 within a 12-point budget. Capture the enemy HQ, hold a crossroads or eliminate the platoon; your
-command tank must survive. Aim modes (Auto, lock a tank, lock a square), squad orders (fall in,
-retreat, advance, attack), waypoints for a selected wingman, repair kits and HQ repair.
+command tank must survive. Aim modes (Auto, lock a tank, lock a square, or **Command**), squad
+orders (fall in, retreat, advance, attack), routes for wingmen, repair kits and HQ repair.
+
+**Command (0.7.0), the core of the strategy layer.** Every battle opens with a frozen *plan step*
+in command mode (`planning` in `client.ts`; the loop skips `step()`). Command is one switch with
+Auto/Lock (`setCommand`, `setAim`); live, time runs at 0.5x and the player's gun is off. The
+client keeps a `draft` (stops) for the selected tank; `plot()` (model) previews it leg by leg;
+Lock sends `{ type: "route", id, cells }`. In the model a unit's `route` is its remaining stops;
+`arrive()` shifts to the next; at the end the order is `hold` at `hold` (enemy HQ = capture).
+Squad orders and attack commands clear routes. Gestures (command mode only): drag a stop/flag
+(`[data-stop]`), drag the line (`.bf-route-hit`) to insert a stop on the nearest leg, drag open map
+to pan, tap a square to set the destination. Routes draw on one SVG in map units
+(`View.routes`), rebuilt only when their JSON key changes.
 
 ## 2. How it uses the DOM
 
@@ -76,6 +89,7 @@ bounded catch-up). `shared/` holds `sherman-sprites.ts`, `selection-lock.ts` and
 
 - **Desktop:** WASD/arrows drive; pointer aims; hold Space or click to fire; Q auto-aim, T lock,
   G attack, F/R/E fall in, retreat, advance; 1–9 select a wingman; M pan, C center; P pause, Esc.
+  O command mode (Enter lock, Backspace clear, N next tank, H attack HQ).
 - **Mobile (own implementation, not the engine kit):** an analog thumbstick with a 0.15 dead zone
   and proportional throttle; a hold-to-fire button (`data-key="Space"`, auto-aim); icon-only arcade
   buttons for Auto, Lock, Center, Pan, Pause and orders; the `.down` class for held presses.
@@ -94,8 +108,8 @@ geometry; diffed highlights; no per-tile inline grid styles; pause cancels the l
 ## 6. Size
 
 `scripts/size.mjs` gzips `dist/index.html`, `assets/battlefield.js` and `assets/battlefield.css`
-and fails above **30,000 B** total. At 0.6.8: 4,489 + 16,864 + 7,944 = **29,297 B** gzip (about
-0.7 KB headroom). The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0).
+and fails above **36,000 B** total. At 0.7.0: 5,475 + 19,587 + 8,736 = **33,798 B** gzip (about
+2.2 KB headroom). The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0) → 36 KB (0.7.0, command mode).
 
 ## 7. Release and hub pin
 

@@ -23,7 +23,12 @@ state is in [HANDOFF.md](HANDOFF.md). Move items to the README changelog when th
 
 - Distinct enemy silhouettes (both teams use the Sherman sprite today).
 - More operations and a seeded "random operation" picker.
-- Show each wingman's standing order and waypoint on the minimap.
+- Show each wingman's route and hold point on the minimap too (the map shows them since 0.7.0).
+- Command mode next steps: multi-select (drag a box) to route a group; per-tank stance on arrival
+  (hold / ambush, i.e. don't fire until spotted / return to squad); saved plans per operation;
+  give the enemy AI the same route + hold behaviour so it flanks.
+- Real-device pass of the command gestures (iOS Safari, Android Chrome): flag and line drags,
+  pan vs tap threshold (8 px), the panel on 667x300.
 
 ### Multiplayer (later version, the Bolo promise)
 

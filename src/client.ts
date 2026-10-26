@@ -10,9 +10,11 @@ import {
   solid,
   point,
   commander,
+  plot,
 } from "./model";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
+import type { RouteLine } from "./view";
 import { createGameAudio } from "../shared/audio";
 import { createMobileSelectionLock } from "../shared/selection-lock";
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
@@ -37,7 +39,14 @@ let state: Battle,
   last = 0,
   uiAt = 0,
   accumulator = 0,
-  hiddenPause = false;
+  hiddenPause = false,
+  // Command mode: direct the squad (your gun is off, time runs at half speed). Planning is the
+  // same tool before the battle starts, with time frozen.
+  commanding = false,
+  planning = false,
+  draft: { id: number; stops: number[] } | null = null;
+/** Wingmen are numbered 1..per-1 (the command tank is 0, "you"). */
+const tankNo = (id: number) => id % state.per;
 const audio = createGameAudio(document, "battlefield");
 /** Player aim: auto (nearest visible enemy), pointer (mouse), a locked tank, or a locked square. */
 type Aim =
@@ -83,10 +92,12 @@ function tipsOff() {
 }
 let coachTimer = 0,
   coachPaused = false;
-/** First-run tips: dotted rings and labels on each visible control; one layout read when shown. */
+/** Button tips: dotted rings and labels on each visible control. They wait until the layout has
+ *  stopped moving (full screen, rotation, rails), re-place on resize, stay until dismissed, and
+ *  each label opens a longer explanation on tap. */
 function coach(show: boolean) {
   const layer = $("#bf-coach");
-  clearTimeout(coachTimer);
+  cancelAnimationFrame(coachTimer);
   layer.querySelectorAll(".bf-coach-tip").forEach((n) => n.remove());
   layer.hidden = !show;
   if (!show) {
@@ -98,21 +109,41 @@ function coach(show: boolean) {
     setPause(true);
     coachPaused = true;
   }
-  const mid = innerWidth / 2;
-  for (const n of document.querySelectorAll<HTMLElement>("#battlefield [data-tip]")) {
-    const r = n.getBoundingClientRect();
-    if (!r.width || !r.height) continue;
-    const tip = document.createElement("div");
-    tip.className = "bf-coach-tip";
-    tip.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
-    const left = r.left + r.width / 2 < mid;
-    tip.dataset.at = r.top < 60 ? (left ? "below" : "below-r") : left ? "right" : "left";
-    const label = document.createElement("span");
-    label.textContent = n.dataset.tip!;
-    tip.append(label);
-    layer.append(tip);
-  }
-  coachTimer = window.setTimeout(() => coach(false), 7000);
+  const controls = () => [...document.querySelectorAll<HTMLElement>("#battlefield [data-tip]")].filter((n) => n.getClientRects().length > 0);
+  const place = () => {
+    layer.querySelectorAll(".bf-coach-tip").forEach((n) => n.remove());
+    const mid = innerWidth / 2;
+    for (const n of controls()) {
+      const r = n.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      const tip = document.createElement("div");
+      tip.className = "bf-coach-tip";
+      tip.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
+      const left = r.left + r.width / 2 < mid;
+      tip.dataset.at = n.dataset.tipAt ?? (r.top < 60 ? (left ? "below" : "below-r") : left ? "right" : "left");
+      const label = document.createElement("button");
+      label.className = "bf-tip-label";
+      label.textContent = n.dataset.tip!;
+      label.setAttribute("aria-expanded", "false");
+      const more = document.createElement("p");
+      more.textContent = n.dataset.tipMore ?? "";
+      tip.append(label, more);
+      layer.append(tip);
+    }
+  };
+  // Wait for a stable layout: the tip targets must not move for 8 frames in a row (max ~1.5 s).
+  let last = "",
+    still = 0,
+    frames = 0;
+  const settle = () => {
+    if (layer.hidden) return;
+    const key = controls().map((n) => { const r = n.getBoundingClientRect(); return `${r.left|0},${r.top|0},${r.width|0}`; }).join();
+    still = key === last ? still + 1 : 0;
+    last = key;
+    if (still >= 8 || ++frames > 90) return place();
+    coachTimer = requestAnimationFrame(settle);
+  };
+  void document.fonts.ready.then(() => (coachTimer = requestAnimationFrame(settle)));
 }
 function fit() {
   if (!view) return;
@@ -168,31 +199,42 @@ function selectUnit(id: number) {
   const u = state.units.find((u) => u.id === id);
   if (!u || u.hp <= 0) return;
   if (u.side !== side) {
-    // Tapping an enemy locks your aim; with a wingman selected it also orders that attack.
-    lockUnit(u.id);
+    // Tapping an enemy: with a wingman selected, it attacks that tank. Outside command mode
+    // your own aim locks on too.
+    if (!commanding) lockUnit(u.id);
     if (selected >= 0) {
       command(state, { type: "focus", ids: [selected], target: u.id });
-      say(`Tank ${(selected % state.per) + 1} attacking. Your aim is locked on the same tank.`);
+      draft = { id: selected, stops: [] };
+      say(`Tank ${tankNo(selected)} attacking that tank.`);
+      cmdPanel();
     }
     return;
   }
   selected = u.id === commander(state).id ? -1 : id;
+  draft = selected < 0 ? null : { id: selected, stops: [...u.route] };
   $("#bf-order-label").textContent =
-    selected < 0 ? "SQUAD ORDERS" : `TANK ${(id % state.per) + 1} SELECTED`;
+    selected < 0 ? "SQUAD ORDERS" : `TANK ${tankNo(id)} SELECTED`;
   say(
     selected < 0
       ? "Squad selected."
-      : `Tank ${(id % state.per) + 1}: tap a square to move, or an enemy to attack it.`,
+      : commanding
+        ? `Tank ${tankNo(id)}: tap a square to send it, or Attack HQ.`
+        : `Tank ${tankNo(id)}: tap a square to move, or an enemy to attack it.`,
   );
   setDrawer(false);
+  cmdPanel();
   view.render(selected, paused, reduced.matches);
 }
 function aimButtons() {
-  $("#bf-auto").setAttribute("aria-pressed", String(aim.mode === "auto"));
-  $("#bf-target").setAttribute("aria-pressed", String(picking || aim.mode === "unit" || aim.mode === "cell"));
+  $("#bf-auto").setAttribute("aria-pressed", String(!commanding && aim.mode === "auto"));
+  $("#bf-target").setAttribute("aria-pressed", String(!commanding && (picking || aim.mode === "unit" || aim.mode === "cell")));
+  $("#bf-command").setAttribute("aria-pressed", String(commanding));
   $("#battlefield").classList.toggle("picking", picking);
+  $("#battlefield").classList.toggle("commanding", commanding);
 }
 function setAim(next: Aim, message?: string) {
+  // Aim and command are one switch: picking an aim mode leaves command mode (not while planning).
+  if (commanding && !planning) setCommand(false);
   aim = next;
   picking = false;
   input.aim = null;
@@ -208,7 +250,7 @@ function autoAim() {
   else setAim({ mode: "auto" }, "Auto-aim: nearest visible enemy.");
 }
 function startPick() {
-  if (!playing || paused) return;
+  if (!playing || paused || planning) return;
   if (picking) return setAim({ mode: "auto" }, "Auto-aim.");
   picking = true;
   aimButtons();
@@ -233,6 +275,164 @@ function setDrawer(open: boolean) {
   $("#battlefield").classList.toggle("squad-open", open);
   $("#bf-squad").setAttribute("aria-expanded", String(open));
 }
+/** Command mode on/off. Your gun stops and time halves, so directing the squad is a risk. */
+function setCommand(on: boolean) {
+  if (planning && !on) return;
+  commanding = on;
+  picking = false;
+  if (!on) {
+    // Back to fighting: squad orders go to the whole squad again.
+    selected = -1;
+    draft = null;
+    $("#bf-order-label").textContent = "SQUAD ORDERS";
+    $("#bf-cmd").hidden = true;
+  } else {
+    if (selected < 0) nextTank();
+    say(planning ? "Plan your attack: tap a tank, then a square. Lock each route, then Start battle." : "Command mode: half speed, your gun is off. Direct a tank, then switch back to Auto.");
+  }
+  aimButtons();
+  cmdPanel();
+}
+function wingmen() {
+  return state.units.filter((u) => u.side === side && u.id !== commander(state).id && u.hp > 0);
+}
+function nextTank() {
+  const list = wingmen();
+  if (!list.length) return;
+  const i = list.findIndex((u) => u.id === selected);
+  selectUnit(list[(i + 1) % list.length]!.id);
+}
+/** The draft's square-by-square line (from the tank), or null if a stop is unreachable. */
+function draftCells() {
+  if (!draft) return null;
+  const u = state.units[draft.id]!;
+  return plot(state.board, cell(state.board, u), draft.stops);
+}
+const dirty = () =>
+  !!draft && draft.stops.join() !== state.units[draft.id]!.route.join();
+function setDest(id: number) {
+  if (!draft) return say("Tap one of your numbered tanks first.");
+  if (solid(state.board.tiles[id]!)) return say("Blocked square. Choose open ground.");
+  const before = draft.stops;
+  draft.stops = [...before.slice(0, -1), id];
+  if (!draftCells()) {
+    draft.stops = before;
+    return say("Unreachable from here. Choose another square.");
+  }
+  if (draft.stops.length === 1 && before.length === 0) say("Route drawn. Drag the line to bend it, then Lock.");
+  cmdPanel();
+}
+function lockRoute() {
+  if (!draft || !draft.stops.length || !dirty()) return;
+  if (command(state, { type: "route", id: draft.id, cells: draft.stops })) {
+    say(`Tank ${tankNo(draft.id)}: ${state.events.at(-1)}`);
+    buzz(12);
+  } else say("That route is blocked now. Adjust it.");
+  cmdPanel();
+}
+function plan(action: string) {
+  if (!playing || paused) return;
+  if (action === "next") return nextTank();
+  if (!draft) return say("Tap one of your numbered tanks first.");
+  const id = draft.id;
+  if (action === "hq") {
+    draft.stops = [state.board.bases[1 - side]!];
+    if (!draftCells()) draft.stops = [];
+    lockRoute();
+  } else if (action === "follow") {
+    command(state, { type: "order", order: "follow", ids: [id] });
+    draft.stops = [];
+    say(`Tank ${tankNo(id)} falling in on you.`);
+  } else if (action === "clear") {
+    command(state, { type: "order", order: "advance", ids: [id] });
+    draft.stops = [];
+    say(`Tank ${tankNo(id)}: route cleared, back to squad orders.`);
+  }
+  cmdPanel();
+}
+function startBattle() {
+  if (!planning) return;
+  planning = false;
+  $("#bf-start").hidden = true;
+  // Squad orders go to the whole squad again once the battle starts.
+  selected = -1;
+  draft = null;
+  $("#bf-order-label").textContent = "SQUAD ORDERS";
+  setCommand(false);
+  setAim({ mode: coarse.matches ? "auto" : "pointer" });
+  audio.play("start");
+  say("Battle started. Tap Command any time to redirect your squad.");
+}
+/** The command panel: what mode you're in, which tank, and what its route is doing. */
+function cmdPanel() {
+  const panel = $("#bf-cmd");
+  panel.hidden = !commanding;
+  if (!commanding) return;
+  const u = draft ? state.units[draft.id] : undefined,
+    alive = u && u.hp > 0;
+  text("#bf-cmd-mode", planning ? "PLAN YOUR ATTACK · TIME FROZEN" : "COMMAND · HALF SPEED · GUN OFF");
+  const cells = draftCells(),
+    hq = !!draft && draft.stops.at(-1) === state.board.bases[1 - side];
+  text(
+    "#bf-cmd-hint",
+    !alive
+      ? "Tap one of your numbered tanks."
+      : !draft!.stops.length
+        ? "Tap a square to send it there, or Attack HQ."
+        : dirty()
+          ? cells
+            ? "Drag the line to bend it · drag the flag to move it · then Lock."
+            : "A stop is blocked. Drag it to open ground."
+          : planning
+            ? "Locked. Next tank, or Start battle."
+            : "Locked. Switch back to Auto to fight.",
+  );
+  text("#bf-cmd-tank", alive ? `TANK ${tankNo(u!.id)} · ${u!.role.toUpperCase()} · ${Math.ceil(u!.hp)} HP` : "NO TANK SELECTED");
+  text(
+    "#bf-cmd-state",
+    !alive
+      ? ""
+      : dirty()
+        ? "DRAFT"
+        : u!.order === "hold" && u!.route.length
+          ? hq
+            ? "ATTACKING HQ"
+            : `EN ROUTE · ${u!.route.length} STOP${u!.route.length > 1 ? "S" : ""}`
+          : u!.order === "hold"
+            ? "HOLDING"
+            : u!.order === "follow"
+              ? "FOLLOWING YOU"
+              : u!.order === "attack"
+                ? "ATTACKING"
+                : u!.order === "retreat"
+                  ? "REPAIRING"
+                  : "ADVANCING",
+  );
+  $<HTMLButtonElement>("#bf-lock").disabled = !alive || !dirty() || !cells || !draft!.stops.length;
+  for (const n of document.querySelectorAll<HTMLButtonElement>("[data-plan]"))
+    n.disabled = n.dataset.plan !== "next" && !alive;
+  $("#bf-start").hidden = !planning;
+}
+/** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
+function routeLines(): RouteLine[] {
+  const out: RouteLine[] = [];
+  const enemyHq = state.board.bases[1 - side]!;
+  for (const u of state.units) {
+    if (u.side !== side || u.hp <= 0 || u.id === commander(state).id) continue;
+    const sel = u.id === selected;
+    if (!commanding && !sel) continue;
+    const own = cell(state.board, u);
+    if (sel && draft && dirty()) {
+      const cells = draftCells();
+      out.push({ id: u.id, cells: [own, ...(cells ?? plot(state.board, own, draft.stops.slice(0, -1)) ?? [])], stops: draft.stops, n: tankNo(u.id), selected: true, draft: true, bad: !cells, hq: draft.stops.at(-1) === enemyHq });
+      continue;
+    }
+    const stops = u.route.length ? u.route : u.order === "hold" && u.hold !== null ? [u.hold] : [];
+    const cells = stops.length ? (plot(state.board, own, stops) ?? [own, ...u.path]) : [own, ...u.path];
+    out.push({ id: u.id, cells: cells[0] === own ? cells : [own, ...cells], stops, n: tankNo(u.id), selected: sel, draft: false, bad: false, hq: stops.at(-1) === enemyHq });
+  }
+  return out;
+}
 function order(order: Order) {
   if (!playing || paused) return;
   const ids =
@@ -244,6 +444,8 @@ function order(order: Order) {
   if (order === "attack")
     command(state, { type: "focus", ids, target: aim.mode === "unit" ? aim.id : null });
   else command(state, { type: "order", order, ids });
+  if (draft) draft.stops = [];
+  cmdPanel();
   say(state.events.at(-1) ?? "");
   updateHUD();
 }
@@ -338,7 +540,8 @@ function checkGate() {
     }
     return;
   }
-  if (gate.hidden) return;
+  // Already landscape and full screen (no gate shown): the cockpit is ready now.
+  if (gate.hidden) return ready();
   gate.hidden = true;
   if (gatePaused) {
     gatePaused = false;
@@ -350,7 +553,7 @@ function checkGate() {
 function ready() {
   if (readyOnce || !playing) return;
   readyOnce = true;
-  if (coarse.matches && !tipsOff()) requestAnimationFrame(() => coach(true));
+  if (coarse.matches && !tipsOff()) coach(true);
 }
 /* ---------- Install for true full screen (Battlefield only) ----------
    iPhone Safari tabs can never hide the browser UI; a Home Screen web app can.
@@ -447,6 +650,10 @@ function deploy() {
   follow = true;
   setAim({ mode: coarse.matches ? "auto" : "pointer" });
   $("#bf-order-label").textContent = "SQUAD ORDERS";
+  // Every battle opens with a frozen planning step in command mode.
+  planning = true;
+  draft = null;
+  setCommand(true);
   setup.hidden = true;
   $("#bf-result").hidden = true;
   $("#bf-controls").hidden = false;
@@ -456,11 +663,7 @@ function deploy() {
   accumulator = 0;
   view.resize();
   view.center();
-  say(
-    coarse.matches
-      ? "Battle started. Drag the stick to drive; hold Fire. Tap an enemy to lock on."
-      : "Battle started. WASD moves. Aim with the pointer; hold Space or Fire to shoot.",
-  );
+  say("Plan your attack: tap a tank, then a square. Lock each route, then Start battle.");
   frame = requestAnimationFrame(loop);
   keepAwake(true);
   // Check the gate once the fullscreen/orientation request settles.
@@ -482,6 +685,10 @@ function reset() {
   coach(false);
   paused = false;
   selected = -1;
+  planning = commanding = false;
+  draft = null;
+  aimButtons();
+  cmdPanel();
   clearInput();
   lease.setActive(false);
   setup.hidden = false;
@@ -516,7 +723,9 @@ function updateHUD() {
   );
   const phase = !playing
     ? "PREPARE"
-    : paused
+    : planning
+      ? "PLAN"
+      : paused
       ? "PAUSED"
       : state.winner === null
         ? "LIVE"
@@ -557,13 +766,14 @@ function loop(now: number) {
         ? stick.y
         : Number(held.has("KeyS") || held.has("ArrowDown")) -
           Number(held.has("KeyW") || held.has("ArrowUp"));
-    input.fire = held.has("Space") || held.has("MouseFire");
+    input.fire = !commanding && (held.has("Space") || held.has("MouseFire"));
+    if (planning) input.x = input.y = 0;
     const previousEvents = state.events.at(-1),
       shots = state.nextId,
       hp = commander(state).hp;
     input.aim = resolveAim();
     // Fixed simulation ticks; bounded catch-up prevents tab stalls from spiraling.
-    accumulator = Math.min(0.1, accumulator + dt);
+    accumulator = planning ? 0 : Math.min(0.1, accumulator + dt * (commanding ? 0.5 : 1));
     while (accumulator >= 1 / 60) {
       step(state, 1 / 60, input);
       accumulator -= 1 / 60;
@@ -582,11 +792,13 @@ function loop(now: number) {
       say(state.events.at(-1)!);
     if (follow && !drag && !pan && commander(state).hp > 0) view.follow(commander(state));
     view.render(selected, paused, reduced.matches);
+    view.routes(routeLines());
     const lead = commander(state),
       auto = state.units.find((u) => u.id === lead.target && u.hp > 0);
     view.aim(aim.mode, aim.mode === "auto" ? (auto ?? null) : aim.mode === "pointer" ? null : input.aim);
     if (now - uiAt > 160) {
       updateHUD();
+      cmdPanel();
       uiAt = now;
     }
     if (state.winner !== null) {
@@ -714,6 +926,14 @@ listen($("#bf-tips"), "click", () => {
   coach(true);
 });
 listen($("#bf-coach"), "click", ((e: MouseEvent) => {
+  const label = (e.target as Element).closest(".bf-tip-label");
+  if (label) {
+    const open = label.getAttribute("aria-expanded") !== "true";
+    for (const n of document.querySelectorAll(".bf-tip-label")) n.setAttribute("aria-expanded", "false");
+    label.setAttribute("aria-expanded", String(open));
+    return;
+  }
+  if ((e.target as Element).closest(".bf-tip-label + p")) return;
   if ((e.target as Element).closest("#bf-coach-off"))
     try {
       localStorage.setItem(TIPS, "off");
@@ -721,6 +941,11 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
   coach(false);
 }) as EventListener);
 listen($("#bf-pause"), "click", () => setPause(!paused));
+listen($("#bf-command"), "click", () => setCommand(!commanding));
+listen($("#bf-lock"), "click", lockRoute);
+listen($("#bf-start"), "click", startBattle);
+for (const n of document.querySelectorAll<HTMLElement>("[data-plan]"))
+  listen(n, "click", () => plan(n.dataset.plan!));
 listen($("#bf-pan"), "click", () => setPan(!pan));
 listen($("#bf-center"), "click", () => {
   follow = true;
@@ -738,9 +963,15 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
       setAim({ mode: "auto" }, "Lock cancelled. Auto-aim.");
       return;
     }
+    if (commanding && selected < 0 && !planning) {
+      setCommand(false);
+      return;
+    }
     if (selected >= 0) {
       selected = -1;
+      draft = null;
       view.highlight(-1);
+      cmdPanel();
       say("Selection cleared.");
     } else setPause(!paused);
     return;
@@ -773,6 +1004,13 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
     if (e.code === "KeyE") order("advance");
     if (e.code === "KeyG") order("attack");
     if (e.code === "KeyQ") autoAim();
+    if (e.code === "KeyO") setCommand(!commanding);
+    if (commanding) {
+      if (e.code === "Enter") lockRoute();
+      if (e.code === "Backspace") plan("clear");
+      if (e.code === "KeyN") plan("next");
+      if (e.code === "KeyH") plan("hq");
+    }
     if (e.code === "KeyT") startPick();
     if (e.code === "KeyC") {
       follow = true;
@@ -899,7 +1137,7 @@ for (const event of ["pointerup", "pointercancel"])
     drag = null;
   });
 listen(viewport, "click", ((e: MouseEvent) => {
-  if (!playing || paused || pan) return;
+  if (!playing || paused || pan || commanding) return;
   const p = view.location(e);
   if (p.x < 0 || p.y < 0 || p.x >= state.board.cols || p.y >= state.board.rows)
     return;
@@ -916,11 +1154,83 @@ listen(viewport, "click", ((e: MouseEvent) => {
   } else say("Blocked or unreachable square. Choose an open lane.");
 }) as EventListener);
 listen(viewport, "contextmenu", (e) => e.preventDefault());
+/* Command gestures. Drag a stop or the flag to move it; drag the line to add a bend; drag open
+   map to pan; tap a square to send the selected tank there. One layout read: the cached view. */
+let gesture: { id: number; kind: "tap" | "pan" | "stop"; stop: number; x: number; y: number; left: number; top: number } | null = null;
+const cellAt = (e: PointerEvent) => {
+  const p = view.location(e);
+  return p.x < 0 || p.y < 0 || p.x >= state.board.cols || p.y >= state.board.rows ? -1 : cell(state.board, p);
+};
+listen(viewport, "pointerdown", ((e: PointerEvent) => {
+  if (!playing || paused || pan || !commanding || gesture || e.button > 0) return;
+  const t = e.target as Element;
+  if (t.closest(".bf-tank")) return;
+  const g = { id: e.pointerId, kind: "tap" as "tap" | "pan" | "stop", stop: -1, x: e.clientX, y: e.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
+  const handle = t.closest("[data-stop]");
+  if (draft && handle) (g.kind = "stop"), (g.stop = Number(handle.getAttribute("data-stop")));
+  else if (draft && t.closest(".bf-route-hit")) {
+    // Bend: insert a stop on the leg nearest the finger, then drag it.
+    const c = cellAt(e),
+      u = state.units[draft.id]!;
+    let from = cell(state.board, u),
+      leg = draft.stops.length - 1,
+      best = Infinity;
+    draft.stops.forEach((stop, k) => {
+      for (const id of plot(state.board, from, [stop]) ?? []) {
+        const d = Math.hypot((id % state.board.cols) - (c % state.board.cols), Math.floor(id / state.board.cols) - Math.floor(c / state.board.cols));
+        if (d < best) (best = d), (leg = k);
+      }
+      from = stop;
+    });
+    draft.stops.splice(leg, 0, c);
+    if (!draftCells()) draft.stops.splice(leg, 1);
+    else (g.kind = "stop"), (g.stop = leg);
+  }
+  gesture = g;
+  viewport.setPointerCapture(e.pointerId);
+  e.preventDefault();
+}) as EventListener);
+listen(viewport, "pointermove", ((e: PointerEvent) => {
+  if (!gesture || e.pointerId !== gesture.id) return;
+  if (gesture.kind === "stop" && draft) {
+    const c = cellAt(e),
+      i = gesture.stop,
+      before = draft.stops[i];
+    if (c < 0 || c === before || solid(state.board.tiles[c]!)) return;
+    draft.stops[i] = c;
+    if (!draftCells()) draft.stops[i] = before!;
+    view.highlight(c);
+    cmdPanel();
+    return;
+  }
+  if (gesture.kind === "tap" && Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 8) {
+    gesture.kind = "pan";
+    follow = false;
+  }
+  if (gesture.kind === "pan") {
+    viewport.scrollLeft = gesture.left + gesture.x - e.clientX;
+    viewport.scrollTop = gesture.top + gesture.y - e.clientY;
+    view.scrolled();
+  }
+}) as EventListener);
+for (const type of ["pointerup", "pointercancel"])
+  listen(viewport, type, ((e: PointerEvent) => {
+    if (!gesture || e.pointerId !== gesture.id) return;
+    const g = gesture;
+    gesture = null;
+    view.highlight(-1);
+    if (type === "pointerup" && g.kind === "tap") {
+      const c = cellAt(e);
+      if (c >= 0) setDest(c);
+    }
+    cmdPanel();
+  }) as EventListener);
 listen(viewport, "pointerdown", ((e: PointerEvent) => {
   if (
     playing &&
     !paused &&
     !pan &&
+    !commanding &&
     (e.button === 2 ||
       (e.button === 0 &&
         e.pointerType === "mouse" &&
@@ -970,6 +1280,7 @@ listen($("#bf-sound"), "click", () => {
 listen(window, "resize", () => {
   if (playing) fit();
   else preview();
+  if (!$("#bf-coach").hidden) coach(true);
 });
 listen(window, "pagehide", () => {
   coach(false);
@@ -1003,6 +1314,9 @@ Object.defineProperty(window, "battlefield", {
     },
     get aim() {
       return { ...aim, picking };
+    },
+    get command() {
+      return { on: commanding, planning, selected, draft: draft && { ...draft, stops: [...draft.stops] } };
     },
   },
   configurable: true,

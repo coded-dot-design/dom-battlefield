@@ -11,7 +11,7 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 
 Four seeded arcade operations: Hedgerow breach, Desert spearhead, Winter crossroads and Twin bridges. Choose either fictional side, one of three deployment formations, and four scout/medium/heavy tanks within a 12-point budget. Capture an opposing HQ, hold a contested crossroads, or eliminate a platoon. Your command tank must survive.
 
-Select a friendly wingman, then an open grid square to send it there. Its previous order resumes on arrival. Fall in follows your command tank; Retreat returns to headquarters, where tanks repair. Advance returns the squad to the objective. Every map has alternate connected routes. Houses, hedges and parked cars can be destroyed into pixel debris and rubble. Rocks and water remain permanent; fences stop tanks but allow shells through.
+**Command your squad.** Every battle opens with a frozen plan step in command mode: tap a numbered tank, tap where it should go (or Attack HQ), drag the route line to bend it or the flag to move it, and Lock. Locked tanks drive their route and hold that square when they arrive (on the enemy HQ that is a capture). Start battle when you're ready. During the battle, Command is the third aim mode beside Auto and Lock: time runs at half speed and your gun is off, so redirect quickly and switch back. Fall in follows your command tank; Retreat returns to headquarters, where tanks repair. Advance returns the squad to the objective. Every map has alternate connected routes. Houses, hedges and parked cars can be destroyed into pixel debris and rubble. Rocks and water remain permanent; fences stop tanks but allow shells through.
 
 Desktop maps fit the available viewport. Mobile uses a larger grid with deliberate Pan mode, minimap camera positioning and a Center button. Resizing an active battle adjusts presentation without resetting terrain, damage or positions.
 
@@ -24,7 +24,11 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Fire | Hold Space / click / right-click | Hold Fire |
 | Fall in / retreat / advance | F / R / E | Labeled buttons |
 | Select wingman | 1–3 or click | Tap tank / roster |
-| Assign waypoint | Click an open grid square | Tap an open grid square |
+| Command mode | O | Command (chevrons) beside Auto / Lock |
+| Send a tank | Command: click tank, then a square | Command: tap tank, then a square |
+| Bend / move a route | Drag the line / the flag | Drag the line / the flag |
+| Lock · clear · next · attack HQ | Enter · Backspace · N · H | Panel buttons |
+| Button tips | Menu → Show button tips | First run; tap a label for details |
 | Pan / recenter | M + drag / C | Pan + drag / Center |
 | Pause / deselect | P / Esc | Pause / select your tank |
 
@@ -43,7 +47,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 30KB gzip budget, checked by `npm run size` (0.6.8: ~29.3KB).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 36KB gzip budget, checked by `npm run size` (0.7.0: ~33.8KB; it was 30KB until command mode).
 
 ## Boundaries
 
@@ -61,6 +65,15 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.7.0 — Command your squad
+
+- **Plan step:** every battle opens frozen in command mode with your first wingman selected. Tap a numbered tank, tap a square (or Attack HQ), drag the line to add a turn or the flag to move the destination, Lock, Next tank, then Start battle.
+- **Routes that stick:** a locked route drives through each turn in order, then the tank holds that square (the enemy HQ means capture). Before, every waypoint was re-pathed to the shortest line and the tank went back to its old order on arrival, so a route could not be shaped or kept.
+- **Command mode in battle:** the third aim mode beside Auto and Lock (O). Every wingman's route shows on the map; time runs at half speed and your gun is off. Picking Auto or Lock leaves it.
+- **Command panel:** mode, tank, route state (DRAFT, EN ROUTE, HOLDING, FOLLOWING…), plus Lock, Attack HQ, Follow, Clear, Next and Start battle. Wingmen show their number in command mode.
+- **Button tips:** placed once the layout stops moving (they used to miss on phones that were already landscape and full screen, where they never appeared at all), re-placed on resize, stay until dismissed, and every label opens a longer explanation on tap.
+- Size budget 30KB → 36KB gzip.
 
 ### 0.6.8 — Eject is a real 3D button
 
