@@ -339,6 +339,9 @@ export class View {
         this.world.append(n);
         this.shots.set(p.id, n);
       }
+      // Shells wear their team's colour (pooled nodes are reused, so set it every time).
+      const team = p.side ? "1" : "0";
+      if (n.dataset.side !== team) n.dataset.side = team;
       n.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px) rotate(${Math.atan2(p.vy, p.vx)}rad)`;
     }
     live.clear();

@@ -71,6 +71,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.13.3 — Team-coloured shells that read in light mode
+
+- Shells are in their team's colour (mint for A, coral for B) with an ink rim and a tracer tail. Dark maps keep a soft glow; light maps use deeper team shades with a crisp dark outline, so they stay visible on every terrain.
+
 ### 0.13.2 — Flat press colour
 
 - START BATTLE and SURRENDER flash a flat cyberpunk red-pink (#f0506e) when pressed, with no glow; critical health uses the same colour.
