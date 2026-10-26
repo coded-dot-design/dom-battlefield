@@ -90,7 +90,11 @@ try {
         await page.setViewportSize({ width: 1100, height: 760 });
         await page.waitForTimeout(150);
         const small = await cols();
-        await page.evaluate(() => document.documentElement.requestFullscreen());
+        // CI Chromium can't resize a real fullscreen window, so fake the fullscreen state.
+        await page.evaluate(() => {
+          Object.defineProperty(document, "fullscreenElement", { get: () => document.documentElement, configurable: true });
+          document.dispatchEvent(new Event("fullscreenchange"));
+        });
         await page.setViewportSize({ width: 1440, height: 1000 });
         await page.waitForTimeout(250);
         assert.equal(await page.locator("#bf-expand").isVisible(), true, "full screen offers a bigger map");
@@ -98,7 +102,10 @@ try {
         await page.locator("#bf-expand-yes").click();
         assert.ok((await cols()) > small, "Expand grows the field");
         assert.equal(await page.locator("#bf-expand").isVisible(), false);
-        await page.evaluate(() => document.exitFullscreen());
+        await page.evaluate(() => {
+          delete document.fullscreenElement;
+          document.dispatchEvent(new Event("fullscreenchange"));
+        });
         await page.waitForTimeout(100);
       }
       await page.locator("#bf-deploy").click();
@@ -119,7 +126,10 @@ try {
         await page.waitForFunction(() => window.battlefield.gate === null);
         // Leaving full screen mid-battle re-locks the gate; one tap restores it.
         if (await page.evaluate(() => !!document.fullscreenElement)) {
-          await page.evaluate(() => document.exitFullscreen());
+          await page.evaluate(() => {
+          delete document.fullscreenElement;
+          document.dispatchEvent(new Event("fullscreenchange"));
+        });
           await page.waitForFunction(() => window.battlefield.gate === "fullscreen");
           await page.locator("#bf-gate-go").click();
           await page.waitForFunction(() => window.battlefield.gate === null);
