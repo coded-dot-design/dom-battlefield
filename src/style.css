@@ -2892,7 +2892,7 @@ circle.bf-grab[data-stop] {
 }
 .bf-unit[data-hp="critical"] {
   --c: var(--critical);
-  background: repeating-linear-gradient(135deg, var(--critical) 0 6px, #b3132a 6px 9px);
+  background: repeating-linear-gradient(135deg, var(--critical) 0 6px, #c23a55 6px 9px);
 }
 .bf-unit[data-hp="lost"] {
   --c: #4a4566;
@@ -3030,9 +3030,9 @@ circle.bf-grab[data-stop] {
 }
 .bf-start.go {
   color: #07060f;
-  background: #ff3355;
+  background: var(--alert);
   transform: translate(var(--px), var(--py));
-  box-shadow: 0 0 0 var(--edge), 0 0 24px #ff2e8899;
+  box-shadow: 0 0 0 var(--edge);
   transition: none;
 }
 @media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
@@ -3304,7 +3304,7 @@ circle.bf-grab[data-stop] {
   color: #f6f3ff;
 }
 #bf-giveup-yes.bf-start.go {
-  background: #ff3355;
+  background: var(--alert);
 }
 @media (max-height: 520px) {
   .bf-giveup {
@@ -3348,7 +3348,7 @@ circle.bf-grab[data-stop] {
 [data-theme="light"] .bf-start.go,
 [data-theme="light"] #bf-giveup-yes.bf-start.go {
   color: #07060f;
-  background: #ff3355;
+  background: var(--alert);
 }
 #battlefield:has(#bf-giveup:not([hidden])) #bf-start {
   visibility: hidden;
@@ -3850,7 +3850,8 @@ circle.bf-grab[data-stop] {
   --team: var(--team-a);
   --enemy: var(--team-b);
   --hurt: #ffc21a;
-  --critical: #ff3344;
+  --critical: #f0506e;
+  --alert: #f0506e;
 }
 #battlefield[data-side="1"] {
   --team: var(--team-b);

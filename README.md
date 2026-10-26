@@ -71,6 +71,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.13.2 — Flat press colour
+
+- START BATTLE and SURRENDER flash a flat cyberpunk red-pink (#f0506e) when pressed, with no glow; critical health uses the same colour.
+
 ### 0.13.1 — Full screen just grows the field
 
 - Removed the "Expand the map?" prompt. On desktop, setup and planning size the field to the space they have, so full screen adds squares straight away. (Phones keep a fixed field that scrolls.)
