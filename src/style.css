@@ -3867,3 +3867,54 @@ circle.bf-grab[data-stop] {
     display: none;
   }
 }
+/* Short screens (phones in landscape): the result, pause and surrender stickers shrink to fit
+   comfortably over the field instead of covering it. */
+@media (max-height: 520px) {
+  #bf-result,
+  .bf-paused {
+    width: min(340px, calc(100% - 24px));
+    gap: 8px;
+    padding: 14px 14px 12px;
+    border-width: 2px;
+    box-shadow: 5px 5px 0 var(--tone);
+  }
+  #bf-result .bf-sticker,
+  .bf-paused .bf-sticker {
+    padding: 6px 14px 8px;
+    border-width: 2px;
+    box-shadow: 3px 3px 0 #07060f;
+  }
+  #bf-result .bf-sticker b,
+  .bf-paused .bf-sticker b {
+    font-size: 24px;
+    letter-spacing: 1px;
+  }
+  #bf-result .bf-sticker span,
+  .bf-paused .bf-sticker span {
+    font-size: 8px;
+  }
+  #bf-result p {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .bf-result-stats div {
+    padding: 4px 2px;
+  }
+  .bf-result-stats dt {
+    font-size: 8px;
+  }
+  .bf-result-stats dd {
+    font-size: 15px;
+  }
+  .bf-result-actions {
+    gap: 8px;
+  }
+  .bf-result-actions button {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  #bf-result .bf-primary {
+    flex-basis: 150px;
+  }
+}

@@ -70,6 +70,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.12.1 — Compact result sticker on phones
+
+- On short screens (phones in landscape) MISSION COMPLETE / GAME OVER, PAUSED and GIVE UP? shrink to a compact card: smaller sticker, tighter stats and buttons, so they no longer cover the field.
+
 ### 0.12.0 — Comms panel, balanced footer
 
 - Desktop: the objective (with live progress) and the message line moved out of the footer into a slim **comms** panel above the map, beside the title. A small LED blinks once per new message. On narrower windows the panel takes its own row. Touch keeps its overlay line.
