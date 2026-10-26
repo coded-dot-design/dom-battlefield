@@ -34,10 +34,14 @@ async function passGate(page) {
   if (await page.locator("#bf-coach").isVisible())
     await page.locator("#bf-coach").click({ position: { x: 5, y: 5 } });
 }
-// Surrender lives in the settings menu now.
+// Surrender lives on the PAUSED sticker, then a "you sure?" confirm.
 async function restart(page) {
-  if (!(await page.locator("#bf-restart").isVisible())) await page.locator("#bf-settings").click();
-  await page.locator("#bf-restart").click();
+  if (await page.evaluate(() => !window.battlefield.paused)) await page.locator("#bf-pause").click();
+  await page.locator("#bf-surrender").click();
+  assert.equal(await page.locator("#bf-giveup").isVisible(), true, "surrender asks first");
+  assert.equal(await page.locator("#bf-paused").isVisible(), false);
+  await page.locator("#bf-giveup-yes").click();
+  await page.waitForFunction(() => !window.battlefield.playing);
 }
 let where = "start";
 try {
@@ -454,6 +458,23 @@ try {
         frozen,
       );
       assert.equal(await page.locator("#bf-paused").isVisible(), true, "pause shows the sticker");
+      await page.locator("#bf-surrender").click();
+      assert.equal(await page.locator("#bf-giveup").isVisible(), true);
+      await page.locator("#bf-giveup-no").click();
+      assert.equal(await page.locator("#bf-giveup").isVisible(), false, "Keep fighting closes the confirm");
+      assert.equal(await page.locator("#bf-paused").isVisible(), true, "...and returns to the pause sticker");
+      if (!mobile) {
+        await page.locator("#bf-keys").hover();
+        assert.equal(await page.locator("#bf-keys-panel").isVisible(), true, "the key icon shows the controls");
+        assert.ok((await page.locator("#bf-keys-panel kbd").count()) > 15);
+        await page.mouse.move(5, 500);
+        assert.equal(await page.locator("#bf-keys-panel").isVisible(), false);
+      } else assert.equal(await page.locator("#bf-keys").isVisible(), false, "no keyboard panel on touch");
+      // Squad keys: shape is the size, colour is health.
+      assert.deepEqual(
+        await page.locator("#bf-roster .bf-roster-unit").evaluateAll((n) => n.map((b) => b.dataset.hp !== undefined && !!b.querySelector(".bf-ru-face text"))).then((a) => a.every(Boolean)),
+        true,
+      );
       await resize(page, 
         mobile ? { width: 844, height: 390 } : { width: 1440, height: 1000 },
       );

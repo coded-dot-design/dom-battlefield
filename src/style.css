@@ -1068,17 +1068,6 @@ h1 {
   border-color: var(--green);
   color: var(--green);
 }
-.bf-help {
-  grid-column: 1 / -1;
-  font-size: 9px;
-  color: var(--muted);
-  line-height: 1.8;
-  margin: 0;
-}
-.bf-help b {
-  font-weight: 600;
-  color: var(--ink);
-}
 .bf-touch,
 .bf-rotate,
 #bf-squad {
@@ -2915,65 +2904,113 @@ circle.bf-grab[data-stop] {
 .map-fits .bf-map-tools {
   display: none;
 }
-/* Squad chips: small squares instead of long text buttons. */
+/* Squad keys: each tank is a pressable 3D shape. Shape = size, colour = health, label = number. */
 .bf-roster {
   flex-wrap: wrap;
+  align-items: flex-end;
 }
-.bf-roster-unit {
-  --px: 2px;
-  --py: 2px;
-  position: relative;
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 2px;
-  width: 46px;
-  min-height: 46px;
-  padding: 4px 3px 7px;
+#bf-roster .bf-roster-unit {
+  --face: #39ffb0;
+  --ink-edge: #07060f;
+  display: block;
+  width: 44px;
+  height: 46px;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.bf-roster-unit b {
-  display: grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 3px;
-  font: 800 11px/1 ui-monospace, monospace;
-  color: #07060f;
-  background: var(--team-a);
-  border: 2px solid #07060f;
-  border-radius: 999px;
+#bf-roster .bf-roster-unit[data-hp="hurt"] {
+  --face: #ffe14d;
 }
-.bf-roster-unit.you b {
-  font-size: 8px;
-  background: var(--yellow);
+#bf-roster .bf-roster-unit[data-hp="critical"] {
+  --face: #ff3355;
 }
-.bf-roster-unit small {
-  font: 700 8px/1 ui-monospace, monospace;
-  letter-spacing: 1px;
-  color: var(--muted);
+#bf-roster .bf-roster-unit[data-hp="lost"] {
+  --face: #3a3652;
 }
-.bf-roster-unit i {
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  bottom: 4px;
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--team-a) var(--hp, 100%), var(--line) 0);
+.bf-roster-unit svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
-.bf-roster-unit:disabled {
-  opacity: 0.35;
+.bf-ru-base > * {
+  fill: color-mix(in srgb, var(--face) 42%, #07060f);
+  stroke: var(--ink-edge);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transform: translateY(5px);
+}
+.bf-ru-face {
+  transition: transform 90ms cubic-bezier(0.34, 1.7, 0.5, 1);
+}
+.bf-ru-face > :not(text) {
+  fill: var(--face);
+  stroke: var(--ink-edge);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.bf-ru-face text {
+  font: 900 13px/1 ui-monospace, monospace;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: #07060f;
+  stroke: none;
+}
+.bf-roster-unit.you .bf-ru-face text {
+  font-size: 14px;
+}
+/* Selected: a white rim so you can see who you are commanding. */
+.bf-roster-unit.active .bf-ru-face > :not(text) {
+  stroke: #f6f3ff;
+  stroke-width: 3;
+}
+.bf-roster-unit.active .bf-ru-base > * {
+  stroke: #f6f3ff;
+  stroke-width: 3;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bf-roster-unit:not(:disabled):hover .bf-ru-face {
+    transform: translateY(2px);
+  }
+}
+.bf-roster-unit:not(:disabled):active .bf-ru-face {
+  transform: translateY(5px);
+  transition: none;
+}
+#bf-roster .bf-roster-unit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.bf-roster-unit:disabled .bf-ru-face text {
+  fill: #8f8aa8;
+}
+.bf-roster-unit:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
 }
 @media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
   [data-active="true"] .bf-roster {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
-  [data-active="true"] .bf-roster-unit {
-    width: 46px;
-    min-height: 46px;
-    padding: 4px 3px 7px;
+  [data-active="true"] #bf-roster .bf-roster-unit {
+    width: 44px;
+    height: 46px;
+    min-height: 0;
+    padding: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-ru-face {
+    transition: none;
   }
 }
 /* Command panel groups: ROUTE (clear, next, lock), ORDERS (attack HQ, follow), PLAN (planning). */
@@ -3205,4 +3242,200 @@ circle.bf-grab[data-stop] {
   display: block;
   opacity: 0.7;
   font-family: ui-monospace, monospace;
+}
+
+/* ---------- Keyboard key: the controls as keycaps (hover or click) ---------- */
+.bf-keys {
+  position: relative;
+}
+.bf-keys-panel {
+  position: absolute;
+  z-index: 46;
+  right: 0;
+  top: calc(100% + 8px);
+  width: max-content;
+  max-width: min(560px, calc(100vw - 24px));
+  padding: 14px 16px 16px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--cyan);
+}
+.bf-keys-panel[hidden] {
+  display: none;
+}
+/* A bridge so moving the pointer from the key to the panel keeps it open. */
+.bf-keys-panel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+}
+.bf-keys-title {
+  display: block;
+  margin-bottom: 10px;
+  font: 800 9px/1 ui-monospace, monospace;
+  letter-spacing: 2px;
+  color: var(--cyan);
+}
+.bf-keymap {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bf-keymap li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font: 11px/1.4 ui-monospace, monospace;
+  color: var(--ink);
+}
+.bf-keymap li > span:not(.bf-kc) {
+  margin-right: 10px;
+}
+.bf-keymap li > i {
+  font-style: normal;
+  color: var(--muted);
+}
+.bf-keys-sub {
+  padding-left: 18px;
+  border-left: 2px dashed var(--line);
+  margin-left: 13px;
+}
+.bf-keymap kbd {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  place-items: center;
+  gap: 4px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px 3px;
+  font: 700 11px/1 ui-monospace, monospace;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid var(--cyan);
+  border-radius: 6px;
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--cyan) 30%, var(--bg)), 0 3px 0 #07060f;
+}
+.bf-keymap kbd.wide {
+  min-width: 44px;
+  font-size: 10px;
+}
+.bf-keymap kbd.mouse svg {
+  width: 11px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+/* WASD as a staggered row, arrows as an inverted T. */
+.bf-kc {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 26px);
+  grid-template-rows: repeat(2, 26px);
+  gap: 3px;
+}
+.bf-kc kbd {
+  min-width: 0;
+  padding: 0 0 3px;
+}
+.bf-kc kbd:first-child {
+  grid-column: 2;
+}
+.bf-kc kbd:nth-child(2) {
+  grid-area: 2 / 1;
+}
+.bf-kc kbd:nth-child(3) {
+  grid-area: 2 / 2;
+}
+.bf-kc kbd:nth-child(4) {
+  grid-area: 2 / 3;
+}
+/* Keyboard controls only matter with a keyboard. */
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  .bf-keys {
+    display: none;
+  }
+}
+.bf-settings[hidden] {
+  display: none;
+}
+/* ---------- Surrender confirm (from the PAUSED sticker) ---------- */
+.bf-giveup {
+  --tone: #f6f3ff;
+  z-index: 26;
+  grid-template-columns: auto auto;
+  align-items: center;
+}
+.bf-giveup .bf-sticker,
+.bf-giveup-copy {
+  grid-column: 1 / -1;
+}
+.bf-giveup-copy {
+  margin: 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--muted);
+}
+#bf-giveup-yes.bf-start {
+  position: static;
+  translate: none;
+  background: #1a1830;
+  color: #f6f3ff;
+}
+#bf-giveup-yes.bf-start.go {
+  background: #ff3355;
+}
+@media (max-height: 520px) {
+  .bf-giveup {
+    gap: 10px;
+    padding: 14px;
+  }
+  .bf-giveup .bf-sticker b {
+    font-size: 26px;
+  }
+  .bf-giveup .bf-start-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+}
+/* Light theme: the Start sticker flips to a light face with an ink rim and base. */
+[data-theme="light"] .bf-start {
+  --edge: #07060f;
+  --edge-hover: #07060f;
+  --border-hover: #07060f;
+  color: #0a8fa8;
+  background: #f6f3ff;
+  border-color: #07060f;
+}
+[data-theme="light"] .bf-start b {
+  color: #07060f;
+}
+[data-theme="light"] .bf-start-icon svg path[stroke],
+[data-theme="light"] .bf-start-icon svg rect {
+  stroke: #0a8fa8;
+}
+[data-theme="light"] #bf-giveup-yes.bf-start {
+  color: #07060f;
+  background: #f6f3ff;
+}
+[data-theme="light"] #bf-giveup-yes .bf-start-icon svg [stroke] {
+  stroke: #07060f;
+}
+[data-theme="light"] #bf-giveup-yes .bf-start-icon svg [fill="#f6f3ff"] {
+  fill: #07060f;
+}
+[data-theme="light"] .bf-start.go,
+[data-theme="light"] #bf-giveup-yes.bf-start.go {
+  color: #07060f;
+  background: #ff3355;
+}
+#battlefield:has(#bf-giveup:not([hidden]), #bf-paused:not([hidden])) #bf-start {
+  visibility: hidden;
 }

@@ -29,7 +29,8 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Bend / move a route | Drag the line / the flag | Drag the line / the flag |
 | Lock · clear · next · attack HQ | Enter · Backspace · N · H | Panel buttons |
 | Button tips | ? in the header | First run; ? in the drawer; tap a label for details |
-| Full screen · surrender | Corners icon · gear → Surrender | Same, in the drawer |
+| Keyboard controls | Keyboard icon in the header (hover or click) | — |
+| Full screen · surrender | Corners icon · Pause → Surrender | Same |
 | Move HQ (plan only) | Drag your HQ, or Move HQ then a square | Same |
 | Pan / recenter | M + drag / C | Pan + drag / Center |
 | Pause / deselect | P / Esc | Pause / select your tank |
@@ -67,6 +68,14 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.10.0 — Squad keys, keyboard panel, surrender on pause
+
+- Squad list: each tank is a pressable 3D shape. Shape is the size (scout triangle, medium circle, heavy hexagon), colour is health (green over 60%, yellow over 30%, red below), the label is the number (★ is you). Tap to command.
+- The keyboard help line is now a keyboard icon in the header: hover or click for the controls as keycaps (hidden on touch).
+- Surrender lives only on the PAUSED sticker and asks "Give up?" with a white-flag sticker button (flashes red) or Keep fighting.
+- Header: theme is a moon, the gear is a real cog and only appears when there is something in it (Install as an app).
+- Light theme: the Start sticker flips to a light face with an ink rim and base. Start hides while a pause or surrender sticker is up.
 
 ### 0.9.0 — Cleaner controls, new ground every map
 

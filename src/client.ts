@@ -582,7 +582,7 @@ function pauseButton() {
   b.querySelector("span")!.textContent = paused ? "Resume" : "Pause";
   b.querySelector("path")!.setAttribute("d", paused ? "M6 4l10 6-10 6Z" : "M7 4v12M13 4v12");
   // The PAUSED sticker is for a pause you chose, not the rotate/full-screen gate or the tips.
-  $("#bf-paused").hidden = !(paused && $("#bf-gate").hidden && $("#bf-coach").hidden && state.winner === null);
+  $("#bf-paused").hidden = !(paused && $("#bf-gate").hidden && $("#bf-coach").hidden && $("#bf-giveup").hidden && state.winner === null);
 }
 function fullscreen() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -683,6 +683,8 @@ function installCard(floating = false) {
   $("#bf-install-app").hidden = mode !== "app";
   $("#bf-install-go").hidden = mode !== "app";
   $("#bf-install-help").hidden = !mode;
+  // The gear only holds Install for now: no install path, no gear.
+  $(".bf-settings").hidden = !mode;
   card.classList.toggle("floating", floating);
   // Floating (from the in-game panel) the card leaves the hidden setup panel; it returns on close.
   if (floating) $("#battlefield").append(card);
@@ -775,6 +777,8 @@ function deploy(quick = false) {
 function reset() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   $("#bf-paused").hidden = true;
+  $("#bf-giveup").hidden = true;
+  keysPanel(false);
   $("#bf-expand").hidden = true;
   mapLock = null;
   expandAsked = false;
@@ -843,34 +847,42 @@ function updateHUD() {
   if (status.textContent !== phase) status.textContent = phase;
   const roster = $("#bf-roster");
   const allies = state.units.filter((u) => u.side === side);
-  // Squad chips: number in a circle, role letter, a health bar. Tap one to command it.
+  // Squad keys: the shape is the size (scout triangle, medium circle, heavy hexagon), the colour is
+  // health (green above 60%, yellow above 30%, red below), the label is the number. Tap to command.
   if (!roster.childElementCount)
     for (const u of allies) {
-      const n = document.createElement("button");
+      const n = document.createElement("button"),
+        shape = SHAPES[u.role];
       n.className = "bf-roster-unit";
-      n.innerHTML = "<b></b><small></small><i></i>";
+      n.dataset.role = u.role;
+      n.innerHTML = `<svg viewBox="0 0 44 46" aria-hidden="true"><g class="bf-ru-base">${shape}</g><g class="bf-ru-face">${shape}<text x="22" y="${u.role === "scout" ? 29 : 24}"></text></g></svg>`;
       n.onclick = () => selectUnit(u.id);
       roster.append(n);
     }
   allies.forEach((u, i) => {
     const n = roster.children[i] as HTMLButtonElement;
+    const you = u.id === commander(state).id;
     n.classList.toggle("active", selected === u.id);
-    n.classList.toggle("you", u.id === commander(state).id);
+    n.classList.toggle("you", you);
     n.disabled = u.hp <= 0;
-    const no = u.id === commander(state).id ? "YOU" : String(u.id % state.per),
-      hp = Math.max(0, Math.ceil((u.hp / u.maxHp) * 100));
-    const b = n.firstElementChild!;
-    if (b.textContent !== no) b.textContent = no;
-    const role = n.children[1]!;
-    if (role.textContent !== u.role[0]!.toUpperCase()) role.textContent = u.role[0]!.toUpperCase();
-    const label = `${no === "YOU" ? "Your tank" : `Tank ${no}`}, ${u.role}, ${Math.ceil(u.hp)} HP${u.hp <= 0 ? ", lost" : ""}`;
+    const no = you ? "★" : String(u.id % state.per),
+      hp = u.hp / u.maxHp,
+      tone = u.hp <= 0 ? "lost" : hp > 0.6 ? "ok" : hp > 0.3 ? "hurt" : "critical";
+    if (n.dataset.hp !== tone) n.dataset.hp = tone;
+    const t = n.querySelector("text")!;
+    if (t.textContent !== no) t.textContent = no;
+    const label = `${you ? "Your tank" : `Tank ${no}`}, ${u.role}, ${Math.max(0, Math.ceil(hp * 100))}% health${u.hp <= 0 ? ", lost" : ""}`;
     if (n.getAttribute("aria-label") !== label) {
       n.setAttribute("aria-label", label);
       n.title = label;
-      n.style.setProperty("--hp", `${hp}%`);
     }
   });
 }
+const SHAPES: Record<string, string> = {
+  scout: '<path d="M22 3 41 37H3Z"/>',
+  medium: '<circle cx="22" cy="20" r="17"/>',
+  heavy: '<path d="M22 2l16 9v18l-16 9-16-9V11Z"/>',
+};
 function loop(now: number) {
   if (!playing) return;
   const dt = last ? Math.min(0.04, (now - last) / 1000) : 0;
@@ -1050,11 +1062,46 @@ listen($("#bf-rematch"), "click", () => {
   reset();
   deploy();
 });
-listen($("#bf-restart"), "click", () => {
-  settings(false);
-  reset();
+/* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
+let giveupResume = false;
+function giveup(open: boolean) {
+  if (open === !$("#bf-giveup").hidden) return;
+  if (open) {
+    giveupResume = !paused;
+    setDrawer(false);
+    $("#bf-giveup").hidden = false;
+    setPause(true);
+    pauseButton();
+    $<HTMLButtonElement>("#bf-giveup-no").focus();
+  } else {
+    $("#bf-giveup").hidden = true;
+    if (giveupResume) setPause(false);
+    else pauseButton();
+  }
+}
+listen($("#bf-surrender"), "click", () => giveup(true));
+listen($("#bf-giveup-no"), "click", () => giveup(false));
+listen($("#bf-giveup-yes"), "click", () => {
+  const b = $("#bf-giveup-yes");
+  b.classList.add("go");
+  setTimeout(() => {
+    b.classList.remove("go");
+    reset();
+  }, reduced.matches ? 0 : 450);
 });
-listen($("#bf-surrender"), "click", reset);
+/* Header keyboard key: hover (fine pointers) or click shows the controls as keycaps. */
+function keysPanel(open: boolean) {
+  $("#bf-keys-panel").hidden = !open;
+  $("#bf-keys").setAttribute("aria-expanded", String(open));
+}
+listen($("#bf-keys"), "click", (e) => {
+  e.stopPropagation();
+  keysPanel($("#bf-keys-panel").hidden === true);
+});
+if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  listen($(".bf-keys"), "mouseenter", () => keysPanel(true));
+  listen($(".bf-keys"), "mouseleave", () => keysPanel(false));
+}
 listen($("#bf-resume"), "click", () => setPause(false));
 /* Header ⚙: the less-used options (install as an app, surrender). Closes on pick or outside tap. */
 function settings(open: boolean) {
@@ -1067,6 +1114,7 @@ listen($("#bf-settings"), "click", ((e: MouseEvent) => {
 }) as EventListener);
 listen(document, "click", ((e: MouseEvent) => {
   if (!(e.target as Element).closest(".bf-settings")) settings(false);
+  if (!(e.target as Element).closest(".bf-keys")) keysPanel(false);
 }) as EventListener);
 listen($("#bf-new-operation"), "click", reset);
 listen($("#bf-fullscreen"), "click", fullscreen);
@@ -1169,6 +1217,7 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
   if (!playing) return;
   if (e.code === "Escape") {
     e.preventDefault();
+    if (!$("#bf-giveup").hidden) return giveup(false);
     if (picking) {
       setAim({ mode: "auto" }, "Lock cancelled. Auto-aim.");
       return;

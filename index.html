@@ -29,7 +29,21 @@
           href="https://coded-dot-design.github.io/dom-virus/#sherman-bytes"
           class="bf-brand"
           ><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><g transform="translate(10 9) scale(.69)" fill="currentColor"><path fill-rule="evenodd" d="M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z" /><path d="M54 0h9v9h-9z" fill="#ff2e88" /></g></svg><span>DOM <b>BATTLEFIELD</b></span></a
-        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.9.0</i></span
+        ><span class="bf-edition">SHERMAN OPERATIONS <i>SOLO / V0.10.0</i></span
+        ><div class="bf-keys"><button id="bf-keys" class="bf-hbtn" aria-expanded="false" aria-controls="bf-keys-panel" aria-label="Keyboard controls" title="Keyboard controls"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="5" width="16" height="10" rx="2" /><path d="M5 8h.01M8 8h.01M11 8h.01M14 8h.01M5 11h.01M15 11h.01M7.5 12h5" /></svg></button
+          ><div id="bf-keys-panel" class="bf-keys-panel" role="dialog" aria-label="Keyboard controls" hidden>
+            <b class="bf-keys-title">KNOW YOUR CONTROLS</b>
+            <ul class="bf-keymap">
+              <li><span class="bf-kc wasd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><i>/</i><span class="bf-kc"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></span><span>move</span></li>
+              <li><kbd class="mouse"><svg viewBox="0 0 16 22" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="19" rx="6.5" /><path d="M8 1.5v6" /></svg>Pointer</kbd><span>aim</span></li>
+              <li><kbd class="mouse"><svg viewBox="0 0 16 22" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="19" rx="6.5" /><path d="M8 1.5v6M1.5 8h6.5" /></svg>Click</kbd><i>/</i><kbd class="wide">Space</kbd><span>fire</span></li>
+              <li><kbd>Q</kbd><span>auto-aim</span><kbd>T</kbd><span>lock a tank or square</span></li>
+              <li><kbd>G</kbd><span>attack</span><kbd class="wide">1–9</kbd><span>select wingman</span></li>
+              <li><kbd>O</kbd><span>command: click a square to send</span></li>
+              <li class="bf-keys-sub"><kbd class="wide">Enter</kbd><span>lock</span><kbd>N</kbd><span>next</span><kbd>H</kbd><span>attack HQ</span></li>
+              <li><kbd>P</kbd><span>pause</span><kbd class="wide">Esc</kbd><span>deselect / pause</span></li>
+            </ul>
+          </div></div
         ><button id="bf-tips" class="bf-hbtn" aria-label="Show button tips" title="Button tips"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" /><path d="M7.8 7.7a2.3 2.3 0 1 1 3.3 2.1c-.7.4-1.1.9-1.1 1.7M10 14.2h.01" /></svg></button
         ><button id="bf-fullscreen" class="bf-hbtn" aria-label="Enter full screen" aria-pressed="false" title="Full screen"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" /></svg></button
         ><button id="bf-sound" class="bf-hbtn" aria-label="Mute game sound" aria-pressed="true" title="Sound">
@@ -37,13 +51,10 @@
             <path d="M3 8h3l4-4v12l-4-4H3ZM14 6q4 4 0 8" />
           </svg></button
         ><button id="bf-theme" class="bf-hbtn" aria-label="Toggle light and dark theme" title="Theme">
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <circle cx="10" cy="10" r="6" />
-            <path d="M10 4v12" /></svg></button
-        ><div class="bf-settings"><button id="bf-settings" class="bf-hbtn" aria-expanded="false" aria-controls="bf-settings-menu" aria-label="More options" title="More"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6" /><path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.6 1.6M13.7 13.7l1.6 1.6M4.7 15.3l1.6-1.6M13.7 6.3l1.6-1.6" /></svg></button
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z" /></svg></button
+        ><div class="bf-settings"><button id="bf-settings" class="bf-hbtn" aria-expanded="false" aria-controls="bf-settings-menu" aria-label="More options" title="More"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M17.7 8.0L18.0 10.5L16.1 10.8L15.6 12.7L16.9 14.0L15.3 16.0L13.8 14.9L12.0 15.9L12.0 17.7L9.5 18.0L9.2 16.1L7.3 15.6L6.0 16.9L4.0 15.3L5.1 13.8L4.1 12.0L2.3 12.0L2.0 9.5L3.9 9.2L4.4 7.3L3.1 6.0L4.7 4.0L6.2 5.1L8.0 4.1L8.0 2.3L10.5 2.0L10.8 3.9L12.7 4.4L14.0 3.1L16.0 4.7L14.9 6.2L15.9 8.0Z" /><circle cx="10" cy="10" r="2.4" /></svg></button
           ><div id="bf-settings-menu" class="bf-settings-menu" hidden>
             <button id="bf-install-help"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9M6 8l4 4 4-4M4 15h12" /></svg>Install as an app</button>
-            <button id="bf-restart" class="bf-surrender"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h9l-2 3.5 2 3.5H5" /></svg>Surrender · new operation</button>
           </div></div
         ><button
           id="bf-eject"
@@ -208,6 +219,12 @@
             <button id="bf-expand-yes" class="bf-primary">Expand</button
             ><button id="bf-expand-no">Keep size</button>
           </section>
+          <section id="bf-giveup" class="bf-paused bf-giveup" hidden role="alertdialog" aria-label="Surrender?">
+            <div class="bf-sticker"><span>WHITE FLAG</span><b>GIVE UP?</b></div>
+            <p class="bf-giveup-copy">You sure you want to give up? This ends the operation.</p>
+            <button id="bf-giveup-yes" class="bf-start bf-flag-sticker" aria-label="Yes, surrender"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#f6f3ff" stroke-opacity=".25" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#f6f3ff" stroke-width="2" /><path d="M19 54V10" stroke="#f6f3ff" stroke-width="4" /><path d="M21 12h24l-6 9 6 9H21Z" fill="#f6f3ff" /></svg></span><b>SURRENDER</b></button>
+            <button id="bf-giveup-no" class="bf-primary">Keep fighting</button>
+          </section>
           <section id="bf-paused" class="bf-paused" hidden aria-label="Paused">
             <div class="bf-sticker"><span>TAKE A BREATH</span><b>PAUSED</b></div>
             <div class="bf-result-actions">
@@ -234,7 +251,7 @@
           <div class="bf-command-top">
             <span id="bf-order-label">SQUAD ORDERS</span>
             <div class="bf-quick">
-              <button id="bf-squad" class="bf-arcade" data-tip="Menu · squad · pause beside it" data-tip-more="The menu opens the squad list (tap a tank to select it), these tips, full screen and a new operation. Pause is the button beside it." aria-expanded="false" aria-controls="bf-tactics" aria-label="Open squad and menu panel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" /></svg></button
+              <button id="bf-squad" class="bf-arcade" data-tip="Menu · squad · pause beside it" data-tip-more="The menu opens the squad list (tap a tank to select it), these tips and full screen. Pause is the button beside it; Surrender is on the pause screen." aria-expanded="false" aria-controls="bf-tactics" aria-label="Open squad and menu panel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" /></svg></button
               ><button id="bf-pause" class="bf-arcade" aria-pressed="false" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4v12M13 4v12" /></svg><span>Pause</span></button>
             </div>
           </div>
@@ -247,12 +264,6 @@
             <p id="bf-drawer-objective" class="bf-drawer-objective"></p>
             <div id="bf-roster" class="bf-roster"></div>
           </div>
-          <p class="bf-help">
-            <b>WASD / arrows</b> move · <b>Pointer</b> aim ·
-            <b>Click / Space</b> fire · <b>Q</b> auto-aim · <b>T</b> lock a tank or square · <b>G</b> attack · <b>1–9</b> select wingman ·
-            <b>Click a square</b> send · <b>O</b> command (Enter lock · N next · H attack HQ) · <b>P</b> pause · <b>Esc</b> deselect /
-            pause
-          </p>
           <div class="bf-touch">
             <div class="bf-dpad" data-tip="Drive: drag any direction" data-tip-more="Drag the stick any way to drive. A small push creeps, a full push is top speed. Damaged tanks are slower.">
               <div id="bf-stick" class="bf-stick" role="application" aria-label="Drive: drag in any direction"><i class="bf-knob"></i></div>

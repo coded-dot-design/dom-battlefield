@@ -116,7 +116,7 @@ geometry; diffed highlights; no per-tile inline grid styles; pause cancels the l
 ## 6. Size
 
 `scripts/size.mjs` gzips `dist/index.html`, `assets/battlefield.js` and `assets/battlefield.css`
-and fails above **44,000 B** total. At 0.9.0 it is about **41,330 B** gzip (about 2.7 KB headroom). The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0) → 36 KB (0.7.0, command mode)
+and fails above **44,000 B** total. At 0.10.0 it is about **43,110 B** gzip (about 0.9 KB headroom; the keyboard panel markup is most of the 0.10 growth). The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0) → 36 KB (0.7.0, command mode)
 → 40 KB (0.8.0, terrain themes and the two-step setup) → 44 KB (0.9.0, header menu, stickers,
 squad chips, per-terrain roads and city shapes).
 
