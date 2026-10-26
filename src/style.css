@@ -3157,37 +3157,6 @@ circle.bf-grab[data-stop] {
 [data-theme="light"] .bf-world[data-terrain="river"] .bf-tile[data-kind="road"] {
   box-shadow: inset 0 1px 0 #3b31701c, inset 0 -1px 0 #3b31701c;
 }
-/* Full screen: offer a bigger field (setup and planning only). */
-.bf-expand {
-  position: absolute;
-  z-index: 23;
-  top: 12px;
-  left: 50%;
-  translate: -50% 0;
-  width: min(460px, calc(100% - 24px));
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 2px solid #07060f;
-  border-radius: 10px;
-  box-shadow: 5px 5px 0 var(--cyan, #19f0ff);
-}
-.bf-expand[hidden] {
-  display: none;
-}
-.bf-expand p {
-  flex: 1 1 200px;
-  margin: 0;
-  font-size: 12px;
-}
-.bf-expand small {
-  display: block;
-  opacity: 0.7;
-  font-family: ui-monospace, monospace;
-}
 
 /* ---------- Keyboard key: the controls as keycaps (hover or click) ---------- */
 .bf-keys {

@@ -90,27 +90,14 @@ try {
         path: `artifacts/setup-${mobile ? "mobile" : "desktop"}-${light ? "light" : "dark"}.png`,
       });
       if (!mobile) {
-        // Full screen asks before growing the field; Keep size holds it, Expand grows it.
+        // More space (full screen) means a bigger field: more squares, not just bigger ones.
         const cols = () => page.evaluate(() => window.battlefield.snapshot().board.cols);
         await page.setViewportSize({ width: 1100, height: 760 });
         await page.waitForTimeout(150);
         const small = await cols();
-        // CI Chromium can't resize a real fullscreen window, so fake the fullscreen state.
-        await page.evaluate(() => {
-          Object.defineProperty(document, "fullscreenElement", { get: () => document.documentElement, configurable: true });
-          document.dispatchEvent(new Event("fullscreenchange"));
-        });
         await page.setViewportSize({ width: 1440, height: 1000 });
         await page.waitForTimeout(250);
-        assert.equal(await page.locator("#bf-expand").isVisible(), true, "full screen offers a bigger map");
-        assert.equal(await cols(), small, "the field waits for an answer");
-        await page.locator("#bf-expand-yes").click();
-        assert.ok((await cols()) > small, "Expand grows the field");
-        assert.equal(await page.locator("#bf-expand").isVisible(), false);
-        await page.evaluate(() => {
-          delete document.fullscreenElement;
-          document.dispatchEvent(new Event("fullscreenchange"));
-        });
+        assert.ok((await cols()) > small, "a bigger screen grows the field");
         await page.waitForTimeout(100);
       }
       await page.locator("#bf-deploy").click();

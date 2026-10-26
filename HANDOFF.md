@@ -122,9 +122,9 @@ squad chips, per-terrain roads and city shapes) → 46 KB (0.11.0, keycap panel,
 platoon keys, surrender confirm) → 48 KB (0.13.0, own-tank routes, movable command card, comms panel,
 team colours).
 
-Map size: setup and planning size the field to the screen. Entering full screen offers **Expand**
-(`#bf-expand`); until answered the size is held (`mapLock` in client.ts). Multiplayer should pass a
-fixed size instead so both players share one field.
+Map size: setup and planning size the field to the screen (`mapSize()` in client.ts), so entering full
+screen on desktop adds squares. Touch maps are a fixed size and scroll. Multiplayer should pass a fixed
+size instead so both players share one field.
 
 ## 7. Release and hub pin
 

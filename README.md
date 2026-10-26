@@ -71,6 +71,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.13.1 — Full screen just grows the field
+
+- Removed the "Expand the map?" prompt. On desktop, setup and planning size the field to the space they have, so full screen adds squares straight away. (Phones keep a fixed field that scrolls.)
+
 ### 0.13.0 — Command your own tank, one pause screen, team colours
 
 - **Your tank takes routes too.** Tap its ★ key in the platoon (or tap it in Command / while planning), tap a square, Lock. When you're not steering it drives to its flag; steer any time to take over, let go and it carries on. Clear drops the route. Shoot while it drives, or take the wheel.
@@ -128,7 +132,7 @@ MIT · Chris Cooley / coded.design
 - Formations are now distinct shapes: wedge (arrowhead), line (abreast) and column (file).
 - Roads change by terrain and seed: winding lanes and a farm track (hedgerow), a highway and a diagonal track (desert), a true crossroads (winter); twin bridges keeps its avenues.
 - Lone bushes in the hedgerow, street trees in the city, and flat city blocks in five shapes (square, slab, round tower, dashed triangle, dashed ring); winter adds dashed peaks and rings.
-- Full screen asks before growing the map during setup and planning (multiplayer will fix the size). Center and Pan hide when the whole field fits.
+- Center and Pan hide when the whole field fits.
 - Size budget 40KB → 44KB gzip.
 
 ### 0.8.2 — Tron desert

@@ -204,26 +204,12 @@ function mapSize() {
     rows = touchMap ? 20 + grow / 2 : Math.floor(viewport.clientHeight / unit);
   return { cols: Math.max(18, Math.min(48, cols)), rows: Math.max(14, Math.min(30, rows)) };
 }
-/** Set when the player keeps the current field size after entering full screen. */
-let mapLock: { cols: number; rows: number } | null = null,
-  expandAsked = false;
-function offerExpand() {
-  const next = mapSize(),
-    ask = !!state && (!playing || planning) && !mapLock && !expandAsked &&
-      (next.cols > state.board.cols || next.rows > state.board.rows);
-  if (!ask) return;
-  expandAsked = true;
-  mapLock = { cols: state.board.cols, rows: state.board.rows };
-  $("#bf-expand").hidden = false;
-  text("#bf-expand-size", `${state.board.cols}×${state.board.rows} → ${next.cols}×${next.rows}`);
-}
 function preview(resized = false) {
   // Setup, or a strategy change during the plan step (same seed, so the same ground).
   if (playing && !planning) return;
-  // Entering full screen may resize before fullscreenchange fires: ask before growing.
-  if (resized && document.fullscreenElement) offerExpand();
-  // Bigger squads get a bigger field; the camera already scrolls on touch.
-  const { cols, rows } = mapLock ?? mapSize();
+  // The field fills the space it has (full screen adds squares); bigger squads get a bigger
+  // field; the camera already scrolls on touch.
+  const { cols, rows } = mapSize();
   // Planning: a resize that doesn't change the map size (address bars, rails) just re-fits.
   if (resized && planning && state && state.board.cols === cols && state.board.rows === rows) return fit();
   view?.destroy();
@@ -823,9 +809,6 @@ function reset() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   $("#bf-giveup").hidden = true;
   keysPanel(false);
-  $("#bf-expand").hidden = true;
-  mapLock = null;
-  expandAsked = false;
   settings(false);
   cancelAnimationFrame(frame);
   audio.close();
@@ -1250,18 +1233,10 @@ listen(document, "click", ((e: MouseEvent) => {
 }) as EventListener);
 listen($("#bf-new-operation"), "click", reset);
 listen($("#bf-fullscreen"), "click", fullscreen);
-listen($("#bf-expand-yes"), "click", () => {
-  mapLock = null;
-  $("#bf-expand").hidden = true;
-  preview();
-});
-listen($("#bf-expand-no"), "click", () => ($("#bf-expand").hidden = true));
 listen(document, "fullscreenchange", () => {
   const full = !!document.fullscreenElement;
   $("#bf-fullscreen").setAttribute("aria-pressed", String(full));
   $("#bf-fullscreen").setAttribute("aria-label", full ? "Leave full screen" : "Enter full screen");
-  if (full) offerExpand();
-  else ($("#bf-expand").hidden = true), (expandAsked = false);
   fit();
   checkGate();
 });
