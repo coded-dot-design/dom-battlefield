@@ -66,6 +66,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.8.1 — Move your HQ
+
+- During the plan step, drag your HQ (it pulses: DRAG TO MOVE) to another open spot on your half. Water and dead ends are refused; the ground under it is cleared and your squad redeploys around it. The move sticks for that map.
+
 ### 0.8.0 — Climates, a simpler setup, GAME OVER
 
 - **Terrain themes:** each operation has its own climate in the neon key. Hedgerow: night fields, rounded green hedges, stone farms. Desert: dusk dunes, sandstone mesas, barbed wire, burnt wrecks. Winter: ice blues and purples, snow-roofed chalets, ice crystals. Twin bridges is now a river city: a street grid of lit towers, cars with headlights and a canal. The minimap follows each palette, light and dark.

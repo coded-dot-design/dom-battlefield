@@ -288,6 +288,28 @@ export function generate(
   b.health = tiles.map(hitPoints);
   return b;
 }
+/** Move a side's HQ during planning: its own half, never water, a cleared 3x3 pad, and both
+ *  HQs plus the objective must stay connected. Returns false (and changes nothing) otherwise. */
+export function moveBase(b: Board, side: number, id: number) {
+  const x = id % b.cols,
+    y = Math.floor(id / b.cols),
+    half = b.cols / 2;
+  if (id < 0 || id >= b.tiles.length || x < 1 || y < 1 || x > b.cols - 2 || y > b.rows - 2) return false;
+  if (side === 0 ? x > half - 3 : x < half + 2) return false;
+  const pad: number[] = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) pad.push((y + dy) * b.cols + x + dx);
+  if (pad.some((c) => b.tiles[c] === "water")) return false;
+  const before = { tiles: pad.map((c) => b.tiles[c]!), health: pad.map((c) => b.health[c]!), base: b.bases[side]! };
+  for (const c of pad) (b.tiles[c] = "ground"), (b.health[c] = 0);
+  b.bases[side] = id;
+  if (!route(b, b.bases[0]!, b.bases[1]!).length || !route(b, id, b.center).length) {
+    pad.forEach((c, i) => ((b.tiles[c] = before.tiles[i]!), (b.health[c] = before.health[i]!)));
+    b.bases[side] = before.base;
+    return false;
+  }
+  b.revision++;
+  return true;
+}
 export function loadoutCost(roles: Role[]) {
   return roles.reduce((n, r) => n + ROLES[r].cost, 0);
 }

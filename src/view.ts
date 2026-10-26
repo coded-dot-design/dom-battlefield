@@ -101,6 +101,7 @@ export class View {
       const base = document.createElement("div");
       base.className = "bf-base";
       base.dataset.side = String(side);
+      if (side === s.side) base.classList.add("own");
       const p = point(s.board, s.board.bases[side]!);
       base.style.left = `${(p.x / s.board.cols) * 100}%`;
       base.style.top = `${(p.y / s.board.rows) * 100}%`;

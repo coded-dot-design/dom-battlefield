@@ -139,6 +139,48 @@ try {
       assert.match(await page.locator("#bf-strat-chip").textContent(), /^A · WEDGE · 4$/);
       await page.locator("#bf-strat-close").click();
       assert.equal(await page.locator("#bf-strategy").isVisible(), false);
+      // Planning: drag your HQ to another open spot on your half; the squad redeploys around it.
+      await page.evaluate(async () => {
+        const { point } = await import("/src/model.ts");
+        const b = window.battlefield.snapshot().board,
+          vp = document.querySelector("#bf-viewport"),
+          tile = document.querySelector(".bf-world").getBoundingClientRect().width / b.cols,
+          p = point(b, b.bases[0]);
+        vp.scrollLeft = Math.max(0, p.x * tile - vp.clientWidth / 2);
+        vp.scrollTop = Math.max(0, p.y * tile - vp.clientHeight / 2);
+        vp.dispatchEvent(new Event("scroll"));
+      });
+      await page.waitForTimeout(100);
+      const hqDrag = await page.evaluate(async () => {
+        const { moveBase, point } = await import("/src/model.ts");
+        const s = window.battlefield.snapshot(),
+          b = s.board,
+          world = document.querySelector(".bf-world").getBoundingClientRect(),
+          tile = world.width / b.cols,
+          from = point(b, b.bases[0]);
+        for (const [dx, dy] of [[2, -3], [2, 3], [1, -4], [1, 4], [3, 0]]) {
+          const id = Math.floor(from.y + dy) * b.cols + Math.floor(from.x + dx),
+            test = structuredClone(b);
+          if (!moveBase(test, 0, id)) continue;
+          const to = { x: world.left + ((id % b.cols) + 0.5) * tile, y: world.top + (Math.floor(id / b.cols) + 0.5) * tile },
+            hit = document.elementFromPoint(to.x, to.y);
+          const start = document.elementFromPoint(world.left + from.x * tile, world.top + from.y * tile);
+          if (!hit?.closest("#bf-viewport") || hit.closest(".bf-tank") || !start?.closest("#bf-viewport") || start.closest(".bf-tank")) continue;
+          return { id, from: { x: world.left + from.x * tile, y: world.top + from.y * tile }, to };
+        }
+        return null;
+      });
+      if (hqDrag) {
+        await page.mouse.move(hqDrag.from.x, hqDrag.from.y);
+        await page.mouse.down();
+        await page.mouse.move(hqDrag.to.x, hqDrag.to.y, { steps: 6 });
+        await page.mouse.up();
+        const after = await page.evaluate(() => window.battlefield.snapshot());
+        assert.equal(after.board.bases[0], hqDrag.id, "HQ moved");
+        const hq = { x: (hqDrag.id % after.board.cols) + 0.5, y: Math.floor(hqDrag.id / after.board.cols) + 0.5 };
+        assert.ok(Math.hypot(after.units[0].x - hq.x, after.units[0].y - hq.y) < 4, "squad redeployed at the new HQ");
+        assert.equal(await page.evaluate(() => window.battlefield.command.planning), true);
+      }
       // Plan step: every battle opens frozen, in command mode, with the first wingman selected.
       const cmd = () => page.evaluate(() => window.battlefield.command);
       assert.deepEqual(

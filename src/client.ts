@@ -11,6 +11,7 @@ import {
   point,
   commander,
   plot,
+  moveBase,
 } from "./model";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
@@ -45,6 +46,9 @@ try {
     if (Array.isArray(saved.roles) && saved.roles.length === 4 && saved.roles.every((r: string) => r in ROLES)) roles = saved.roles;
   }
 } catch {}
+/** A moved HQ belongs to one map: same location, layout, density, squad size and side. */
+let hqMove: { key: string; cell: number } | null = null;
+const mapKey = () => `${mission}:${seed}:${density}:${per}:${side}`;
 function remember() {
   try {
     localStorage.setItem(SETUP, JSON.stringify({ mission, side, density, seed, formation, per, roles }));
@@ -183,6 +187,7 @@ function preview() {
     cols = touchMap ? 26 + grow : Math.floor(viewport.clientWidth / unit),
     rows = touchMap ? 20 + grow / 2 : Math.floor(viewport.clientHeight / unit);
   const b = generate(cols, rows, mission, seed, density);
+  if (hqMove && hqMove.key === mapKey()) moveBase(b, side, hqMove.cell);
   state = createBattle(
     b,
     mission,
@@ -396,6 +401,15 @@ function plan(action: string) {
   }
   cmdPanel();
 }
+/** Move your HQ (planning only). The squad redeploys around it; routes start over. */
+function moveHq(id: number) {
+  const test = structuredClone(state.board);
+  if (!moveBase(test, side, id))
+    return say("Your HQ needs open ground on your half, off the water, with a way through to the enemy.");
+  hqMove = { key: mapKey(), cell: id };
+  preview();
+  say("HQ moved. Your squad redeployed around it.");
+}
 function startBattle() {
   if (!planning) return;
   if (loadoutCost(roles) > 12) return say("Over budget: downgrade a tank in Strategy first.");
@@ -414,6 +428,8 @@ function startBattle() {
 }
 /** The command panel: what mode you're in, which tank, and what its route is doing. */
 function cmdPanel() {
+  const root = $("#battlefield");
+  if (root.dataset.plan !== String(planning)) root.dataset.plan = String(planning);
   const panel = $("#bf-cmd");
   panel.hidden = !commanding;
   if (!commanding) return;
@@ -425,7 +441,9 @@ function cmdPanel() {
   text(
     "#bf-cmd-hint",
     !alive
-      ? "Tap one of your numbered tanks."
+      ? planning
+        ? "Tap one of your numbered tanks, or drag your HQ to move it."
+        : "Tap one of your numbered tanks."
       : !draft!.stops.length
         ? "Tap a square to send it there, or Attack HQ."
         : dirty()
@@ -433,7 +451,7 @@ function cmdPanel() {
             ? "Drag the line to bend it · drag the flag to move it · then Lock."
             : "A stop is blocked. Drag it to open ground."
           : planning
-            ? "Locked. Next tank, or Start battle."
+            ? "Locked. Next tank, drag your HQ, or Start battle."
             : "Locked. Switch back to Auto to fight.",
   );
   text("#bf-cmd-tank", alive ? `TANK ${tankNo(u!.id)} · ${u!.role.toUpperCase()} · ${Math.ceil(u!.hp)} HP` : "NO TANK SELECTED");
@@ -462,6 +480,7 @@ function cmdPanel() {
     n.disabled = n.dataset.plan !== "next" && !alive;
   $("#bf-start").hidden = !planning;
 }
+
 /** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
 function routeLines(): RouteLine[] {
   const out: RouteLine[] = [];
@@ -1249,7 +1268,7 @@ listen(viewport, "click", ((e: MouseEvent) => {
 listen(viewport, "contextmenu", (e) => e.preventDefault());
 /* Command gestures. Drag a stop or the flag to move it; drag the line to add a bend; drag open
    map to pan; tap a square to send the selected tank there. One layout read: the cached view. */
-let gesture: { id: number; kind: "tap" | "pan" | "stop"; stop: number; x: number; y: number; left: number; top: number } | null = null;
+let gesture: { id: number; kind: "tap" | "pan" | "stop" | "hq"; stop: number; x: number; y: number; left: number; top: number; moved?: boolean } | null = null;
 const cellAt = (e: PointerEvent) => {
   const p = view.location(e);
   return p.x < 0 || p.y < 0 || p.x >= state.board.cols || p.y >= state.board.rows ? -1 : cell(state.board, p);
@@ -1258,9 +1277,15 @@ listen(viewport, "pointerdown", ((e: PointerEvent) => {
   if (!playing || paused || pan || !commanding || gesture || e.button > 0) return;
   const t = e.target as Element;
   if (t.closest(".bf-tank")) return;
-  const g = { id: e.pointerId, kind: "tap" as "tap" | "pan" | "stop", stop: -1, x: e.clientX, y: e.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
+  const g = { id: e.pointerId, kind: "tap" as "tap" | "pan" | "stop" | "hq", stop: -1, x: e.clientX, y: e.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
+  // Planning: press on your HQ and drag it somewhere else on your half.
+  const at = view.location(e),
+    base = point(state.board, state.board.bases[side]!);
+  if (planning && Math.hypot(at.x - base.x, at.y - base.y) < 1.6) g.kind = "hq";
   const handle = t.closest("[data-stop]");
-  if (draft && handle) (g.kind = "stop"), (g.stop = Number(handle.getAttribute("data-stop")));
+  if (g.kind === "hq") {
+    // handled on release
+  } else if (draft && handle) (g.kind = "stop"), (g.stop = Number(handle.getAttribute("data-stop")));
   else if (draft && t.closest(".bf-route-hit")) {
     // Bend: insert a stop on the leg nearest the finger, then drag it.
     const c = cellAt(e),
@@ -1298,6 +1323,12 @@ listen(viewport, "pointermove", ((e: PointerEvent) => {
     cmdPanel();
     return;
   }
+  if (gesture.kind === "hq") {
+    if (Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 8) gesture.moved = true;
+    const c = cellAt(e);
+    if (gesture.moved && c >= 0) view.highlight(c);
+    return;
+  }
   if (gesture.kind === "tap" && Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 8) {
     gesture.kind = "pan";
     follow = false;
@@ -1314,7 +1345,10 @@ for (const type of ["pointerup", "pointercancel"])
     const g = gesture;
     gesture = null;
     view.highlight(-1);
-    if (type === "pointerup" && g.kind === "tap") {
+    if (type === "pointerup" && g.kind === "hq" && g.moved) {
+      const c = cellAt(e);
+      if (c >= 0) moveHq(c);
+    } else if (type === "pointerup" && (g.kind === "tap" || g.kind === "hq")) {
       const c = cellAt(e);
       if (c >= 0) setDest(c);
     }

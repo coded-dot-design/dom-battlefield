@@ -16,6 +16,7 @@ import {
   clearShot,
   speedOf,
   plot,
+  moveBase,
 } from "../src/model.ts";
 const roles = ["medium", "scout", "medium", "heavy"];
 const idle = { x: 0, y: 0, fire: false, aim: null };
@@ -186,6 +187,18 @@ test("damaged tanks slow down but never stop", () => {
   assert.ok(ROLES.heavy.speed < ROLES.medium.speed && ROLES.medium.speed < ROLES.scout.speed);
 });
 import { commander, REPAIR, SQUAD_SIZES } from "../src/model.ts";
+test("an HQ can move within its own half, never onto water or into a dead end", () => {
+  const b = generate(30, 20, 3, 4);
+  const mid = Math.floor(b.rows / 2);
+  assert.equal(moveBase(b, 0, mid * b.cols + 25), false, "not on the enemy half");
+  assert.equal(moveBase(b, 0, mid * b.cols + 15), false, "not on the canal");
+  assert.ok(moveBase(b, 0, 4 * b.cols + 5));
+  assert.equal(b.bases[0], 4 * b.cols + 5);
+  assert.equal(b.tiles[4 * b.cols + 5], "ground");
+  assert.ok(route(b, b.bases[0], b.bases[1]).length);
+  const s = createBattle(b, 3, 0, roles);
+  assert.ok(Math.hypot(s.units[0].x - 5.5, s.units[0].y - 4.5) < 4, "squad deploys at the new HQ");
+});
 test("terrain density makes maps lighter or heavier", () => {
   const solidCount = (b) => b.tiles.filter((t) => t !== "ground" && t !== "road").length;
   for (let mission = 0; mission < 4; mission++) {

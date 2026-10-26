@@ -2748,3 +2748,33 @@ circle.bf-grab[data-stop] {
   fill: none;
   stroke: currentColor;
 }
+/* Planning: your HQ can be dragged to a new spot on your half. */
+[data-plan="true"] .bf-base.own {
+  cursor: grab;
+  z-index: 4;
+  animation: bf-hq 1.2s steps(2) infinite;
+}
+[data-plan="true"] .bf-base.own::after {
+  content: "DRAG TO MOVE";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 4px);
+  translate: -50% 0;
+  padding: 2px 5px;
+  font: 800 8px/1.2 ui-monospace, monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  color: #07060f;
+  background: var(--team-a);
+  border-radius: 3px;
+}
+@keyframes bf-hq {
+  50% {
+    border-style: solid;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-plan="true"] .bf-base.own {
+    animation: none;
+  }
+}

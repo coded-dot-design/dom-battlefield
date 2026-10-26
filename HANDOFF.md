@@ -46,6 +46,8 @@ and it is the special-edition cartridge 02 on the shelf. Ecosystem context is in
   `localStorage["dom-battlefield:setup"]`. The Strategy panel (`#bf-strategy`, fixed, outside the
   stage so it layers over the rails) edits it during the plan step; `preview()` rebuilds while
   `planning`. `?debug` adds `battlefield.end(won)` for after-action tests.
+- Moving the HQ (planning): `moveBase()` in the model validates and clears a 3x3 pad; the
+  client keeps `hqMove` keyed to the map (`mapKey()`) and re-applies it in `preview()`.
 - Button tips (`coach()`) place only after the `[data-tip]` targets stop moving for 8 frames; any
   control can set `data-tip-more` (tap-to-expand detail) and `data-tip-at` (label side).
 
