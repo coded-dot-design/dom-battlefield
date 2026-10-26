@@ -10,6 +10,13 @@ const MINI: Record<string, string> = {
   fence: "#ffe14d",
   car: "#ffe14d",
 };
+/** Minimap colours follow each operation's climate (see the terrain themes in style.css). */
+const MINI_BY: Record<string, Record<string, string>> = {
+  hedge: { hedge: "#39ffb0", house: "#7be0a8", rock: "#2b9a63", fence: "#7aa356", car: "#3d6b4f" },
+  sand: { rock: "#ff8a3c", fence: "#ffb547", car: "#e07a2c", house: "#ffb547", rubble: "#5a2d12" },
+  snow: { rock: "#bfe9ff", house: "#7c8cff", fence: "#b9a8ff", car: "#9fd8ff", water: "#3a6fd8", rubble: "#2b3170" },
+  river: { house: "#ff2e88", water: "#19c6d8", car: "#ffe14d", fence: "#ff2e88", rubble: "#2a2a3c" },
+};
 /** A route as drawn: square ids from the tank's square to its destination, plus its stops. */
 export interface RouteLine {
   id: number;
@@ -50,6 +57,8 @@ export class View {
   tile = 36;
   revision = -1;
   routeLayer: SVGSVGElement;
+  hintEl: HTMLElement;
+  hintKey = "";
   routeKey = "";
   target = -1;
   paused?: boolean;
@@ -76,6 +85,7 @@ export class View {
     this.world = document.createElement("div");
     this.world.className = "bf-world";
     this.world.dataset.terrain = MISSIONS[s.mission]!.terrain;
+    viewport.dataset.terrain = this.world.dataset.terrain;
     viewport.replaceChildren(this.world);
     this.mini = document.querySelector<SVGSVGElement>("#bf-minimap")!;
     this.mini.replaceChildren();
@@ -151,6 +161,10 @@ export class View {
     this.routeLayer.setAttribute("preserveAspectRatio", "none");
     this.routeLayer.setAttribute("aria-hidden", "true");
     this.world.append(this.routeLayer);
+    this.hintEl = document.createElement("b");
+    this.hintEl.className = "bf-hint";
+    this.hintEl.hidden = true;
+    this.world.append(this.hintEl);
     this.reticle = document.createElement("i");
     this.reticle.className = "bf-reticle";
     this.reticle.hidden = true;
@@ -232,7 +246,7 @@ export class View {
         r.setAttribute("y", String(Math.floor(i / b.cols)));
         r.setAttribute("width", "1");
         r.setAttribute("height", "1");
-        r.setAttribute("fill", MINI[t] ?? "#ff2e88");
+        r.setAttribute("fill", MINI_BY[MISSIONS[s.mission]!.terrain]?.[t] ?? MINI[t] ?? "#ff2e88");
         map.append(r);
       });
       b.bases.forEach((id, side) => {
@@ -403,6 +417,16 @@ export class View {
           el("circle", { class: "bf-stop", cx: sx!, cy: sy!, r: ".3", "data-stop": String(i) });
         });
     }
+  }
+  /** A short instruction that rides above the selected tank (command mode). */
+  hint(text: string, p: { x: number; y: number } | null) {
+    const key = p && text ? `${text}|${(p.x * this.tile).toFixed(0)},${(p.y * this.tile).toFixed(0)}` : "";
+    if (key === this.hintKey) return;
+    this.hintKey = key;
+    this.hintEl.hidden = !key;
+    if (!key) return;
+    if (this.hintEl.textContent !== text) this.hintEl.textContent = text;
+    this.hintEl.style.transform = `translate(${(p!.x * this.tile).toFixed(0)}px,${(p!.y * this.tile - 30).toFixed(0)}px) translateX(-50%)`;
   }
   /** Aim reticle: auto (dashed, follows the auto target), unit lock, or square lock. */
   aim(mode: string, p: { x: number; y: number } | null) {

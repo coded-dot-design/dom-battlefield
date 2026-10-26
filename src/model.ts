@@ -104,12 +104,12 @@ export const MISSIONS = [
   {
     id: "river",
     name: "Twin bridges",
-    region: "RIVER CROSSING / TRAINING DRILL",
+    region: "RIVER CITY / TRAINING DRILL",
     terrain: "river",
     objective: "capture",
     brief:
-      "Cross either bridge and capture the opposing headquarters. Protect your own approach.",
-    tip: "Water blocks movement and shells. Use the two bridges; send a wingman to cover the second.",
+      "A canal splits the city. Cross either bridge, work through the streets and capture the opposing headquarters.",
+    tip: "Towers block shells until they fall; streets are lanes. Send a wingman over the second bridge.",
     source: "",
   },
 ] as const;
@@ -219,7 +219,10 @@ export function generate(
   rows: number,
   mission: number,
   seed: number,
+  /** Obstacle density: 0.6 light, 1 normal, 1.45 heavy. Roads and deployment zones are kept clear. */
+  density = 1,
 ): Board {
+  const d = Math.max(0.4, Math.min(1.6, density));
   cols = Math.max(18, Math.min(48, Math.floor(cols)));
   rows = Math.max(14, Math.min(30, Math.floor(rows)));
   const random = rng(seed),
@@ -242,20 +245,22 @@ export function generate(
       const r = random();
       let t: Tile = "ground";
       if (mission === 0) {
-        if ((x % 6 === 0 || y % 6 === 0) && r < 0.78) t = "hedge";
-        else if (r < 0.07) t = "house";
+        if ((x % 6 === 0 || y % 6 === 0) && r < Math.min(0.95, 0.78 * d)) t = "hedge";
+        else if (r < 0.07 * d) t = "house";
       }
       if (mission === 1) {
-        if (r < 0.11) t = "rock";
-        else if (r < 0.15) t = "fence";
+        if (r < 0.11 * d) t = "rock";
+        else if (r < 0.15 * d) t = "fence";
       }
       if (mission === 2) {
-        if (r < 0.12) t = "house";
-        else if (r < 0.19) t = "rock";
+        if (r < 0.12 * d) t = "house";
+        else if (r < 0.19 * d) t = "rock";
       }
       if (mission === 3) {
+        // River city: a canal down the middle and city blocks between a grid of streets.
         if (Math.abs(x - Math.floor(cols / 2)) <= 1) t = "water";
-        else if (r < 0.08) t = "house";
+        else if (x % 4 !== 1 && y % 4 !== 1 && r < 0.3 * d) t = "house";
+        else if (r < 0.025 * d) t = "car";
       }
       tiles[y * cols + x] = t;
     }

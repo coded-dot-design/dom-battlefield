@@ -26,9 +26,30 @@ const viewport = $("#bf-viewport"),
 let mission = 0,
   side = 0,
   seed = 1207,
+  density = 1,
   formation = "wedge",
   per = 4,
   roles: Role[] = ["medium", "scout", "medium", "heavy"];
+/* Setup sticks between visits: location, terrain and the whole strategy (side, formation, squad
+   size, loadout). Restarting is just: pick a place, then Plan strategy or Quick battle. */
+const SETUP = "dom-battlefield:setup";
+try {
+  const saved = JSON.parse(localStorage.getItem(SETUP) || "null");
+  if (saved) {
+    if (saved.mission >= 0 && saved.mission < 4) mission = saved.mission;
+    if (saved.side === 0 || saved.side === 1) side = saved.side;
+    if ([0.6, 1, 1.45].includes(saved.density)) density = saved.density;
+    if (Number.isInteger(saved.seed)) seed = saved.seed;
+    if (["wedge", "line", "column"].includes(saved.formation)) formation = saved.formation;
+    if ([4, 8, 12].includes(saved.per)) per = saved.per;
+    if (Array.isArray(saved.roles) && saved.roles.length === 4 && saved.roles.every((r: string) => r in ROLES)) roles = saved.roles;
+  }
+} catch {}
+function remember() {
+  try {
+    localStorage.setItem(SETUP, JSON.stringify({ mission, side, density, seed, formation, per, roles }));
+  } catch {}
+}
 let state: Battle,
   view: View,
   playing = false,
@@ -151,7 +172,8 @@ function fit() {
   view.render(selected, paused, reduced.matches);
 }
 function preview() {
-  if (playing) return;
+  // Setup, or a strategy change during the plan step (same seed, so the same ground).
+  if (playing && !planning) return;
   view?.destroy();
   $("#bf-roster").replaceChildren();
   // Bigger squads get a bigger field; the camera already scrolls on touch.
@@ -160,7 +182,7 @@ function preview() {
     unit = per === 12 ? 28 : per === 8 ? 32 : 36,
     cols = touchMap ? 26 + grow : Math.floor(viewport.clientWidth / unit),
     rows = touchMap ? 20 + grow / 2 : Math.floor(viewport.clientHeight / unit);
-  const b = generate(cols, rows, mission, seed);
+  const b = generate(cols, rows, mission, seed, density);
   state = createBattle(
     b,
     mission,
@@ -192,7 +214,20 @@ function preview() {
       : MISSIONS[mission]!.objective === "hold"
         ? "HOLD CROSSROADS / 45s"
         : "ELIMINATE OPPOSING PLATOON";
+  const sum = `${side ? "B · CORAL" : "A · MINT"} · ${formation.toUpperCase()} · ${per} TANKS · ${loadoutCost(roles)}/12`;
+  text("#bf-strat-chip", `${side ? "B" : "A"} · ${formation.toUpperCase()} · ${per}`);
+  text("#bf-strat-summary", `STRATEGY · ${sum} · edit it while you plan`);
+  remember();
   updateHUD();
+  if (planning) {
+    selected = -1;
+    draft = null;
+    view.resize();
+    view.center();
+    nextTank();
+    cmdPanel();
+    $<HTMLButtonElement>("#bf-start").disabled = loadoutCost(roles) > 12;
+  }
 }
 function selectUnit(id: number) {
   if (!playing || paused || pan) return;
@@ -210,6 +245,9 @@ function selectUnit(id: number) {
     }
     return;
   }
+  if (draft && draft.id !== id) commitDraft();
+  // Tapping one of your wingmen mid-battle opens Command on it: see its route, change it.
+  if (!commanding && !planning && u.id !== commander(state).id) setCommand(true, false);
   selected = u.id === commander(state).id ? -1 : id;
   draft = selected < 0 ? null : { id: selected, stops: [...u.route] };
   $("#bf-order-label").textContent =
@@ -276,8 +314,9 @@ function setDrawer(open: boolean) {
   $("#bf-squad").setAttribute("aria-expanded", String(open));
 }
 /** Command mode on/off. Your gun stops and time halves, so directing the squad is a risk. */
-function setCommand(on: boolean) {
+function setCommand(on: boolean, pick = true) {
   if (planning && !on) return;
+  if (!on) commitDraft();
   commanding = on;
   picking = false;
   if (!on) {
@@ -287,7 +326,7 @@ function setCommand(on: boolean) {
     $("#bf-order-label").textContent = "SQUAD ORDERS";
     $("#bf-cmd").hidden = true;
   } else {
-    if (selected < 0) nextTank();
+    if (selected < 0 && pick) nextTank();
     say(planning ? "Plan your attack: tap a tank, then a square. Lock each route, then Start battle." : "Command mode: half speed, your gun is off. Direct a tank, then switch back to Auto.");
   }
   aimButtons();
@@ -322,6 +361,13 @@ function setDest(id: number) {
   if (draft.stops.length === 1 && before.length === 0) say("Route drawn. Drag the line to bend it, then Lock.");
   cmdPanel();
 }
+/** Moving on (another tank, Start, leaving Command) never throws a drawn route away. */
+function commitDraft() {
+  if (draft && dirty() && draft.stops.length && draftCells()) {
+    lockRoute();
+    say(`Tank ${tankNo(draft.id)}: route locked.`);
+  }
+}
 function lockRoute() {
   if (!draft || !draft.stops.length || !dirty()) return;
   if (command(state, { type: "route", id: draft.id, cells: draft.stops })) {
@@ -352,7 +398,10 @@ function plan(action: string) {
 }
 function startBattle() {
   if (!planning) return;
+  if (loadoutCost(roles) > 12) return say("Over budget: downgrade a tank in Strategy first.");
+  commitDraft();
   planning = false;
+  strategy(false);
   $("#bf-start").hidden = true;
   // Squad orders go to the whole squad again once the battle starts.
   selected = -1;
@@ -634,7 +683,7 @@ function keepAwake(on: boolean) {
   } else if (!wake && nav.wakeLock && document.visibilityState === "visible")
     nav.wakeLock.request("screen").then((w) => (wake = w), () => {});
 }
-function deploy() {
+function deploy(quick = false) {
   if (playing) return;
   if (loadoutCost(roles) > 12) return;
   audio.unlock();
@@ -650,10 +699,10 @@ function deploy() {
   follow = true;
   setAim({ mode: coarse.matches ? "auto" : "pointer" });
   $("#bf-order-label").textContent = "SQUAD ORDERS";
-  // Every battle opens with a frozen planning step in command mode.
-  planning = true;
+  // Plan strategy opens a frozen planning step in command mode; Quick battle skips it.
+  planning = !quick;
   draft = null;
-  setCommand(true);
+  setCommand(!quick);
   setup.hidden = true;
   $("#bf-result").hidden = true;
   $("#bf-controls").hidden = false;
@@ -663,7 +712,7 @@ function deploy() {
   accumulator = 0;
   view.resize();
   view.center();
-  say("Plan your attack: tap a tank, then a square. Lock each route, then Start battle.");
+  say(quick ? "Battle started. Tap one of your tanks any time to direct it." : "Plan your attack: tap a tank, then a square. Lock each route, then Start battle.");
   frame = requestAnimationFrame(loop);
   keepAwake(true);
   // Check the gate once the fullscreen/orientation request settles.
@@ -687,6 +736,7 @@ function reset() {
   selected = -1;
   planning = commanding = false;
   draft = null;
+  strategy(false);
   aimButtons();
   cmdPanel();
   clearInput();
@@ -793,6 +843,11 @@ function loop(now: number) {
     if (follow && !drag && !pan && commander(state).hp > 0) view.follow(commander(state));
     view.render(selected, paused, reduced.matches);
     view.routes(routeLines());
+    const hintFor = commanding && draft ? state.units[draft.id] : undefined;
+    view.hint(
+      hintFor && hintFor.hp > 0 ? (!draft!.stops.length ? "TAP WHERE IT GOES" : dirty() ? "DRAG TO BEND · LOCK ✓" : "") : "",
+      hintFor ?? null,
+    );
     const lead = commander(state),
       auto = state.units.find((u) => u.id === lead.target && u.hp > 0);
     view.aim(aim.mode, aim.mode === "auto" ? (auto ?? null) : aim.mode === "pointer" ? null : input.aim);
@@ -805,13 +860,18 @@ function loop(now: number) {
       audio.play(state.winner === side ? "won" : "gameover");
       clearInput();
       lease.setActive(false);
-      $("#bf-result").hidden = false;
-      $("#bf-result-title").textContent =
-        state.winner === side ? "OPERATION COMPLETE" : "PLATOON LOST";
-      $("#bf-result-copy").textContent =
-        state.winner === side
-          ? "Your platoon secured the objective. Try the other side or a different formation."
-          : "Regroup, adjust your loadout, and try another approach.";
+      const won = state.winner === side,
+        result = $("#bf-result");
+      result.hidden = false;
+      result.classList.toggle("won", won);
+      $("#bf-result-kicker").textContent = won ? "STAGE CLEAR" : "INSERT COIN";
+      $("#bf-result-title").textContent = won ? "MISSION COMPLETE" : "GAME OVER";
+      $("#bf-result-copy").textContent = won
+        ? "Your platoon took the objective. Try the other side, heavier terrain or a new plan."
+        : "Your platoon is down. Regroup, rethink the routes, and go again.";
+      $("#bf-r-time").textContent = $("#bf-clock").textContent!;
+      $("#bf-r-kills").textContent = String(state.units.filter((u) => u.side !== side && u.hp <= 0).length);
+      $("#bf-r-lost").textContent = String(state.units.filter((u) => u.side === side && u.hp <= 0).length);
       updateHUD();
       return;
     }
@@ -879,10 +939,43 @@ listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
   roles[Number(b.closest<HTMLElement>("[data-slot]")!.dataset.slot)] = b.dataset.role as Role;
   preview();
 }) as EventListener);
-listen($("#bf-deploy"), "click", deploy);
+listen($("#bf-deploy"), "click", () => deploy());
+listen($("#bf-quick"), "click", () => deploy(true));
+picker("#bf-density", "density", (v) => (density = Number(v)));
+// Random terrain: a new layout at a random density (light, normal or heavy).
 listen($("#bf-reroll"), "click", () => {
-  seed++;
+  seed = 1 + Math.floor(Math.random() * 1e6);
+  density = [0.6, 1, 1.45][Math.floor(Math.random() * 3)]!;
+  pressed("#bf-density", "density", String(density));
   preview();
+});
+function pressed(sel: string, attr: string, value: string) {
+  for (const n of document.querySelectorAll<HTMLElement>(`${sel} [data-${attr}]`))
+    n.setAttribute("aria-pressed", String(n.dataset[attr] === value));
+}
+function strategy(open: boolean) {
+  $("#bf-strategy").hidden = !open;
+  $("#bf-strat-toggle").setAttribute("aria-expanded", String(open));
+}
+listen($("#bf-strat-toggle"), "click", () => strategy($("#bf-strategy").hidden === true));
+listen($("#bf-strat-close"), "click", () => strategy(false));
+// Randomize: side, formation, squad size and a loadout that fits the 12-point budget.
+listen($("#bf-randomize"), "click", () => {
+  const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)]!;
+  side = pick([0, 1]);
+  formation = pick(["wedge", "line", "column"]);
+  per = pick([4, 8, 12]);
+  do roles = [0, 1, 2, 3].map(() => pick(["scout", "medium", "heavy"] as Role[]));
+  while (loadoutCost(roles) > 12);
+  pressed("#bf-side", "side", String(side));
+  pressed("#bf-formation", "formation", formation);
+  pressed("#bf-size", "size", String(per));
+  preview();
+  say(`Strategy: ${side ? "B" : "A"} side, ${formation}, ${per} tanks a side.`);
+});
+listen($("#bf-rematch"), "click", () => {
+  reset();
+  deploy();
 });
 listen($("#bf-restart"), "click", reset);
 listen($("#bf-new-operation"), "click", reset);
@@ -1187,7 +1280,9 @@ listen(viewport, "pointerdown", ((e: PointerEvent) => {
     else (g.kind = "stop"), (g.stop = leg);
   }
   gesture = g;
-  viewport.setPointerCapture(e.pointerId);
+  try {
+    viewport.setPointerCapture(e.pointerId);
+  } catch {}
   e.preventDefault();
 }) as EventListener);
 listen(viewport, "pointermove", ((e: PointerEvent) => {
@@ -1292,6 +1387,11 @@ listen(window, "pagehide", () => {
   view.destroy();
   abort.abort();
 });
+// Show the remembered setup on its buttons.
+pressed("#bf-side", "side", String(side));
+pressed("#bf-formation", "formation", formation);
+pressed("#bf-size", "size", String(per));
+pressed("#bf-density", "density", String(density));
 preview();
 installCard();
 // Small read-only diagnostic contract for lifecycle and command tests.
@@ -1314,6 +1414,12 @@ Object.defineProperty(window, "battlefield", {
     },
     get aim() {
       return { ...aim, picking };
+    },
+    /** Test-only (?debug): end the battle now to check the after-action screen. */
+    end(won: boolean) {
+      if (!location.search.includes("debug") || !playing) return;
+      for (const u of state.units) if (u.side === (won ? 1 - side : side) && (won || u.id === commander(state).id)) u.hp = 0;
+      planning = false;
     },
     get command() {
       return { on: commanding, planning, selected, draft: draft && { ...draft, stops: [...draft.stops] } };

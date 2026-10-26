@@ -47,7 +47,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 36KB gzip budget, checked by `npm run size` (0.7.0: ~33.8KB; it was 30KB until command mode).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 40KB gzip budget, checked by `npm run size` (0.8.0: ~37.5KB; 30KB until 0.7.0, 36KB in 0.7.x).
 
 ## Boundaries
 
@@ -65,6 +65,14 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.8.0 — Climates, a simpler setup, GAME OVER
+
+- **Terrain themes:** each operation has its own climate in the neon key. Hedgerow: night fields, rounded green hedges, stone farms. Desert: dusk dunes, sandstone mesas, barbed wire, burnt wrecks. Winter: ice blues and purples, snow-roofed chalets, ice crystals. Twin bridges is now a river city: a street grid of lit towers, cars with headlights and a canal. The minimap follows each palette, light and dark.
+- **Two-step setup:** 01 Location, 02 Terrain (Light / Normal / Heavy obstacles, or Random for a new layout at a random density), then **Plan strategy** or **Quick battle**. Side, formation, squad size and loadout moved into a **Strategy** slide-out during the plan step, with Randomize; changes rebuild the battle on the same ground. Everything is remembered for next time.
+- **Directing, smoother:** tap one of your tanks mid-battle to open Command on it; a hint rides above the selected tank (TAP WHERE IT GOES, then DRAG TO BEND · LOCK ✓); Lock pulses while there is a draft; a drawn route is locked automatically when you move on (another tank, Start, leaving Command).
+- **After action:** an arcade sticker. GAME OVER in pink (INSERT COIN) or MISSION COMPLETE in green, with time, kills and losses, **Start another campaign** and **Rematch**.
+- Size budget 36KB → 40KB gzip.
 
 ### 0.7.1 — Header clears the status bar
 

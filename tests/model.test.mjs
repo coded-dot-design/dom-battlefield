@@ -26,11 +26,12 @@ test("all operations and viewport sizes have reachable objectives and clear depl
       [26, 20],
       [40, 26],
     ])
-      for (let seed = 1; seed <= 12; seed++) {
-        const b = generate(w, h, mission, seed);
-        assert.ok(route(b, b.bases[0], b.bases[1]).length);
+      for (let seed = 1; seed <= 12; seed++)
+      for (const density of [0.6, 1, 1.45]) {
+        const b = generate(w, h, mission, seed, density);
+        assert.ok(route(b, b.bases[0], b.bases[1]).length, `${mission}/${density}: HQ to HQ`);
         assert.ok(route(b, b.bases[0], b.center).length);
-        assert.deepEqual(b, generate(w, h, mission, seed));
+        assert.deepEqual(b, generate(w, h, mission, seed, density));
         for (const formation of ["wedge", "line", "column"])
           for (const side of [0, 1]) {
             const s = createBattle(b, mission, side, roles, formation);
@@ -185,6 +186,14 @@ test("damaged tanks slow down but never stop", () => {
   assert.ok(ROLES.heavy.speed < ROLES.medium.speed && ROLES.medium.speed < ROLES.scout.speed);
 });
 import { commander, REPAIR, SQUAD_SIZES } from "../src/model.ts";
+test("terrain density makes maps lighter or heavier", () => {
+  const solidCount = (b) => b.tiles.filter((t) => t !== "ground" && t !== "road").length;
+  for (let mission = 0; mission < 4; mission++) {
+    const light = solidCount(generate(30, 20, mission, 5, 0.6)),
+      heavy = solidCount(generate(30, 20, mission, 5, 1.45));
+    assert.ok(heavy > light, `mission ${mission}: ${light} < ${heavy}`);
+  }
+});
 test("larger squads deploy on open ground with unique ids and a command tank", () => {
   for (const per of SQUAD_SIZES)
     for (let mission = 0; mission < 4; mission++)

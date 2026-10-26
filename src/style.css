@@ -356,16 +356,167 @@ h1 {
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: var(--tile) var(--tile);
 }
+/* ---------- Terrain themes ----------
+   Each operation has its own climate in the same neon key: tiles read their colours from these
+   variables, and each [data-terrain] sets them (dark first, light below). Terrain stays quieter
+   than the tanks. */
 .bf-world {
   --grid-line: #ffffff08;
   --road: #0e0d22;
+  --water: #0a1430;
+  --water-edge: #1f3a6655;
+  --hedge: #0f1d2b;
+  --hedge-edge: #22465a;
+  --hedge-r: 0;
+  --house: #1a1430;
+  --house-edge: #3c2b55;
+  --house-mark: #3c2b55;
+  --house-top: none;
+  --rock: #231c40;
+  --fence: #4a4330;
+  --car: #17132c;
+  --car-edge: #4a4330;
+  --car-glow: none;
+  --rubble: #2c2448;
+  --texture: none;
+}
+/* Hedgerow breach: Normandy fields at night. Rounded green hedges, stone farms. */
+[data-terrain="hedge"] {
+  --map: #06110c;
+  --grid-line: #39ffb00a;
+  --road: #0c1d14;
+  --hedge: #0f3524;
+  --hedge-edge: #2b9a63;
+  --hedge-r: 40%;
+  --house: #16261c;
+  --house-edge: #4f8a66;
+  --house-mark: #7be0a8;
+  --rock: #1d3a2b;
+  --fence: #7aa356;
+  --car: #102018;
+  --car-edge: #3d6b4f;
+  --rubble: #2a4a37;
+}
+/* Desert spearhead: dusk dunes. Sandstone mesas, barbed wire, burnt wrecks. */
+[data-terrain="sand"] {
+  --map: #160b05;
+  --grid-line: #ff9a3c0b;
+  --road: #2a160a;
+  --house: #3a200f;
+  --house-edge: #c0702c;
+  --house-mark: #ffb547;
+  --rock: linear-gradient(160deg, #d0702a, #6a2f10 55%, #3a1808);
+  --fence: #ffb547;
+  --car: #2b160a;
+  --car-edge: #e07a2c;
+  --car-glow: 0 0 6px #ff6a1a66;
+  --rubble: #5a2d12;
+  --texture: repeating-linear-gradient(165deg, transparent 0 44px, #ff9a3c0a 44px 52px);
+}
+/* Winter crossroads: a snowed-in village. Chalets with snow roofs, ice crystals. */
+[data-terrain="snow"] {
+  --map: #0a0f26;
+  --grid-line: #9fd8ff0c;
+  --road: #151c40;
+  --water: #123462;
+  --house: #1b2054;
+  --house-edge: #7c8cff;
+  --house-mark: #b9a8ff;
+  --house-top: inset 0 3px 0 #e6f4ff;
+  --rock: linear-gradient(135deg, #e2f6ff, #7f8cff 55%, #3b2f96);
+  --fence: #b9a8ff;
+  --car: #1a2050;
+  --car-edge: #9fd8ff;
+  --car-glow: inset 0 2px 0 #e6f4ff;
+  --rubble: #2b3170;
+  --texture: radial-gradient(#e6f4ff22 1px, transparent 1.5px) 0 0 / 23px 19px;
+}
+/* Twin bridges: a river city. Street grid, lit towers, cars with headlights, a canal. */
+[data-terrain="river"] {
+  --map: #0b0b14;
+  --grid-line: #ffffff06;
+  --road: #13131f linear-gradient(90deg, #ffe14d55 50%, transparent 0) center / 8px 2px repeat-x;
+  --water: #05262f;
+  --water-edge: #19f0ff40;
+  --house: #14142a radial-gradient(#ffd27acc 0.9px, transparent 1.3px) 2px 2px / 5px 5px;
+  --house-edge: #ff2e8888;
+  --house-mark: #19f0ff;
+  --rock: #232336;
+  --fence: #ff2e88;
+  --car: #1f1a36;
+  --car-edge: #8a7bd6;
+  --car-glow: 0 0 7px #ffe14d88;
+  --rubble: #2a2a3c;
 }
 [data-theme="light"] .bf-world {
   --grid-line: #3b31700f;
   --road: #dcdcf0;
-}
-[data-theme="light"] .bf-world {
   --map: #e4e6f7;
+  --water: #c9d8f2;
+  --hedge: #d3dcec;
+  --hedge-edge: #aab9d6;
+  --house: #dcd6ee;
+  --house-edge: #b5a9d8;
+  --house-mark: #c4bbe2;
+  --rock: #c4bbe2;
+  --car: #e8e4f6;
+  --rubble: #cdc6e6;
+}
+[data-theme="light"] [data-terrain="hedge"] {
+  --map: #e4f3e9;
+  --road: #d2e6d8;
+  --hedge: #b9e3c9;
+  --hedge-edge: #5fbf8a;
+  --house: #dcebe1;
+  --house-edge: #8cbf9f;
+  --house-mark: #4fae7a;
+  --rock: #b8d3c2;
+}
+[data-theme="light"] [data-terrain="sand"] {
+  --map: #f7e8d3;
+  --road: #ecd5b6;
+  --house: #f0d7b4;
+  --house-edge: #c98b4a;
+  --house-mark: #e08a2c;
+  --rock: linear-gradient(160deg, #f0a35c, #c26a2c 60%, #8a4316);
+  --fence: #c07a1a;
+  --car: #e9cfae;
+  --car-edge: #b86a2c;
+  --rubble: #e2c39c;
+  --texture: repeating-linear-gradient(165deg, transparent 0 44px, #c26a2c12 44px 52px);
+}
+[data-theme="light"] [data-terrain="snow"] {
+  --map: #eef3ff;
+  --road: #dfe6fb;
+  --water: #c7dafa;
+  --house: #dfe0fb;
+  --house-edge: #8a96e8;
+  --house-mark: #8f7de8;
+  --house-top: inset 0 3px 0 #ffffff;
+  --rock: linear-gradient(135deg, #ffffff, #b9c4ff 55%, #7f74e0);
+  --fence: #8f7de8;
+  --car: #e3e6fb;
+  --car-edge: #8aa8e8;
+  --rubble: #cfd3f5;
+  --texture: radial-gradient(#7f8cff33 1px, transparent 1.5px) 0 0 / 23px 19px;
+}
+[data-theme="light"] [data-terrain="river"] {
+  --map: #e7e7ef;
+  --road: #d6d6e2 linear-gradient(90deg, #c9a21a88 50%, transparent 0) center / 8px 2px repeat-x;
+  --water: #bfe6ec;
+  --house: #d4d4e6 radial-gradient(#8a7bd6aa 0.9px, transparent 1.3px) 2px 2px / 5px 5px;
+  --house-edge: #c95a8f;
+  --house-mark: #1aa8b8;
+  --car: #dcdaf0;
+  --car-edge: #8a7bd6;
+  --car-glow: 0 0 6px #c9a21a66;
+}
+.bf-world {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    var(--texture);
+  background-size: var(--tile) var(--tile), var(--tile) var(--tile), auto;
 }
 .bf-tile {
   position: relative;
@@ -375,69 +526,70 @@ h1 {
   position: absolute;
   pointer-events: none;
 }
-/* Terrain is deliberately quiet: flat, low-contrast shapes that sit back so tanks pop. */
 .bf-tile[data-kind="road"] {
   background: var(--road);
 }
 .bf-tile[data-kind="water"] {
-  background: #0a1430;
-  box-shadow: inset 0 0 0 1px #1f3a6655;
+  background: var(--water);
+  box-shadow: inset 0 0 0 1px var(--water-edge);
 }
 .bf-tile[data-kind="hedge"]::before {
   content: "";
   inset: 12%;
-  background: #0f1d2b;
-  border: 1px solid #22465a;
+  background: var(--hedge);
+  border: 1px solid var(--hedge-edge);
+  border-radius: var(--hedge-r);
 }
 .bf-tile[data-kind="house"]::before {
   content: "";
   inset: 8%;
-  background: #1a1430;
-  border: 1px solid #3c2b55;
+  background: var(--house);
+  border: 1px solid var(--house-edge);
+  box-shadow: var(--house-top);
 }
 .bf-tile[data-kind="house"]::after {
   content: "";
   inset: 34% 34%;
-  background: #3c2b55;
+  background: var(--house-mark);
+}
+.bf-world[data-terrain="river"] .bf-tile[data-kind="house"]::after {
+  inset: 6% 40% auto auto;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  box-shadow: 0 0 5px var(--house-mark);
 }
 .bf-tile[data-kind="rock"]::before {
   content: "";
   inset: 10%;
-  background: #231c40;
+  background: var(--rock);
   clip-path: polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%);
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="rock"]::before {
+  clip-path: polygon(50% 0, 66% 36%, 100% 50%, 66% 64%, 50% 100%, 34% 64%, 0 50%, 34% 36%);
+}
+.bf-world[data-terrain="sand"] .bf-tile[data-kind="rock"]::before {
+  inset: 18% 6% 8%;
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
 }
 .bf-tile[data-kind="fence"]::before {
   content: "";
   inset: 46% 6%;
-  border-top: 2px dashed #4a4330;
+  border-top: 2px dashed var(--fence);
 }
 .bf-tile[data-kind="car"]::before {
   content: "";
   inset: 30% 12%;
-  background: #17132c;
-  border: 1px solid #4a4330;
+  background: var(--car);
+  border: 1px solid var(--car-edge);
   border-radius: 30%;
+  box-shadow: var(--car-glow);
 }
 .bf-tile[data-kind="rubble"] {
   background:
-    linear-gradient(#2c2448, #2c2448) 22% 30% / 16% 16% no-repeat,
-    linear-gradient(#2c2448, #2c2448) 70% 62% / 14% 14% no-repeat,
+    linear-gradient(var(--rubble), var(--rubble)) 22% 30% / 16% 16% no-repeat,
+    linear-gradient(var(--rubble), var(--rubble)) 70% 62% / 14% 14% no-repeat,
     #a77bff0d;
-}
-[data-theme="light"] .bf-tile[data-kind="hedge"]::before {
-  background: #d3dcec;
-  border-color: #aab9d6;
-}
-[data-theme="light"] .bf-tile[data-kind="house"]::before {
-  background: #dcd6ee;
-  border-color: #b5a9d8;
-}
-[data-theme="light"] .bf-tile[data-kind="house"]::after,
-[data-theme="light"] .bf-tile[data-kind="rock"]::before {
-  background: #c4bbe2;
-}
-[data-theme="light"] .bf-tile[data-kind="water"] {
-  background: #c9d8f2;
 }
 .bf-tile.target {
   background: #39ffb040;
@@ -834,23 +986,6 @@ h1 {
   line-height: 1.6;
   color: var(--muted);
 }
-.bf-result {
-  width: 400px;
-  bottom: auto;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 30px;
-  border-color: var(--cyan);
-  box-shadow: 6px 6px 0 var(--cyan);
-}
-.bf-result h2 {
-  font: 800 28px system-ui;
-}
-.bf-result p {
-  font: 14px/1.6 system-ui;
-  color: var(--muted);
-}
 
 /* ---------- Desktop command deck ---------- */
 .bf-controls {
@@ -1129,13 +1264,6 @@ h1 {
   .bf-main:has(#bf-setup:not([hidden])) :is(.bf-mini, .bf-map-tools) {
     display: none;
   }
-  .bf-result {
-    inset: 50% auto auto 50%;
-    width: calc(100% - 24px);
-    max-width: 380px;
-    border: 2px solid var(--cyan);
-    border-radius: 8px;
-  }
 }
 /* Touch setup in landscape: no page chrome, two columns, Deploy always visible. */
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
@@ -1174,7 +1302,7 @@ h1 {
   .bf-tip {
     display: none;
   }
-  .bf-missions {
+  .bf-locations {
     grid-row: 1 / span 4;
     margin: 10px 0 0;
     align-content: start;
@@ -2066,7 +2194,7 @@ html.bf-playing body {
   .bf-setup-scroll > .bf-install .bf-install-actions {
     grid-column: auto;
   }
-  .bf-setup-scroll:has(> .bf-install:not([hidden])) .bf-missions {
+  .bf-setup-scroll:has(> .bf-install:not([hidden])) .bf-locations {
     grid-row: 2 / span 4;
   }
 }
@@ -2364,4 +2492,259 @@ circle.bf-grab[data-stop] {
   .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
     height: calc(100dvh - 56px - env(safe-area-inset-top, 0px));
   }
+}
+
+/* ---------- Setup: two short steps ---------- */
+.bf-step {
+  display: block;
+  margin: 4px 0 8px;
+}
+.bf-step b {
+  color: var(--cyan);
+  margin-right: 4px;
+}
+.bf-terrain-field {
+  margin-top: 16px;
+}
+#bf-reroll {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  --c: var(--yellow);
+}
+#bf-quick {
+  flex: 0 0 auto;
+}
+.bf-strat-summary {
+  margin: 0;
+  padding: 0 22px 12px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+/* ---------- Strategy: slides out over the controls during the plan step ---------- */
+.bf-strategy {
+  position: fixed;
+  z-index: 30;
+  left: max(16px, env(safe-area-inset-left));
+  top: 96px;
+  bottom: 16px;
+  width: min(420px, calc(100% - 20px));
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 12px 14px 16px;
+  background: var(--surface);
+  border: 2px solid var(--yellow);
+  border-radius: 10px;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
+  animation: bf-slide 180ms ease-out;
+}
+.bf-strategy[hidden] {
+  display: none;
+}
+@keyframes bf-slide {
+  from {
+    translate: -16px 0;
+    opacity: 0;
+  }
+}
+.bf-strategy-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.bf-strategy-head b {
+  margin-right: auto;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  font-size: 11px;
+}
+.bf-strategy-head span {
+  order: 3;
+  flex: 1 1 100%;
+  font-size: 10px;
+  color: var(--muted);
+}
+.bf-strategy-head button {
+  min-height: 34px;
+  padding: 4px 10px;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+#bf-strat-close {
+  padding: 4px 8px;
+}
+.bf-strategy .bf-config {
+  grid-template-columns: 1fr;
+}
+#bf-strat-toggle {
+  --c: var(--yellow);
+}
+#bf-strat-toggle span {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-strategy {
+    position: fixed;
+    z-index: 30;
+    left: max(0px, env(safe-area-inset-left));
+    top: 0;
+    bottom: 0;
+    width: min(400px, 62vw);
+    border-radius: 0 10px 10px 0;
+    padding: max(10px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  }
+}
+/* ---------- Command: a hint above the selected tank, and a Lock that asks to be pressed ---------- */
+.bf-hint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 8;
+  padding: 3px 7px;
+  font: 800 9px/1.2 ui-monospace, monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  color: #07060f;
+  background: var(--yellow);
+  border: 2px solid #07060f;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 #07060f;
+  pointer-events: none;
+}
+#bf-lock:not(:disabled) {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  animation: bf-ask 1s steps(2) infinite;
+}
+@keyframes bf-ask {
+  50% {
+    outline-color: var(--green);
+  }
+}
+/* ---------- After action: an arcade sticker. GAME OVER in pink, MISSION COMPLETE in green ---------- */
+#bf-result {
+  --tone: var(--pink);
+  position: absolute;
+  z-index: 25;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 26px 20px 20px;
+  text-align: center;
+  background: var(--surface);
+  border: 3px solid #07060f;
+  border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--tone);
+}
+#bf-result[hidden] {
+  display: none;
+}
+#bf-result.won {
+  --tone: var(--green);
+}
+.bf-sticker {
+  display: grid;
+  gap: 4px;
+  padding: 10px 22px 14px;
+  color: #07060f;
+  background: var(--tone);
+  border: 3px solid #07060f;
+  border-radius: 10px;
+  box-shadow: 5px 5px 0 #07060f;
+  rotate: -4deg;
+  animation: bf-slap 360ms steps(4) both;
+}
+@keyframes bf-slap {
+  from {
+    scale: 1.6;
+    rotate: 8deg;
+    opacity: 0;
+  }
+}
+.bf-sticker span {
+  font: 800 10px/1 ui-monospace, monospace;
+  letter-spacing: 4px;
+  animation: bf-blink 1s steps(2) infinite;
+}
+@keyframes bf-blink {
+  50% {
+    opacity: 0.45;
+  }
+}
+.bf-sticker b {
+  font: 900 clamp(30px, 6.5vw, 48px)/1 ui-monospace, monospace;
+  letter-spacing: 2px;
+  text-shadow: 3px 3px 0 color-mix(in srgb, #07060f 35%, transparent);
+}
+#bf-result p {
+  margin: 0;
+  font: 13px/1.5 system-ui;
+  color: var(--muted);
+}
+.bf-result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+.bf-result-stats div {
+  padding: 8px 4px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+}
+.bf-result-stats dt {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.bf-result-stats dd {
+  margin: 2px 0 0;
+  font: 800 20px ui-monospace, monospace;
+  color: var(--ink);
+}
+.bf-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+#bf-result:not(.won) .bf-primary {
+  --green: var(--pink);
+}
+#bf-result .bf-primary {
+  flex: 1 1 200px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-sticker,
+  .bf-sticker span,
+  #bf-lock:not(:disabled),
+  .bf-strategy {
+    animation: none;
+  }
+}
+.bf-panel-heading h2 {
+  font-size: clamp(20px, 2.4vw, 26px);
+}
+.bf-panel-heading p {
+  margin-bottom: 4px;
+}
+#bf-reroll svg,
+#bf-randomize svg {
+  fill: none;
+  stroke: currentColor;
 }

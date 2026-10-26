@@ -58,15 +58,17 @@ try {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       );
-      await page.locator('[data-slot="1"] [data-role="heavy"]').click();
-      assert.equal(await page.locator("#bf-deploy").isDisabled(), true);
-      await page.locator('[data-slot="1"] [data-role="scout"]').click();
-      assert.equal(await page.locator('[data-slot="1"] [data-role="scout"]').getAttribute("aria-pressed"), "true");
-      await page.locator('#bf-formation [data-formation="line"]').click();
-      await page.locator('#bf-formation [data-formation="wedge"]').click();
-      await page.locator('#bf-side [data-side="1"]').click();
-      assert.equal(await page.evaluate(() => window.battlefield.snapshot().side), 1);
-      await page.locator('#bf-side [data-side="0"]').click();
+      // Setup is two steps: location, then terrain density (Random rerolls layout and density).
+      assert.equal(await page.locator("#bf-strategy").isVisible(), false, "strategy waits for the plan step");
+      const solids = () => page.evaluate(() => window.battlefield.snapshot().board.tiles.filter((t) => t !== "ground" && t !== "road").length);
+      await page.locator('#bf-density [data-density="0.6"]').click();
+      const lightCount = await solids();
+      await page.locator('#bf-density [data-density="1.45"]').click();
+      assert.ok((await solids()) > lightCount, "heavy terrain has more obstacles");
+      const seedBefore = await page.evaluate(() => window.battlefield.snapshot().board.seed);
+      await page.locator("#bf-reroll").click();
+      assert.notEqual(await page.evaluate(() => window.battlefield.snapshot().board.seed), seedBefore);
+      await page.locator('#bf-density [data-density="1"]').click();
       for (let i = 0; i < 4; i++) {
         await page.locator(".bf-mission").nth(i).click();
         const s = await page.evaluate(() => window.battlefield.snapshot());
@@ -120,6 +122,23 @@ try {
           await page.evaluate(() => getComputedStyle(document.body).userSelect),
           "none",
         );
+      // Strategy slides out during the plan step: changes rebuild the battle and stick.
+      await page.locator("#bf-strat-toggle").click();
+      assert.equal(await page.locator("#bf-strategy").isVisible(), true);
+      await page.locator('[data-slot="1"] [data-role="heavy"]').click();
+      assert.equal(await page.locator("#bf-start").isDisabled(), true, "over budget blocks Start");
+      await page.locator('[data-slot="1"] [data-role="scout"]').click();
+      assert.equal(await page.locator('[data-slot="1"] [data-role="scout"]').getAttribute("aria-pressed"), "true");
+      assert.equal(await page.locator("#bf-start").isDisabled(), false);
+      await page.locator('#bf-formation [data-formation="line"]').click();
+      await page.locator('#bf-formation [data-formation="wedge"]').click();
+      await page.locator('#bf-side [data-side="1"]').click();
+      assert.equal(await page.evaluate(() => window.battlefield.snapshot().side), 1);
+      assert.equal(await page.evaluate(() => window.battlefield.command.planning), true, "still planning after a change");
+      await page.locator('#bf-side [data-side="0"]').click();
+      assert.match(await page.locator("#bf-strat-chip").textContent(), /^A · WEDGE · 4$/);
+      await page.locator("#bf-strat-close").click();
+      assert.equal(await page.locator("#bf-strategy").isVisible(), false);
       // Plan step: every battle opens frozen, in command mode, with the first wingman selected.
       const cmd = () => page.evaluate(() => window.battlefield.command);
       assert.deepEqual(
@@ -304,14 +323,21 @@ try {
       assert.ok(target >= 0);
       const tile = page.locator(`[data-cell="${target}"]`);
       await tile.scrollIntoViewIfNeeded();
-      // Click the map at the square's centre; a tank driving over it must not intercept the tap.
+      // Tapping your own tank mid-battle opens Command on it.
+      assert.deepEqual(
+        await page.evaluate(() => ({ on: window.battlefield.command.on, selected: window.battlefield.command.selected })),
+        { on: true, selected: 1 },
+      );
+      // Tap the square's centre on the map (a tank driving over it must not intercept), then Lock.
       await tile.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        document.querySelector("#bf-viewport").dispatchEvent(
-          new MouseEvent("click", { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }),
-        );
+        const r = el.getBoundingClientRect(),
+          at = { bubbles: true, pointerId: 7, isPrimary: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+        const vp = document.querySelector("#bf-viewport");
+        vp.dispatchEvent(new PointerEvent("pointerdown", at));
+        vp.dispatchEvent(new PointerEvent("pointerup", at));
       });
-      // Outside command mode a tap on a square still sends the selected tank (and it holds there).
+      await page.locator("#bf-lock").click();
+      // The locked tank heads there and holds.
       assert.equal(
         await page.evaluate(() => window.battlefield.snapshot().units[1].order),
         "hold",
@@ -324,6 +350,9 @@ try {
         moved.waypoint === target || moved.assigned,
         `UI waypoint reaches model: ${JSON.stringify(moved)}`,
       );
+      // Back to fighting: Auto leaves Command (and the gun works again).
+      await page.locator("#bf-auto").click();
+      assert.equal(await page.evaluate(() => window.battlefield.command.on), false);
       const rosterIdentity = await page
         .locator(".bf-roster-unit")
         .first()
@@ -473,11 +502,13 @@ try {
         await page.locator("style[data-dom-virus-selection]").count(),
         0,
       );
-      // Big battle: 12 per side deploys and runs without errors.
-      await page.locator('#bf-size [data-size="12"]').click();
-      assert.equal(await page.locator(".bf-tank").count(), 24);
+      // Big battle: 12 per side, picked in Strategy during the plan step, runs without errors.
       await page.locator("#bf-deploy").click();
       if (mobile) await passGate(page);
+      await page.locator("#bf-strat-toggle").click();
+      await page.locator('#bf-size [data-size="12"]').click();
+      assert.equal(await page.locator(".bf-tank").count(), 24);
+      await page.locator("#bf-strat-close").click();
       await page.locator("#bf-start").click();
       await page.waitForTimeout(800);
       assert.equal(await page.evaluate(() => window.battlefield.snapshot().units.length), 24);
@@ -486,7 +517,17 @@ try {
         await page.waitForTimeout(300);
       }
       await page.locator("#bf-restart").click();
-      await page.locator('#bf-size [data-size="4"]').click();
+      // The strategy stuck: still 12 a side on the next setup.
+      assert.equal(await page.locator(".bf-tank").count(), 24);
+      // Quick battle skips the plan step entirely.
+      await page.locator("#bf-quick").click();
+      if (mobile) await passGate(page);
+      assert.equal(await page.evaluate(() => window.battlefield.command.planning), false);
+      if (mobile) {
+        await page.locator("#bf-squad").click();
+        await page.waitForTimeout(300);
+      }
+      await page.locator("#bf-restart").click();
       assert.deepEqual(errors, []);
       console.log({
         mobile,

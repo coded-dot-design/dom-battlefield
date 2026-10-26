@@ -40,6 +40,12 @@ and it is the special-edition cartridge 02 on the shelf. Ecosystem context is in
   in `View`), never per frame or per `pointermove`; DOM writes happen only on change.
 - Respect reduced motion (`prefers-reduced-motion` is passed to `view.render` and styled).
 - Mobile must stay smooth and fit: landscape rails must not overlap at 844x330 or 667x300.
+- Terrain colours live in CSS variables set per `[data-terrain]` (on both the world and the
+  viewport); tile rules only read variables. Add a climate by adding one variable block.
+- Setup (location, density, seed, side, formation, size, loadout) persists in
+  `localStorage["dom-battlefield:setup"]`. The Strategy panel (`#bf-strategy`, fixed, outside the
+  stage so it layers over the rails) edits it during the plan step; `preview()` rebuilds while
+  `planning`. `?debug` adds `battlefield.end(won)` for after-action tests.
 - Button tips (`coach()`) place only after the `[data-tip]` targets stop moving for 8 frames; any
   control can set `data-tip-more` (tap-to-expand detail) and `data-tip-at` (label side).
 
@@ -108,8 +114,9 @@ geometry; diffed highlights; no per-tile inline grid styles; pause cancels the l
 ## 6. Size
 
 `scripts/size.mjs` gzips `dist/index.html`, `assets/battlefield.js` and `assets/battlefield.css`
-and fails above **36,000 B** total. At 0.7.0: 5,475 + 19,587 + 8,736 = **33,798 B** gzip (about
-2.2 KB headroom). The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0) → 36 KB (0.7.0, command mode).
+and fails above **40,000 B** total. At 0.8.0: 5,985 + 20,929 + 10,611 = **37,525 B** gzip (about
+2.5 KB headroom). The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0) → 36 KB (0.7.0, command mode)
+→ 40 KB (0.8.0, terrain themes and the two-step setup).
 
 ## 7. Release and hub pin
 
