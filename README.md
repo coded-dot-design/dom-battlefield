@@ -69,6 +69,12 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.10.1 — Docked aim keys, Tron winter, dashed = weaker
+
+- Desktop: Auto / Lock / Command dock in the bottom bar beside Pause (they no longer float over the map); keycap hints drop on narrow windows. The touch cockpit keeps them on the right rail.
+- Winter buildings are flat neon outlines like the other climates: cabins, lodges and an outlined star turned 45°.
+- Cover reads at a glance: filled shapes are permanent (rock), solid outlines are full-strength, dashed or dotted outlines fall to fewer shells (city and winter dashed blocks 40 HP vs 90, winter dashed peaks and rings 35 HP and can be shot away, desert scrub 20 HP). Fences still let shells pass.
+
 ### 0.10.0 — Squad keys, keyboard panel, surrender on pause
 
 - Squad list: each tank is a pressable 3D shape. Shape is the size (scout triangle, medium circle, heavy hexagon), colour is health (green over 60%, yellow over 30%, red below), the label is the number (★ is you). Tap to command.

@@ -1,5 +1,5 @@
 import { tankSprites } from "../shared/sherman-sprites";
-import { point, MISSIONS } from "./model";
+import { point, variant, MISSIONS } from "./model";
 import type { Battle } from "./model";
 const colors = ["#39ffb0", "#ff5c8f"];
 const MINI: Record<string, string> = {
@@ -95,7 +95,7 @@ export class View {
       el.className = "bf-tile";
       el.dataset.cell = String(i);
       // A stable per-cell variant so the city mixes building shapes.
-      el.dataset.v = String(((i * 2654435761) >>> 0) % 5);
+      el.dataset.v = String(variant(i));
       this.world.append(el);
       this.cells.push(el);
     }

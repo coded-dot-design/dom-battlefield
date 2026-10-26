@@ -424,10 +424,10 @@ h1 {
   --grid-line: #9fd8ff0c;
   --road: #151c40;
   --water: #123462;
-  --house: #1b2054;
-  --house-edge: #7c8cff;
+  --house: #0d1433;
+  --house-edge: #9fd8ff;
   --house-mark: #b9a8ff;
-  --house-top: inset 0 3px 0 #e6f4ff;
+  --house-top: 0 0 7px #9fd8ff55;
   --rock: #a9b8ff;
   --fence: #b9a8ff;
   --car: #1a2050;
@@ -499,10 +499,10 @@ h1 {
   --map: #eef3ff;
   --road: #dfe6fb;
   --water: #c7dafa;
-  --house: #dfe0fb;
-  --house-edge: #8a96e8;
+  --house: #f4f6ff;
+  --house-edge: #5f78e0;
   --house-mark: #8f7de8;
-  --house-top: inset 0 3px 0 #ffffff;
+  --house-top: none;
   --rock: #b9c4ff;
   --fence: #8f7de8;
   --car: #e3e6fb;
@@ -3438,4 +3438,72 @@ circle.bf-grab[data-stop] {
 }
 #battlefield:has(#bf-giveup:not([hidden]), #bf-paused:not([hidden])) #bf-start {
   visibility: hidden;
+}
+/* Desktop: Auto / Lock / Command sit in the bottom bar, left of Pause, split by a hairline. */
+.bf-quick > .bf-aim {
+  position: static;
+  display: flex;
+  gap: 8px;
+  margin-right: 6px;
+  padding-right: 14px;
+  border-right: 1px solid var(--line);
+}
+.bf-quick {
+  align-items: center;
+}
+@media (max-width: 1100px) {
+  .bf-quick > .bf-aim kbd {
+    display: none;
+  }
+  .bf-quick > .bf-aim button {
+    padding: 6px 10px;
+  }
+}
+
+/* ---------- Winter blocks, Tron style: flat outlines with an ice glow ----------
+   Solid outlines are full-strength cover; dashed ones (v3, v4) fall to fewer shells. */
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"]::before {
+  inset: 12%;
+  border: 2px solid var(--house-edge);
+  border-radius: 2px;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"]::after {
+  inset: 36%;
+  background: none;
+  border: 1px solid var(--house-mark);
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"][data-v="1"]::before {
+  inset: 26% 8%;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"][data-v="1"]::after {
+  inset: 48% 22% auto;
+  height: 0;
+  border-width: 1px 0 0;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"]:is([data-v="2"], [data-v="4"])::before {
+  inset: 6%;
+  border: 0;
+  border-radius: 0;
+  background: var(--house-edge);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath transform='rotate(45 10 10)' d='M10 1.5 12.4 7.6 18.5 10 12.4 12.4 10 18.5 7.6 12.4 1.5 10 7.6 7.6Z' fill='none' stroke='%23000' stroke-width='1.7' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath transform='rotate(45 10 10)' d='M10 1.5 12.4 7.6 18.5 10 12.4 12.4 10 18.5 7.6 12.4 1.5 10 7.6 7.6Z' fill='none' stroke='%23000' stroke-width='1.7' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--house-edge) 60%, transparent));
+  box-shadow: none;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"][data-v="4"]::before {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath transform='rotate(45 10 10)' d='M10 1.5 12.4 7.6 18.5 10 12.4 12.4 10 18.5 7.6 12.4 1.5 10 7.6 7.6Z' fill='none' stroke='%23000' stroke-width='1.7' stroke-linejoin='round' stroke-dasharray='2.6 1.8'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath transform='rotate(45 10 10)' d='M10 1.5 12.4 7.6 18.5 10 12.4 12.4 10 18.5 7.6 12.4 1.5 10 7.6 7.6Z' fill='none' stroke='%23000' stroke-width='1.7' stroke-linejoin='round' stroke-dasharray='2.6 1.8'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"]:is([data-v="2"], [data-v="4"])::after {
+  inset: 44%;
+  border: 0;
+  border-radius: 50%;
+  background: var(--house-mark);
+}
+.bf-world[data-terrain="snow"] .bf-tile[data-kind="house"][data-v="3"]::before {
+  border-style: dashed;
+  box-shadow: none;
+}
+[data-theme="light"] .bf-world[data-terrain="snow"] .bf-tile[data-kind="house"]::before {
+  filter: none;
 }

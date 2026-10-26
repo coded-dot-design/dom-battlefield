@@ -170,6 +170,17 @@ export const hitPoints = (t: Tile) =>
     fence: 0,
     rubble: 0,
   })[t];
+/** A stable per-cell look (0-4). 3 and 4 are the dashed shapes, drawn by the view. */
+export const variant = (id: number) => ((id * 2654435761) >>> 0) % 5;
+/** Dashed or dotted cover is flimsier than solid cover: it falls to fewer shells. Winter's dashed
+ *  peaks and rings can even be shot away (solid rock stays permanent). */
+export function toughness(t: Tile, id: number, mission: number) {
+  const dashed = variant(id) >= 3;
+  if (t === "house" && dashed && (mission === 2 || mission === 3)) return 40;
+  if (t === "rock" && dashed && mission === 2) return 35;
+  if (t === "hedge" && mission === 1) return 20; // dotted desert scrub
+  return hitPoints(t);
+}
 export function rng(seed: number) {
   return () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -336,7 +347,7 @@ export function generate(
         if (x > 0 && x < cols - 1 && y > 0 && y < rows - 1)
           tiles[y * cols + x] = "ground";
   }
-  b.health = tiles.map(hitPoints);
+  b.health = tiles.map((t, i) => toughness(t, i, mission));
   return b;
 }
 /** Move a side's HQ during planning: its own half, never water, a cleared 3x3 pad, and both

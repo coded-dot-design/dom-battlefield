@@ -1062,6 +1062,19 @@ listen($("#bf-rematch"), "click", () => {
   reset();
   deploy();
 });
+/* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
+   on the right rail inside the stage (its rail CSS is positioned against the stage). */
+const railLayout = matchMedia("(pointer: coarse) and (max-width: 1400px), (max-width: 759px)"),
+  aimHome = $(".bf-aim").parentElement!,
+  aimNext = $(".bf-aim").nextElementSibling;
+function dockAim() {
+  const aim = $(".bf-aim");
+  if (railLayout.matches) {
+    if (aim.parentElement !== aimHome) aimHome.insertBefore(aim, aimNext);
+  } else if (aim.parentElement !== $(".bf-quick")) $(".bf-quick").prepend(aim);
+}
+dockAim();
+listen(railLayout, "change", dockAim);
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
 let giveupResume = false;
 function giveup(open: boolean) {

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  variant,
   generate,
   route,
   point,
@@ -278,4 +279,15 @@ test("each terrain lays different roads, and every field stays connected", () =>
         assert.ok(route(b, b.bases[0], b.bases[1]).length, `bases connect (${m}/${s})`);
         assert.ok(route(b, b.bases[0], b.center).length, `objective reachable (${m}/${s})`);
       }
+});
+
+test("dashed cover falls faster than solid cover", () => {
+  const b = generate(36, 20, 3, 11);
+  const houses = b.tiles.map((t, i) => [t, i]).filter(([t]) => t === "house");
+  const dashed = houses.filter(([, i]) => variant(i) >= 3), solidOnes = houses.filter(([, i]) => variant(i) < 3);
+  assert.ok(dashed.length && solidOnes.length);
+  for (const [, i] of dashed) assert.equal(b.health[i], 40);
+  for (const [, i] of solidOnes) assert.equal(b.health[i], 90);
+  const w = generate(36, 20, 2, 11);
+  w.tiles.forEach((t, i) => t === "rock" && assert.equal(w.health[i], variant(i) >= 3 ? 35 : 0));
 });
