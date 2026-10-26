@@ -1054,19 +1054,9 @@ h1 {
 .bf-drawer-objective {
   display: none;
 }
-.bf-roster,
-.bf-drawer-actions {
+.bf-roster {
   display: flex;
   gap: 6px;
-}
-.bf-roster-unit,
-.bf-drawer-actions button {
-  font-size: 9px;
-  padding: 6px 9px;
-}
-.bf-roster-unit.active {
-  border-color: var(--green);
-  color: var(--green);
 }
 .bf-touch,
 .bf-rotate,
@@ -1496,7 +1486,7 @@ h1 {
     display: block;
     padding: 0;
   }
-  [data-active="true"] :is(.bf-command-top > span, .bf-help, kbd) {
+  [data-active="true"] :is(.bf-command-top > span, kbd) {
     display: none;
   }
   [data-active="true"] .bf-quick {
@@ -1658,18 +1648,6 @@ h1 {
     font-size: 9px;
     line-height: 1.6;
     color: var(--cyan);
-  }
-  [data-active="true"] .bf-roster,
-  [data-active="true"] .bf-drawer-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  [data-active="true"] .bf-roster-unit,
-  [data-active="true"] .bf-drawer-actions button {
-    min-height: 42px;
-    font-size: 9px;
-    padding: 5px;
   }
   [data-active="true"] .bf-footer {
     position: absolute;
@@ -2297,21 +2275,6 @@ html.bf-playing body {
   box-shadow: 0 4px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
   font-size: 11px;
 }
-.bf-cmd-head,
-.bf-cmd-tank {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 10px;
-}
-.bf-cmd-head b {
-  color: var(--yellow);
-  letter-spacing: 1.5px;
-  font-size: 10px;
-}
-.bf-cmd-head span {
-  color: var(--muted);
-}
 .bf-cmd-tank b {
   letter-spacing: 1px;
 }
@@ -2474,7 +2437,7 @@ circle.bf-grab[data-stop] {
     padding: 6px 8px 7px;
     font-size: 10px;
   }
-  [data-active="true"] .bf-cmd-head span {
+  [data-active="true"] #bf-cmd-hint {
     display: none;
   }
   [data-active="true"] .bf-cmd-actions {
@@ -2904,113 +2867,102 @@ circle.bf-grab[data-stop] {
 .map-fits .bf-map-tools {
   display: none;
 }
-/* Squad keys: each tank is a pressable 3D shape. Shape = size, colour = health, label = number. */
+/* Platoon keys: the standard square arcade key. Colour = health, pips = size, number = the
+   number on the field. Selected rests pressed with a white rim; lost rests pressed, grey, disabled. */
+.bf-platoon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bf-platoon-tag {
+  font: 800 9px/1 ui-monospace, monospace;
+  letter-spacing: 1.6px;
+  color: var(--muted);
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+}
 .bf-roster {
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
+  gap: 8px;
 }
-#bf-roster .bf-roster-unit {
-  --face: #39ffb0;
-  --ink-edge: #07060f;
-  display: block;
+.bf-unit {
+  --c: #39ffb0;
   width: 44px;
-  height: 46px;
+  height: 44px;
   min-height: 0;
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  transform: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  padding: 0 0 2px;
+  gap: 3px;
+  align-content: center;
 }
-#bf-roster .bf-roster-unit[data-hp="hurt"] {
-  --face: #ffe14d;
+.bf-unit[data-hp="hurt"] {
+  --c: #ffe14d;
 }
-#bf-roster .bf-roster-unit[data-hp="critical"] {
-  --face: #ff3355;
+.bf-unit[data-hp="critical"] {
+  --c: #ff3355;
 }
-#bf-roster .bf-roster-unit[data-hp="lost"] {
-  --face: #3a3652;
+.bf-unit[data-hp="lost"] {
+  --c: #4a4566;
 }
-.bf-roster-unit svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.bf-unit b {
+  font: 900 16px/1 ui-monospace, monospace;
+  color: #07060f;
 }
-.bf-ru-base > * {
-  fill: color-mix(in srgb, var(--face) 42%, #07060f);
-  stroke: var(--ink-edge);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  transform: translateY(5px);
+.bf-unit.you b {
+  font-size: 15px;
 }
-.bf-ru-face {
-  transition: transform 90ms cubic-bezier(0.34, 1.7, 0.5, 1);
+.bf-pips {
+  display: flex;
+  gap: 3px;
 }
-.bf-ru-face > :not(text) {
-  fill: var(--face);
-  stroke: var(--ink-edge);
-  stroke-width: 2;
-  stroke-linejoin: round;
+.bf-pips s {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: #07060f;
 }
-.bf-ru-face text {
-  font: 900 13px/1 ui-monospace, monospace;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  fill: #07060f;
-  stroke: none;
+#bf-roster .bf-unit.active {
+  outline: 2px solid #f6f3ff;
+  outline-offset: 2px;
 }
-.bf-roster-unit.you .bf-ru-face text {
-  font-size: 14px;
-}
-/* Selected: a white rim so you can see who you are commanding. */
-.bf-roster-unit.active .bf-ru-face > :not(text) {
-  stroke: #f6f3ff;
-  stroke-width: 3;
-}
-.bf-roster-unit.active .bf-ru-base > * {
-  stroke: #f6f3ff;
-  stroke-width: 3;
-}
-@media (hover: hover) and (pointer: fine) {
-  .bf-roster-unit:not(:disabled):hover .bf-ru-face {
-    transform: translateY(2px);
-  }
-}
-.bf-roster-unit:not(:disabled):active .bf-ru-face {
-  transform: translateY(5px);
-  transition: none;
-}
-#bf-roster .bf-roster-unit:disabled {
-  opacity: 0.45;
+#bf-roster .bf-unit:disabled {
+  opacity: 0.55;
   cursor: default;
+  transform: translate(var(--px), var(--py));
+  box-shadow: 0 0 0 var(--edge);
 }
-.bf-roster-unit:disabled .bf-ru-face text {
-  fill: #8f8aa8;
+.bf-unit:disabled b {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
 }
-.bf-roster-unit:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 3px;
+/* The command card badge: the same key, not pressable (a span keeps the base by hand). */
+#bf-cmd-badge.bf-unit {
+  display: inline-grid;
+  flex: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--c) 45%, #07060f);
+}
+#bf-cmd-badge.bf-unit:empty {
+  background: none;
+  border: 2px dashed var(--line);
+  box-shadow: none;
 }
 @media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-roster {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  [data-active="true"] .bf-platoon-tag {
+    writing-mode: horizontal-tb;
+    rotate: none;
   }
-  [data-active="true"] #bf-roster .bf-roster-unit {
-    width: 44px;
-    height: 46px;
-    min-height: 0;
-    padding: 0;
+  [data-active="true"] .bf-platoon {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bf-ru-face {
-    transition: none;
+  [data-active="true"] #bf-cmd-badge.bf-unit {
+    width: 34px;
+    height: 34px;
+  }
+  [data-active="true"] #bf-cmd-badge b {
+    font-size: 13px;
   }
 }
 /* Command panel groups: ROUTE (clear, next, lock), ORDERS (attack HQ, follow), PLAN (planning). */
@@ -3506,4 +3458,116 @@ circle.bf-grab[data-stop] {
 }
 [data-theme="light"] .bf-world[data-terrain="snow"] .bf-tile[data-kind="house"]::before {
   filter: none;
+}
+
+/* ---------- Command card: badge + text on the left, actions, close on the right ---------- */
+.bf-cmd {
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 14px;
+}
+.bf-cmd-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.bf-cmd-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.bf-cmd-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 800 9px/1 ui-monospace, monospace;
+  letter-spacing: 1.5px;
+  color: var(--yellow);
+}
+.bf-cmd-mode svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.bf-cmd-tank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.bf-cmd-tank b {
+  font: 800 12px/1.1 ui-monospace, monospace;
+  letter-spacing: 1px;
+}
+#bf-cmd-hp:not(:empty) {
+  padding: 1px 6px;
+  font: 800 9px/1.4 ui-monospace, monospace;
+  color: #07060f;
+  background: #39ffb0;
+  border-radius: 3px;
+}
+#bf-cmd-hp[data-hp="hurt"] {
+  background: #ffe14d;
+}
+#bf-cmd-hp[data-hp="critical"] {
+  background: #ff3355;
+}
+#bf-cmd-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.bf-cmd-actions {
+  justify-content: center;
+}
+#bf-cmd-close {
+  --c: var(--cyan);
+  grid-row: 1;
+  grid-column: -2;
+  align-self: start;
+}
+#bf-cmd-close[data-plan="true"] {
+  --c: #6d6894;
+}
+/* Desktop: docked above the map as a full-width bar; the map rescales into the space left. */
+.bf-main > .bf-cmd {
+  position: static;
+  transform: none;
+  width: auto;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+}
+.bf-main:has(> .bf-cmd:not([hidden])) .bf-stage {
+  height: calc(100dvh - 330px - var(--cmd-h, 72px));
+}
+@media (max-width: 1180px) {
+  .bf-main > .bf-cmd {
+    grid-template-columns: 1fr auto;
+    row-gap: 10px;
+  }
+  .bf-main > .bf-cmd .bf-cmd-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+}
+/* Touch overlay: badge and text stack tighter; close stays top right. */
+@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
+  [data-active="true"] .bf-stage .bf-cmd {
+    grid-template-columns: 1fr auto;
+    row-gap: 5px;
+  }
+  [data-active="true"] .bf-stage .bf-cmd .bf-cmd-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+  [data-active="true"] #bf-cmd-close {
+    min-height: 32px;
+    padding: 3px 8px;
+  }
 }

@@ -73,6 +73,13 @@ let state: Battle,
   draft: { id: number; stops: number[] } | null = null;
 /** Wingmen are numbered 1..per-1 (the command tank is 0, "you"). */
 const tankNo = (id: number) => id % state.per;
+/** While planning, the command card can be tucked away (Hide); a tank tap or Command reopens it. */
+let cmdHidden = false;
+/** A platoon key's inside: the tank number over 1-3 size pips. */
+const PIPS: Record<string, number> = { scout: 1, medium: 2, heavy: 3 };
+const unitKey = (role: string, no: string) => `<b>${no}</b><i class="bf-pips" data-n="${PIPS[role]}">${"<s></s>".repeat(PIPS[role] ?? 1)}</i>`;
+const healthTone = (u: { hp: number; maxHp: number }) =>
+  u.hp <= 0 ? "lost" : u.hp / u.maxHp > 0.6 ? "ok" : u.hp / u.maxHp > 0.3 ? "hurt" : "critical";
 const audio = createGameAudio(document, "battlefield");
 /** Player aim: auto (nearest visible enemy), pointer (mouse), a locked tank, or a locked square. */
 type Aim =
@@ -266,6 +273,7 @@ function preview(resized = false) {
 }
 function selectUnit(id: number) {
   if (!playing || paused || pan) return;
+  cmdHidden = false;
   const u = state.units.find((u) => u.id === id);
   if (!u || u.hp <= 0) return;
   if (u.side !== side) {
@@ -461,11 +469,29 @@ function cmdPanel() {
   const root = $("#battlefield");
   if (root.dataset.plan !== String(planning)) root.dataset.plan = String(planning);
   const panel = $("#bf-cmd");
-  panel.hidden = !commanding;
-  if (!commanding) return;
+  panel.hidden = !commanding || (planning && cmdHidden);
+  if (panel.hidden) return;
   const u = draft ? state.units[draft.id] : undefined,
     alive = u && u.hp > 0;
-  text("#bf-cmd-mode", planning ? "PLAN YOUR ATTACK · TIME FROZEN" : "COMMAND · HALF SPEED · GUN OFF");
+  text("#bf-cmd-mode span", planning ? "PLAN · TIME FROZEN" : "COMMAND · HALF SPEED · GUN OFF");
+  // Close: in battle it is Auto (command off, aim back on); while planning it just tucks the card away.
+  const close = $("#bf-cmd-close");
+  if (close.dataset.plan !== String(planning)) {
+    close.dataset.plan = String(planning);
+    close.querySelector("span")!.textContent = planning ? "Hide" : "Auto";
+    close.setAttribute("aria-label", planning ? "Hide the command card (tap a tank to bring it back)" : "Close command: back to auto-aim (Q)");
+    close.title = planning ? "Hide · tap a tank or Command to reopen" : "Q · Back to auto-aim";
+  }
+  // Badge: the same platoon key as the list (colour = health, pips = size, number).
+  const badge = $("#bf-cmd-badge"),
+    key = alive ? `${u!.role}|${tankNo(u!.id)}` : "";
+  if (badge.dataset.key !== key) {
+    badge.dataset.key = key;
+    badge.innerHTML = alive ? unitKey(u!.role, String(tankNo(u!.id))) : "";
+  }
+  badge.dataset.hp = alive ? healthTone(u!) : "lost";
+  text("#bf-cmd-hp", alive ? `${Math.ceil(u!.hp)} HP` : "");
+  $("#bf-cmd-hp").dataset.hp = badge.dataset.hp;
   const cells = draftCells(),
     hq = !!draft && draft.stops.at(-1) === state.board.bases[1 - side];
   text(
@@ -484,7 +510,7 @@ function cmdPanel() {
             ? "Locked. Next tank, drag your HQ, or Start battle."
             : "Locked. Switch back to Auto to fight.",
   );
-  text("#bf-cmd-tank", alive ? `TANK ${tankNo(u!.id)} · ${u!.role.toUpperCase()} · ${Math.ceil(u!.hp)} HP` : "NO TANK SELECTED");
+  text("#bf-cmd-tank", alive ? `TANK ${tankNo(u!.id)} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
   text(
     "#bf-cmd-state",
     !alive
@@ -775,6 +801,7 @@ function deploy(quick = false) {
   if (!coarse.matches) ready();
 }
 function reset() {
+  cmdHidden = false;
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   $("#bf-paused").hidden = true;
   $("#bf-giveup").hidden = true;
@@ -847,15 +874,14 @@ function updateHUD() {
   if (status.textContent !== phase) status.textContent = phase;
   const roster = $("#bf-roster");
   const allies = state.units.filter((u) => u.side === side);
-  // Squad keys: the shape is the size (scout triangle, medium circle, heavy hexagon), the colour is
-  // health (green above 60%, yellow above 30%, red below), the label is the number. Tap to command.
+  // Platoon keys: the same square arcade key as every control. Colour = health (green over 60%,
+  // yellow over 30%, red below), pips = size (1 scout, 2 medium, 3 heavy), the big number is the
+  // one painted on the field. Lost tanks rest pressed flat and disabled. Tap to command.
   if (!roster.childElementCount)
     for (const u of allies) {
-      const n = document.createElement("button"),
-        shape = SHAPES[u.role];
-      n.className = "bf-roster-unit";
-      n.dataset.role = u.role;
-      n.innerHTML = `<svg viewBox="0 0 44 46" aria-hidden="true"><g class="bf-ru-base">${shape}</g><g class="bf-ru-face">${shape}<text x="22" y="${u.role === "scout" ? 29 : 24}"></text></g></svg>`;
+      const n = document.createElement("button");
+      n.className = "bf-arcade bf-unit";
+      n.innerHTML = unitKey(u.role, "");
       n.onclick = () => selectUnit(u.id);
       roster.append(n);
     }
@@ -866,10 +892,10 @@ function updateHUD() {
     n.classList.toggle("you", you);
     n.disabled = u.hp <= 0;
     const no = you ? "★" : String(u.id % state.per),
-      hp = u.hp / u.maxHp,
-      tone = u.hp <= 0 ? "lost" : hp > 0.6 ? "ok" : hp > 0.3 ? "hurt" : "critical";
+      hp = u.hp / u.maxHp;
+    const tone = healthTone(u);
     if (n.dataset.hp !== tone) n.dataset.hp = tone;
-    const t = n.querySelector("text")!;
+    const t = n.querySelector("b")!;
     if (t.textContent !== no) t.textContent = no;
     const label = `${you ? "Your tank" : `Tank ${no}`}, ${u.role}, ${Math.max(0, Math.ceil(hp * 100))}% health${u.hp <= 0 ? ", lost" : ""}`;
     if (n.getAttribute("aria-label") !== label) {
@@ -878,11 +904,6 @@ function updateHUD() {
     }
   });
 }
-const SHAPES: Record<string, string> = {
-  scout: '<path d="M22 3 41 37H3Z"/>',
-  medium: '<circle cx="22" cy="20" r="17"/>',
-  heavy: '<path d="M22 2l16 9v18l-16 9-16-9V11Z"/>',
-};
 function loop(now: number) {
   if (!playing) return;
   const dt = last ? Math.min(0.04, (now - last) / 1000) : 0;
@@ -1062,6 +1083,22 @@ listen($("#bf-rematch"), "click", () => {
   reset();
   deploy();
 });
+listen($("#bf-cmd-close"), "click", () => {
+  if (planning) {
+    cmdHidden = true;
+    cmdPanel();
+  } else setAim({ mode: "auto" }, "Command off. Auto-aim: nearest visible enemy.");
+});
+/* Desktop docks the command card above the map (in flow, the map rescales to fit) instead of over
+   it; the touch cockpit has no spare room, so there it stays over the field. */
+const cmdHome = $("#bf-cmd").parentElement!,
+  cmdNext = $("#bf-cmd").nextElementSibling;
+function dockCmd() {
+  const c = $("#bf-cmd");
+  if (railLayout.matches) {
+    if (c.parentElement !== cmdHome) cmdHome.insertBefore(c, cmdNext);
+  } else if (c.nextElementSibling !== $(".bf-stage")) $(".bf-stage").before(c);
+}
 /* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
    on the right rail inside the stage (its rail CSS is positioned against the stage). */
 const railLayout = matchMedia("(pointer: coarse) and (max-width: 1400px), (max-width: 759px)"),
@@ -1073,8 +1110,21 @@ function dockAim() {
     if (aim.parentElement !== aimHome) aimHome.insertBefore(aim, aimNext);
   } else if (aim.parentElement !== $(".bf-quick")) $(".bf-quick").prepend(aim);
 }
+// The docked card's real height comes off the stage's, so the page never scrolls.
+new ResizeObserver(([e]) => {
+  if (e) $(".bf-main").style.setProperty("--cmd-h", `${Math.ceil(e.borderBoxSize[0]?.blockSize ?? e.contentRect.height) + 10}px`);
+}).observe($("#bf-cmd"));
+// Desktop tiles scale to the viewport: refit when the docked card (or anything else) resizes it.
+let vpSize = "";
+new ResizeObserver(() => {
+  const k = `${viewport.clientWidth}x${viewport.clientHeight}`;
+  if (k === vpSize) return;
+  vpSize = k;
+  if (view && !railLayout.matches) requestAnimationFrame(fit);
+}).observe(viewport);
 dockAim();
-listen(railLayout, "change", dockAim);
+dockCmd();
+listen(railLayout, "change", () => (dockAim(), dockCmd()));
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
 let giveupResume = false;
 function giveup(open: boolean) {
@@ -1195,7 +1245,11 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
   coach(false);
 }) as EventListener);
 listen($("#bf-pause"), "click", () => setPause(!paused));
-listen($("#bf-command"), "click", () => setCommand(!commanding));
+listen($("#bf-command"), "click", () => {
+  // While planning, Command brings a hidden card back; in battle it toggles command mode.
+  if (planning) return (cmdHidden = false), cmdPanel();
+  setCommand(!commanding);
+});
 listen($("#bf-lock"), "click", lockRoute);
 // START BATTLE: the sticker flashes red as the battle begins, then peels away.
 listen($("#bf-start"), "click", () => {

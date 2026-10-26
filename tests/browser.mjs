@@ -259,9 +259,14 @@ try {
           c = window.battlefield.command,
           line = document.querySelector(".bf-route-hit"),
           pts = line.getAttribute("points").split(" ").map((p) => p.split(",").map(Number)),
-          [mx, my] = pts[Math.floor(pts.length / 2)],
           world = document.querySelector(".bf-world").getBoundingClientRect(),
-          tile = world.width / s.board.cols;
+          tile = world.width / s.board.cols,
+          // Grab a point on the line that is on screen (the touch command card covers the top).
+          hq = document.querySelector(".bf-base.own").getBoundingClientRect(),
+          offHq = (x, y) => x < hq.left - 4 || x > hq.right + 4 || y < hq.top - 4 || y > hq.bottom + 4,
+          seen = ([x, y]) => document.elementFromPoint(world.left + x * tile, world.top + y * tile) === line && offHq(world.left + x * tile, world.top + y * tile),
+          inner = pts.slice(1, -1).filter(seen),
+          [mx, my] = inner[Math.floor(inner.length / 2)] ?? pts[Math.floor(pts.length / 2)];
         for (const dy of [2, -2, 3, -3])
           for (const dx of [0, 1, -1]) {
             const x = Math.floor(mx) + dx,
@@ -271,7 +276,7 @@ try {
             if (!plot(s.board, cell(s.board, s.units[c.selected]), [id, ...c.draft.stops])) continue;
             const to = { x: world.left + (x + 0.5) * tile, y: world.top + (y + 0.5) * tile },
               hit = document.elementFromPoint(to.x, to.y);
-            if (!hit?.closest("#bf-viewport")) continue;
+            if (!hit?.closest("#bf-viewport") || !offHq(to.x, to.y)) continue;
             return { from: { x: world.left + mx * tile, y: world.top + my * tile }, to, id };
           }
         return null;
@@ -295,6 +300,18 @@ try {
       // Next tank, then start: time runs, command mode ends, aim returns.
       await page.locator('[data-plan="next"]').click();
       assert.equal((await cmd()).selected, 2);
+      // The command card: docked above the map on desktop (over it on touch), with a close key.
+      assert.equal(
+        await page.locator("#bf-cmd").evaluate((n) => !!n.closest(".bf-stage")),
+        mobile,
+        "desktop docks the command card outside the field",
+      );
+      assert.equal(await page.locator("#bf-cmd-badge b").textContent(), String((await cmd()).selected));
+      await page.locator("#bf-cmd-close").click();
+      assert.equal(await page.locator("#bf-cmd").isVisible(), false, "Hide tucks the plan card away");
+      assert.equal((await cmd()).planning, true, "...without leaving the plan step");
+      await page.locator("#bf-command").click();
+      assert.equal(await page.locator("#bf-cmd").isVisible(), true, "Command brings it back");
       // Move HQ is a planning-only control; Start is a sticker that flashes red and leaves.
       assert.equal(await page.locator("#bf-move-hq").isVisible(), true);
       await page.locator("#bf-move-hq").click();
@@ -319,6 +336,11 @@ try {
       await page.locator("#bf-auto").click();
       assert.equal((await cmd()).on, false);
       assert.equal(await page.locator("#bf-cmd").isVisible(), false);
+      // The card's own close key is Auto too.
+      await page.locator("#bf-command").click();
+      assert.equal(await page.locator("#bf-cmd-close").textContent(), "Auto");
+      await page.locator("#bf-cmd-close").click();
+      assert.deepEqual({ on: (await cmd()).on, aim: await page.evaluate(() => window.battlefield.aim.mode) }, { on: false, aim: "auto" });
       const before = await page.evaluate(
         () => window.battlefield.snapshot().units[0],
       );
@@ -384,7 +406,7 @@ try {
       if (mobile) {
         await page.locator("#bf-squad").click();
         await page.waitForTimeout(300);
-        await page.locator(".bf-roster-unit").nth(1).click();
+        await page.locator("#bf-roster .bf-unit").nth(1).click();
       }
       else await page.keyboard.press("Digit1");
       const target = await page.evaluate(async () => {
@@ -438,7 +460,7 @@ try {
       await page.locator("#bf-auto").click();
       assert.equal(await page.evaluate(() => window.battlefield.command.on), false);
       const rosterIdentity = await page
-        .locator(".bf-roster-unit")
+        .locator("#bf-roster .bf-unit")
         .first()
         .elementHandle();
       await page.waitForTimeout(180);
@@ -470,9 +492,9 @@ try {
         await page.mouse.move(5, 500);
         assert.equal(await page.locator("#bf-keys-panel").isVisible(), false);
       } else assert.equal(await page.locator("#bf-keys").isVisible(), false, "no keyboard panel on touch");
-      // Squad keys: shape is the size, colour is health.
+      // Platoon keys: colour is health, pips are size, the number matches the field.
       assert.deepEqual(
-        await page.locator("#bf-roster .bf-roster-unit").evaluateAll((n) => n.map((b) => b.dataset.hp !== undefined && !!b.querySelector(".bf-ru-face text"))).then((a) => a.every(Boolean)),
+        await page.locator("#bf-roster .bf-unit").evaluateAll((n) => n.map((b) => b.dataset.hp !== undefined && b.querySelectorAll(".bf-pips s").length >= 1 && b.querySelector("b").textContent !== "")).then((a) => a.every(Boolean)),
         true,
       );
       await resize(page, 

@@ -23,7 +23,7 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Aim | Pointer | Nearest visible enemy |
 | Fire | Hold Space / click / right-click | Hold Fire |
 | Fall in / retreat / advance | F / R / E | Labeled buttons |
-| Select wingman | 1–3 or click | Tap tank / roster |
+| Select wingman | 1–9 or click | Tap tank / platoon key |
 | Command mode | O | Command (chevrons) beside Auto / Lock |
 | Send a tank | Command: click tank, then a square | Command: tap tank, then a square |
 | Bend / move a route | Drag the line / the flag | Drag the line / the flag |
@@ -50,7 +50,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 44KB gzip budget, checked by `npm run size` (0.9.0: ~41.3KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 46KB gzip budget, checked by `npm run size` (0.11.0: ~44.1KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10).
 
 ## Boundaries
 
@@ -68,6 +68,13 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.11.0 — Docked command card, platoon keys
+
+- Command card: on desktop it docks above the map instead of covering it (the map rescales into the space left); on touch it stays over the field. Its head is organised: the tank's key (colour = health, pips = size, number), the mode, TANK n · ROLE with an HP chip and status, then the hint.
+- Close key on the card: **Auto** in battle (command off, aim back on — the same thing the Auto key does); **Hide** while planning (tap a tank or Command to bring it back).
+- Platoon list: back to square keys, the same arcade key as every other control. Colour is health (green, yellow under 60%, red under 30%), 1–3 pips are size (scout, medium, heavy), the big number matches the field (★ is you). Lost tanks rest pressed, grey, struck through and disabled. A PLATOON tag leads the list.
+- Size budget 44KB → 46KB gzip.
 
 ### 0.10.1 — Docked aim keys, Tron winter, dashed = weaker
 

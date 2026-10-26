@@ -116,9 +116,10 @@ geometry; diffed highlights; no per-tile inline grid styles; pause cancels the l
 ## 6. Size
 
 `scripts/size.mjs` gzips `dist/index.html`, `assets/battlefield.js` and `assets/battlefield.css`
-and fails above **44,000 B** total. At 0.10.1 it is about **43,575 B** gzip (about 0.4 KB headroom; the keyboard panel markup is most of the 0.10 growth). Next feature: trim (e.g. the inline SVG masks in style.css) or raise the budget with a note. The budget went 24 → 28 KB (0.3.0) → 30 KB (0.5.0) → 36 KB (0.7.0, command mode)
+and fails above **46,000 B** total. At 0.11.0 it is about **44,120 B** gzip (about 1.9 KB headroom). 0.11 trimmed dead drawer CSS and raised the budget for the keycap panel, docked command card and platoon keys.
 → 40 KB (0.8.0, terrain themes and the two-step setup) → 44 KB (0.9.0, header menu, stickers,
-squad chips, per-terrain roads and city shapes).
+squad chips, per-terrain roads and city shapes) → 46 KB (0.11.0, keycap panel, docked command card,
+platoon keys, surrender confirm).
 
 Map size: setup and planning size the field to the screen. Entering full screen offers **Expand**
 (`#bf-expand`); until answered the size is held (`mapLock` in client.ts). Multiplayer should pass a
