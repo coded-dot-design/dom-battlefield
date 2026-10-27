@@ -87,6 +87,13 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.3 — Labels and a clearer plan step
+
+- **Desktop bar labels read like the full-screen cards**, first word bold: RADIO · EACH TANK, RADIO · WHOLE SQUAD (RADIO · TANK 2 with a tank selected), PLATOON · RADIOS and AIM · AUTO / LOCK. The compact desktop bar (icon keys, platoon card on the map) keeps one word per group: RADIO, WHOLE SQUAD, PLATOON, AIM. Full screen and touch are unchanged.
+- **Planning keys.** The round Platoon / Loadout / Plan keys are bigger on desktop and phones (the phone caption keeps its size; the icon grows). Every planning tank icon has the ink outline of the Move Tanks key, and the Plan icon's route is one connected dashed line in command violet.
+- **A clear plan step.** The round card keys no longer crowd the Plan card (as when it is shrunk); a LOADOUT tab on its top edge goes back a step. On phones the toast shows at the bottom of the field while the Plan card is up, instead of being squeezed off the edge.
+- Size budget 68 KB.
+
 ### 0.18.2 — Full-screen card polish
 
 - Keyboard focus on a 3D key: the ring wraps the face and its hard base together (the outline used to stop short of the base).

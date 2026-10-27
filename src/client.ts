@@ -104,7 +104,7 @@ function syncUi() {
   if (root.dataset.panel !== panel) root.dataset.panel = panel;
   if (root.dataset.per !== String(per)) root.dataset.per = String(per);
   if (view) view.fitAll = ui === "desk" || stage !== "battle";
-  if (changed) requestAnimationFrame(() => (barIcons(), placePlatoon()));
+  if (changed) requestAnimationFrame(() => (barIcons(), placePlatoon(), orderLabel()));
 }
 /** A platoon key's inside: the tank number over 1-3 size pips. */
 const PIPS: Record<string, number> = { scout: 1, medium: 2, heavy: 3 };
@@ -507,9 +507,13 @@ function preview(resized = false) {
     cmdPanel();
   }
 }
-/** Orders label: "ORDERS · WHOLE SQUAD" in the bar; the full-screen Radio card drops "ORDERS · ". */
-function orderLabel(who: string) {
-  $("#bf-order-label").innerHTML = `<span class="bf-lbl-pre">ORDERS · </span>${who}`;
+/** Orders label: "RADIO · WHOLE SQUAD" in the desktop bar (ORDERS on touch); full screen and the
+ *  compact bar show only "WHOLE SQUAD". */
+let orderWho = "WHOLE SQUAD";
+function orderLabel(who = orderWho) {
+  orderWho = who;
+  // Desktop bar: RADIO · WHOLE SQUAD (one radio voice, like RADIO · EACH TANK); touch keeps ORDERS.
+  $("#bf-order-label").innerHTML = `<b class="bf-lbl-pre">${railLayout.matches ? "ORDERS" : "RADIO"}</b><span class="bf-lbl-sep"> · </span>${who}`;
 }
 function selectUnit(id: number, fromList = false) {
   if (!playing || paused || pan) return;

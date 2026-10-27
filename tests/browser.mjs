@@ -1081,7 +1081,7 @@ try {
       // Open ground at the top middle: a finger held on a tank would select it (orders go to it).
       hold = { x: v.x + v.width / 2, y: v.y + 12, id: 1 };
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [hold] });
-    assert.equal(await page.locator("#bf-order-label").textContent(), "ORDERS · WHOLE SQUAD", "the held finger selected nothing");
+    assert.equal(await page.locator("#bf-order-label").textContent(), "RADIO · WHOLE SQUAD", "the held finger selected nothing");
     for (const o of ["follow", "retreat"]) {
       const b = await box(page, `[data-order=${o}]`),
         t = { x: b.x + b.width / 2, y: b.y + b.height / 2, id: 2 };

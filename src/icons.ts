@@ -27,19 +27,25 @@ function colors(root: HTMLElement): Colors {
     v = (n: string) => css.getPropertyValue(n).trim();
   return { team: v("--team"), a: v("--team-a"), b: v("--team-b"), cmd: v("--k-cmd"), cyan: v("--k-sys"), ink: v("--rim") || "#07060f" };
 }
-/** A dashed pixel line from point to point (horizontal or vertical runs only). */
+/** A dashed pixel line along a path of horizontal / vertical runs. The dash rhythm carries round
+ *  each corner and every corner gets a square, so the route reads as one connected line. */
 function dashes(c: CanvasRenderingContext2D, pts: [number, number][], color: string) {
   c.fillStyle = color;
+  let phase = 0;
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]!,
       [x1, y1] = pts[i]!,
       len = Math.hypot(x1 - x0, y1 - y0),
       dx = (x1 - x0) / len,
       dy = (y1 - y0) / len;
-    for (let t = 0; t < len; t += 7) {
-      const run = Math.min(4, len - t);
-      c.fillRect(Math.round(x0 + dx * t - (dy ? 1.5 : 0)), Math.round(y0 + dy * t - (dx ? 1.5 : 0)), dx ? run : 3, dy ? run : 3);
+    for (let t = -phase; t < len; t += 7) {
+      const a = Math.max(0, t), run = Math.min(t + 4, len) - a;
+      if (run <= 0) continue;
+      const x = dx < 0 ? x0 + dx * (a + run) : x0 + dx * a, y = dy < 0 ? y0 + dy * (a + run) : y0 + dy * a;
+      c.fillRect(Math.round(x - (dy ? 1.5 : 0)), Math.round(y - (dx ? 1.5 : 0)), dx ? run : 3, dy ? run : 3);
     }
+    phase = (phase + len) % 7;
+    if (i < pts.length - 1) c.fillRect(Math.round(x1 - 1.5), Math.round(y1 - 1.5), 3, 3);
   }
 }
 function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
@@ -61,7 +67,7 @@ function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
     }
   } else if (kind === "plan") {
     // A tank, its dashed route and the flag it drives to.
-    dashes(c, [[30, 56], [52, 56], [52, 22], [78, 22]], k.team);
+    dashes(c, [[30, 56], [52, 56], [52, 22], [77, 22]], k.cmd);
     tank(16, 56, 0, k.team, 0.7);
     c.fillStyle = k.ink;
     c.fillRect(77, 6, 5, 28);
