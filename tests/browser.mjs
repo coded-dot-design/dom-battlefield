@@ -743,6 +743,51 @@ try {
     console.log({ fast: true });
   }
   {
+    // Phone stick: drives your tank; a second finger's order lands (and stays lit); a new finger
+    // on the stick takes it over even if the first finger's release never arrived.
+    where = "phone-stick";
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(() => { localStorage.setItem("dom-battlefield:intro", "seen"); localStorage.setItem("dom-battlefield:tips", "off"); });
+    const page = await ctx.newPage();
+    await page.goto(URL);
+    await page.waitForFunction(() => window.battlefield);
+    await page.locator(".bf-mission").first().tap();
+    await page.locator("#bf-quick").tap();
+    await page.waitForTimeout(300);
+    if (await page.evaluate(() => window.battlefield.gate === "fullscreen")) await page.locator("#bf-gate-go").tap();
+    await page.waitForTimeout(300);
+    const cdp = await ctx.newCDPSession(page);
+    const me = () => page.evaluate(() => { const s = window.battlefield.snapshot(); const u = s.units.find((u) => u.id === s.side * s.per); return { x: u.x, side: s.side }; });
+    const sb = await box(page, "#bf-stick"),
+      c = { x: sb.x + sb.width / 2, y: sb.y + sb.height / 2 },
+      a = await me(),
+      dir = a.side === 0 ? 1 : -1,
+      held = { x: c.x + (dir * sb.width) / 2, y: c.y, id: 1 };
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...c, id: 1 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [held] });
+    await page.waitForTimeout(500);
+    assert.ok(Math.abs((await me()).x - a.x) > 0.5, "the stick drives your tank");
+    const ob = await box(page, "[data-order=retreat]"),
+      t = { x: ob.x + ob.width / 2, y: ob.y + ob.height / 2, id: 2 };
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [held, t] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [t] });
+    await page.waitForTimeout(250);
+    assert.ok(await page.evaluate(() => { const s = window.battlefield.snapshot(); return s.units.filter((u) => u.side === s.side && u.id % s.per).every((u) => u.order === "retreat"); }), "an order lands while driving");
+    assert.equal(await page.locator("[data-order=retreat]").getAttribute("aria-pressed"), "true", "the squad's order stays lit");
+    // Finger 1 is never released; finger 3 lands on the stick and drives the other way.
+    const back = { x: c.x - (dir * sb.width) / 2, y: c.y, id: 3 },
+      b = await me();
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [held, { ...c, id: 3 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [held, back] });
+    await page.waitForTimeout(500);
+    assert.ok(dir * ((await me()).x - b.x) < -0.3, "a new finger takes the stick");
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.waitForTimeout(100);
+    assert.equal(await page.evaluate(() => document.querySelector("#bf-stick").classList.contains("down")), false, "all fingers up: the stick lets go");
+    await ctx.close();
+    console.log({ phoneStick: true });
+  }
+  {
     // Desktop layout on a touch screen (tablet, touch laptop): with one finger down, a second
     // finger's taps on the bottom bar (orders, aim, platoon keys) still count.
     where = "desk-touch";

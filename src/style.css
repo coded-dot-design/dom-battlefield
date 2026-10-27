@@ -4311,9 +4311,13 @@ canvas.bf-ico {
   gap: calc(4 * var(--u));
   align-content: center;
 }
+/* Your star: the same yellow and dark rim as the wingman number discs below it. */
 .bf-emblem > b {
+  --o: calc(1.5 * var(--u));
   font-size: calc(24 * var(--u));
   line-height: 0.9;
+  color: var(--yellow);
+  text-shadow: var(--o) 0 var(--rim), calc(-1 * var(--o)) 0 var(--rim), 0 var(--o) var(--rim), 0 calc(-1 * var(--o)) var(--rim);
 }
 .bf-emblem .bf-pips {
   display: flex;

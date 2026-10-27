@@ -158,12 +158,32 @@ document.addEventListener(
   },
   { capture: true, signal: abort.signal },
 );
+/** Touch screens send native touch events, which iOS delivers reliably to every finger even while
+ *  another is driving; pointer events can be cancelled there when a second finger reads as a
+ *  pinch. Controls listen to touches first (and cancel them, so no zoom, scroll or click follows). */
+const touchEvents = "ontouchstart" in window,
+  active = { signal: abort.signal, passive: false };
+/** Brief pressed look for a key the finger only taps (iOS shows no :active for it). */
+function flash(el: HTMLElement) {
+  el.classList.add("down");
+  setTimeout(() => el.classList.remove("down"), 140);
+}
 /** A key that works while another finger is down (driving with the stick or held keys): touch
- *  presses act the moment the finger lands, like Fire (phones and tablets send no click for a
- *  second touch and may cancel its release). Mouse and keyboard use click. */
+ *  presses act the moment the finger lands, like Fire. Mouse and keyboard use click. */
 function press(el: HTMLElement, fn: () => void) {
+  el.addEventListener(
+    "touchstart",
+    (e) => {
+      if (!e.cancelable) return; // the click that follows will act
+      e.preventDefault();
+      flash(el);
+      fn();
+    },
+    active,
+  );
   listen(el, "pointerdown", ((e: PointerEvent) => {
     if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if (e.pointerType === "touch" && touchEvents) return;
     e.preventDefault();
     swallowId = e.pointerId;
     fn();
@@ -686,6 +706,7 @@ function startBattle() {
   setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
   follow = true;
   undrag();
+  clearInput();
   syncUi();
   fit();
   view.center();
@@ -1169,6 +1190,13 @@ function reset() {
 }
 function updateHUD() {
   const p = commander(state);
+  // The order key the squad (or the selected tank) is on stays lit, so a tap visibly lands.
+  const crew = state.units.filter((u) => u.side === side && u.hp > 0 && u.id !== p.id && (selected < 0 || selected === p.id || u.id === selected)),
+    now = crew.length && crew.every((u) => u.order === crew[0]!.order) ? crew[0]!.order : "";
+  for (const n of document.querySelectorAll<HTMLElement>("[data-order]")) {
+    const on = String(n.dataset.order === now);
+    if (n.getAttribute("aria-pressed") !== on) n.setAttribute("aria-pressed", on);
+  }
   text("#bf-armor", `${Math.ceil((p.hp / p.maxHp) * 100)}%`);
   text(
     "#bf-allies",
@@ -1244,12 +1272,12 @@ function loop(now: number) {
     for (const k of keys) held.add(k);
     for (const k of touch.values()) held.add(k);
     input.x =
-      stick.id >= 0
+      stick.id !== -1
         ? stick.x
         : Number(held.has("KeyD") || held.has("ArrowRight")) -
           Number(held.has("KeyA") || held.has("ArrowLeft"));
     input.y =
-      stick.id >= 0
+      stick.id !== -1
         ? stick.y
         : Number(held.has("KeyS") || held.has("ArrowDown")) -
           Number(held.has("KeyW") || held.has("ArrowUp"));
@@ -1856,8 +1884,26 @@ listen(document, "visibilitychange", () => {
     say("Paused while away. Resume when ready.");
   }
 });
+/** Touch identifiers are kept apart from pointer ids (and from -1, "no finger"). */
+const touchKey = (t: Touch) => -2 - t.identifier;
 for (const n of document.querySelectorAll<HTMLElement>("[data-key]")) {
+  n.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      if (!playing || paused) return;
+      for (const t of e.changedTouches) touch.set(touchKey(t), n.dataset.key!);
+      n.classList.add("down");
+    },
+    active,
+  );
+  for (const type of ["touchend", "touchcancel"])
+    n.addEventListener(type, ((e: TouchEvent) => {
+      for (const t of e.changedTouches) touch.delete(touchKey(t));
+      if (![...touch.values()].includes(n.dataset.key!)) n.classList.remove("down");
+    }) as EventListener, options);
   listen(n, "pointerdown", ((e: PointerEvent) => {
+    if (e.pointerType === "touch" && touchEvents) return;
     e.preventDefault();
     if (!playing || paused) return;
     n.setPointerCapture(e.pointerId);
@@ -1866,12 +1912,12 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-key]")) {
   }) as EventListener);
   for (const event of ["pointerup", "pointercancel", "lostpointercapture"])
     listen(n, event, ((e: PointerEvent) => {
-      touch.delete(e.pointerId);
+      if (!touch.delete(e.pointerId)) return;
       n.classList.remove("down");
     }) as EventListener);
 }
 /* Analog thumbstick: one layout read per touch start; direction + throttle from the drag. */
-function stickMove(e: PointerEvent | null) {
+function stickMove(e: { clientX: number; clientY: number } | null) {
   const knob = $(".bf-knob");
   if (!e) {
     stick.id = -1;
@@ -1891,25 +1937,66 @@ function stickMove(e: PointerEvent | null) {
   stick.y = dy * k;
   knob.style.transform = `translate(${(dx * stick.r).toFixed(1)}px,${(dy * stick.r).toFixed(1)}px)`;
 }
-listen($("#bf-stick"), "pointerdown", ((e: PointerEvent) => {
-  e.preventDefault();
-  if (!playing || paused || stick.id >= 0) return;
+/** A new finger on the stick always takes it: a stick still waiting for a release the browser
+ *  dropped (a home-bar or edge swipe mid-drive) would otherwise ignore every touch after. */
+function stickGrab(id: number, at: { clientX: number; clientY: number }) {
   const el = $("#bf-stick"),
     r = el.getBoundingClientRect();
-  el.setPointerCapture(e.pointerId);
   el.classList.add("down");
-  stick.id = e.pointerId;
+  stick.id = id;
   stick.cx = r.left + r.width / 2;
   stick.cy = r.top + r.height / 2;
-  stick.r = r.width * 0.36;
-  stickMove(e);
+  stick.r = Math.max(1, r.width * 0.36);
+  stickMove(at);
+}
+const stickEl = $("#bf-stick");
+stickEl.addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    if (playing && !paused && t) stickGrab(touchKey(t), t);
+  },
+  active,
+);
+stickEl.addEventListener(
+  "touchmove",
+  (e) => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (touchKey(t) === stick.id) stickMove(t);
+  },
+  active,
+);
+for (const type of ["touchend", "touchcancel"])
+  stickEl.addEventListener(type, ((e: TouchEvent) => {
+    for (const t of e.changedTouches) if (touchKey(t) === stick.id) stickMove(null);
+  }) as EventListener, options);
+listen(stickEl, "pointerdown", ((e: PointerEvent) => {
+  if (e.pointerType === "touch" && touchEvents) return;
+  e.preventDefault();
+  if (!playing || paused) return;
+  stickEl.setPointerCapture(e.pointerId);
+  stickGrab(e.pointerId, e);
 }) as EventListener);
-listen($("#bf-stick"), "pointermove", ((e: PointerEvent) => {
+listen(stickEl, "pointermove", ((e: PointerEvent) => {
   if (e.pointerId === stick.id) stickMove(e);
 }) as EventListener);
 for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
-  listen($("#bf-stick"), type, ((e: PointerEvent) => {
+  listen(stickEl, type, ((e: PointerEvent) => {
     if (e.pointerId === stick.id) stickMove(null);
+  }) as EventListener);
+/** Any touch event lists every finger still down: a stick or Fire key held by a finger that is
+ *  gone (its release never arrived) lets go. */
+for (const type of ["touchstart", "touchend", "touchcancel"])
+  listen(document, type, ((e: TouchEvent) => {
+    const down = new Set([...e.touches].map(touchKey));
+    if (stick.id < -1 && !down.has(stick.id)) stickMove(null);
+    for (const [id, key] of touch)
+      if (id < -1 && !down.has(id)) {
+        touch.delete(id);
+        if (![...touch.values()].includes(key))
+          for (const n of document.querySelectorAll(`[data-key="${key}"]`)) n.classList.remove("down");
+      }
   }) as EventListener);
 let drag: {
   x: number;

@@ -18,6 +18,8 @@ export interface Unit extends Point {
   role: Role;
   hp: number;
   maxHp: number;
+  /** Seconds a driving tank has been blocked; past a moment it may pass through its own squad. */
+  jam?: number;
   angle: number;
   turret: number;
   tread: number;
@@ -662,6 +664,8 @@ export function moveUnit(s: Battle, u: Unit, dx: number, dy: number) {
     canMove(s.board, p) &&
     !s.units.some((v) => {
       if (v === u || v.hp <= 0) return false;
+      // A tank jammed behind its own squad for a moment squeezes past (no stuck pile-ups).
+      if ((u.jam ?? 0) > 0.6 && v.side === u.side) return false;
       const after = Math.hypot(v.x - p.x, v.y - p.y);
       return after < 0.55 && after <= Math.hypot(v.x - u.x, v.y - u.y);
     })
@@ -773,7 +777,10 @@ function drive(s: Battle, u: Unit, goal: number, occupied: Set<number>, dt: numb
   if (d < 0.08) {
     u.path.shift();
     if (!u.path.length && u.waypoint !== null) arrive(u);
-  } else if (!moveUnit(s, u, ((p.x - u.x) / d) * travel, ((p.y - u.y) / d) * travel)) u.plan = Math.min(u.plan, 0.25);
+  } else if (!moveUnit(s, u, ((p.x - u.x) / d) * travel, ((p.y - u.y) / d) * travel)) {
+    u.plan = Math.min(u.plan, 0.25);
+    u.jam = Math.min(2, (u.jam ?? 0) + dt);
+  } else u.jam = Math.max(0, (u.jam ?? 0) - dt / 2);
 }
 export function step(s: Battle, dt: number, input: Input) {
   if (s.winner !== null) return;

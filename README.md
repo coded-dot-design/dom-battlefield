@@ -73,6 +73,14 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.9 — Phone controls fix
+
+- **Fix: on iPhone (above all from the Home Screen) the stick could stop driving your tank, and orders tapped while driving seemed dead.** Battle controls now listen to native touch events, which iOS delivers to every finger, and cancel them so a second finger is never read as a pinch or scroll. A new finger on the stick always takes it, and lifting every finger releases a stick or Fire key whose release iOS dropped, so a stuck stick can no longer survive a new battle.
+- Order keys flash when tapped, and the order your squad (or the selected tank) is on stays lit.
+- A tank jammed behind its own squad for more than a moment squeezes past instead of waiting forever.
+- Loadout: your star is yellow with a dark rim, like the wingman number discs.
+- Size budget 54.5 KB (from 54 KB).
+
 ### 0.15.8 — Audit fixes
 
 - **Fix (0.15.7): tapping Menu on a phone could open the coded.design link** that drops in under the finger with the header. After a touch press, the click that follows is swallowed wherever it lands, so every key acts exactly once (a long hold no longer toggles twice; Pause no longer clicks the dim).
