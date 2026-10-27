@@ -32,12 +32,14 @@
           if (t === "light" || t === "dark") document.getElementById("battlefield").dataset.theme = t;
         } catch (e) {}
         /* The boot screen, decided before first paint. Test browsers (unless ?intro) and reduced
-           motion skip it; arriving from the hub (its cartridge already opened the doors) skips
-           the doors. */
+           motion skip it. Launched from the hub's cartridge, the doors arrive shut and hold the
+           whole boot until the game has loaded ("hold"); from another hub page they're skipped. */
         (function () {
-          var b = document.getElementById("battlefield"), q = location.search;
+          var b = document.getElementById("battlefield"), q = location.search, shut = false;
+          try { shut = sessionStorage.getItem("dom-virus:doors") === "shut"; sessionStorage.removeItem("dom-virus:doors"); } catch (e) {}
           if ((navigator.webdriver && q.indexOf("intro") < 0) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
           b.dataset.boot = "on";
+          if (shut) return void (b.dataset.bootDoors = "hold");
           try {
             var r = document.referrer && new URL(document.referrer);
             if (r && r.origin === location.origin && r.pathname !== location.pathname) b.dataset.bootDoors = "off";
@@ -49,15 +51,15 @@
         <svg class="bf-boot-hq" data-side="0" viewBox="0 0 100 100" aria-hidden="true"><rect x="4" y="4" width="92" height="92" pathLength="100" /><rect class="bf-boot-core" x="30" y="44" width="40" height="30" /><text x="50" y="30">HQ A</text></svg>
         <svg class="bf-boot-hq" data-side="1" viewBox="0 0 100 100" aria-hidden="true"><rect x="4" y="4" width="92" height="92" pathLength="100" /><rect class="bf-boot-core" x="30" y="44" width="40" height="30" /><text x="50" y="30">HQ B</text></svg>
         <div class="bf-sticker bf-boot-sticker"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><g transform="translate(10 9) scale(.69)" fill="currentColor"><path fill-rule="evenodd" d="M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z" /><path d="M54 0h9v9h-9z" fill="#ff2e88" /></g></svg></span><span>SHERMAN OPERATIONS</span><b>BATTLEFIELD</b></div>
-        <p class="bf-boot-status" role="status">LOADING<i></i></p>
-        <button id="bf-boot-go" class="bf-start bf-keep-sticker bf-call" aria-label="Press start"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><path d="M22 16v32l26-16Z" fill="currentColor" /></svg></span><b>PRESS START</b></button>
+        <div class="bf-boot-low"><p class="bf-boot-status" role="status">LOADING<i></i></p>
+        <button id="bf-boot-go" class="bf-start bf-keep-sticker bf-call" aria-label="Press start"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><path d="M22 16v32l26-16Z" fill="currentColor" /></svg></span><b>PRESS START</b></button></div>
         <i class="bf-boot-door" data-side="l"></i><i class="bf-boot-door" data-side="r"></i>
       </div>
       <header class="bf-header">
         <a
           href="https://coded-dot-design.github.io/dom-virus/#sherman-bytes"
           class="bf-brand"
-          ><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><g transform="translate(10 9) scale(.69)" fill="currentColor"><path fill-rule="evenodd" d="M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z" /><path d="M54 0h9v9h-9z" fill="#ff2e88" /></g></svg><span>DOM <i class="bf-ver">SOLO / V0.17.1</i><b>BATTLEFIELD</b></span></a
+          ><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><g transform="translate(10 9) scale(.69)" fill="currentColor"><path fill-rule="evenodd" d="M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z" /><path d="M54 0h9v9h-9z" fill="#ff2e88" /></g></svg><span>DOM <i class="bf-ver">SOLO / V0.18.0</i><b>BATTLEFIELD</b></span></a
         ><div class="bf-help-keys" role="group" aria-label="Help"></div
         ><span class="bf-edition">SHERMAN OPERATIONS</span
         ><div class="bf-keys"><button id="bf-keys" class="bf-hbtn" aria-expanded="false" aria-controls="bf-keys-panel" aria-label="Keyboard controls" title="Keyboard controls"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="5" width="16" height="10" rx="2" /><path d="M5 8h.01M8 8h.01M11 8h.01M14 8h.01M5 11h.01M15 11h.01M7.5 12h5" /></svg></button
@@ -97,7 +99,7 @@
       <section id="bf-giveup" class="bf-overlay" data-tone="flag" hidden role="dialog" aria-label="Battle paused: keep fighting or surrender">
             <div class="bf-sticker"><span>BATTLE PAUSED</span><b>GIVE UP?</b></div>
             <div class="bf-overlay-keys"><button id="bf-giveup-no" class="bf-start bf-keep-sticker" aria-label="Keep fighting (resume)"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><g transform="translate(10 9) scale(.69)" fill="currentColor"><path fill-rule="evenodd" d="M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z" /><path d="M54 0h9v9h-9z" fill="#ff2e88" /></g></svg></span><b>KEEP FIGHTING</b></button>
-            <button id="bf-giveup-yes" class="bf-start bf-flag-sticker" aria-label="Yes, surrender"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#f6f3ff" stroke-opacity=".25" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#f6f3ff" stroke-width="2" /><path d="M19 54V10" stroke="#f6f3ff" stroke-width="4" /><path d="M21 12h24l-6 9 6 9H21Z" fill="#f6f3ff" /></svg></span><b>SURRENDER</b></button></div>
+            <button id="bf-giveup-yes" class="bf-start bf-flag-sticker" aria-label="Yes, surrender"><span class="bf-start-icon"><svg class="bf-surrender-icon" viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><g class="bf-cells"><rect x="0" y="0" width="16" height="16" style="--i:0" /><rect x="16" y="0" width="16" height="16" style="--i:1" /><rect x="32" y="0" width="16" height="16" style="--i:3" /><rect x="48" y="0" width="16" height="16" style="--i:6" /><rect x="0" y="16" width="16" height="16" style="--i:2" /><rect x="16" y="16" width="16" height="16" style="--i:4" /><rect x="32" y="16" width="16" height="16" style="--i:7" /><rect x="48" y="16" width="16" height="16" style="--i:10" /><rect x="0" y="32" width="16" height="16" style="--i:5" /><rect x="16" y="32" width="16" height="16" style="--i:8" /><rect x="32" y="32" width="16" height="16" style="--i:11" /><rect x="48" y="32" width="16" height="16" style="--i:13" /><rect x="0" y="48" width="16" height="16" style="--i:9" /><rect x="16" y="48" width="16" height="16" style="--i:12" /><rect x="32" y="48" width="16" height="16" style="--i:14" /><rect x="48" y="48" width="16" height="16" style="--i:15" /></g><path class="bf-grid" d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" /><rect class="bf-frame" x="1" y="1" width="62" height="62" /><g class="bf-white-flag"><path class="bf-pole" d="M17 9h4v46h-4Z" /><path class="bf-cloth" d="M21 12h24l-6 9 6 9H21Z" /></g></svg></span><b>SURRENDER</b></button></div>
           </section>
       <section id="bf-result" class="bf-overlay" data-tone="lost" hidden aria-live="polite" aria-labelledby="bf-result-title">
             <div class="bf-sticker"><span id="bf-result-kicker">INSERT COIN</span><b id="bf-result-title">GAME OVER</b></div>
@@ -284,7 +286,7 @@
         <p class="bf-rotate">Rotate to landscape for the full widescreen battlefield.</p>
         <section id="bf-controls" class="bf-controls" hidden>
           <div class="bf-dock bf-dock-cmd">
-            <button class="bf-dock-fold" aria-pressed="false" aria-label="Icons only" title="Icons only / show labels"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12M4 10h7M4 15h12" /></svg></button>
+            <button class="bf-dock-fold" aria-pressed="false" aria-label="Icons only" title="Icons only / show labels"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="bf-l-list" d="M4 5h12M4 10h7M4 15h12" /><path class="bf-l-grid" d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM11 11h5v5h-5z" /></svg></button>
             <div class="bf-task"><span class="bf-group-label">RADIO · EACH TANK</span></div>
             <div class="bf-squad-orders">
               <span id="bf-order-label" class="bf-group-label">ORDERS · WHOLE SQUAD</span>
@@ -300,7 +302,7 @@
             <div class="bf-platoon"><span class="bf-platoon-tag">PLATOON</span><button id="bf-roster-layout" class="bf-roster-layout" data-layout="grid" aria-label="Platoon layout: grid (tap for column, then row)" title="Grid / column / row"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="bf-l-grid" d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM11 11h5v5h-5z" /><path class="bf-l-column" d="M7 3h6v4H7zM7 8h6v4H7zM7 13h6v4H7z" /><path class="bf-l-row" d="M2 7h5v6H2zM7.5 7h5v6h-5zM13 7h5v6h-5z" /></svg></button><div id="bf-roster" class="bf-roster" role="group" aria-label="Platoon"></div></div>
           </div>
           <div class="bf-dock bf-quick">
-            <button class="bf-dock-fold" aria-pressed="false" aria-label="Icons only" title="Icons only / show labels"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12M4 10h7M4 15h12" /></svg></button>
+            <button class="bf-dock-fold" aria-pressed="false" aria-label="Icons only" title="Icons only / show labels"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="bf-l-list" d="M4 5h12M4 10h7M4 15h12" /><path class="bf-l-grid" d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM11 11h5v5h-5z" /></svg></button>
               <button id="bf-squad" class="bf-arcade" data-tip="Menu · squad · pause beside it" data-tip-more="The menu opens the squad list (tap a tank to select it), these tips and full screen. The white flag beside it pauses: keep fighting or surrender." aria-expanded="false" aria-controls="bf-tactics" aria-label="Open squad and menu panel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12" /></svg></button
               ><button id="bf-pause" class="bf-arcade bf-flag-key" aria-pressed="false" aria-label="Surrender: pause, then keep fighting or give up (P)" title="P · Pause / surrender"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-3 3.5 3 3.5H5" /></svg><span>Surrender</span></button>
           </div>

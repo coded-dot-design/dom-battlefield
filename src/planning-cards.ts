@@ -4,7 +4,7 @@ export function bindPlanningCards(
   root: HTMLElement,
   signal: AbortSignal,
   onFold: () => void = () => {},
-): { reset(): void } {
+): { reset(): void; fold(card: HTMLElement, folded: boolean): void } {
   const keys = [...root.querySelectorAll<HTMLButtonElement>(".bf-fold-key")];
 
   function setFolded(key: HTMLButtonElement, folded: boolean) {
@@ -48,6 +48,11 @@ export function bindPlanningCards(
   }, { signal });
 
   return {
+    /** Fold or open one card (by its fold key) without the click feedback. */
+    fold(card: HTMLElement, folded: boolean) {
+      const key = card.querySelector<HTMLButtonElement>(".bf-fold-key");
+      if (key) setFolded(key, folded);
+    },
     reset() {
       for (const key of keys) {
         setFolded(key, false);

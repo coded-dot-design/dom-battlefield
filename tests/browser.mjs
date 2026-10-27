@@ -951,14 +951,50 @@ try {
     await page.goto(`${URL}?intro`);
     await page.waitForFunction(() => window.battlefield);
     assert.equal(await page.locator("#bf-boot").isVisible(), true, "the boot screen covers the page");
+    const top = () => page.locator(".bf-boot-sticker").evaluate((n) => n.offsetTop);
+    const sticker = await top();
     await page.locator("#bf-boot-go").waitFor({ state: "visible", timeout: 8000 });
+    await page.waitForTimeout(450);
+    const after = await box(page, ".bf-boot-sticker"), key = await box(page, "#bf-boot-go");
+    assert.equal(await top(), sticker, "PRESS START never shifts the sticker");
+    assert.ok(key.y > after.y + after.height, "PRESS START sits below the sticker");
     await page.locator("#bf-boot-go").click();
     await page.waitForFunction(() => document.querySelector("#bf-boot").hidden && !document.querySelector("#battlefield").dataset.boot, null, { timeout: 4000 });
     await page.locator(".bf-mission").first().click();
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
     assert.equal(await page.locator(".bf-stale").isVisible(), true, "a restored page offers a restart");
     await page.close();
+    // From the hub's cartridge: the doors arrive shut and open once the game has loaded.
+    const hub = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await hub.addInitScript(() => sessionStorage.setItem("dom-virus:doors", "shut"));
+    await hub.goto(`${URL}?intro`);
+    await hub.waitForFunction(() => document.querySelector("#battlefield").dataset.bootDoors === "open", null, { timeout: 4000 });
+    assert.equal(await hub.evaluate(() => sessionStorage.getItem("dom-virus:doors")), null, "the hand-off flag is used once");
+    await hub.close();
     console.log({ boot: true });
+    // Desktop battle: command mode starts with the Plan card shrunk and the orders unpinned; a
+    // change sticks (also after a reload).
+    where = "battle cards";
+    const desk = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await desk.addInitScript(() => localStorage.setItem("dom-battlefield:tips", "off"));
+    await desk.goto(URL);
+    await desk.locator(".bf-mission").first().click();
+    await desk.locator("#bf-quick").click();
+    await desk.waitForFunction(() => window.battlefield.playing && !window.battlefield.command.planning);
+    await desk.locator("#bf-command").click();
+    assert.equal(await desk.locator("#bf-cmd").evaluate((n) => n.classList.contains("folded")), true, "Plan card shrunk");
+    assert.equal(await desk.locator("#bf-acts").getAttribute("data-pin"), "false", "orders unpinned");
+    const corner = await box(desk, "#bf-cmd"), stage = await box(desk, ".bf-stage");
+    assert.ok(corner.x - stage.x < 40 && corner.y - stage.y < 40, "Plan card in the top-left corner");
+    await desk.locator("#bf-acts-pin").click();
+    await desk.reload();
+    await desk.locator(".bf-mission").first().click();
+    await desk.locator("#bf-quick").click();
+    await desk.waitForFunction(() => window.battlefield.playing && !window.battlefield.command.planning);
+    await desk.locator("#bf-command").click();
+    assert.equal(await desk.locator("#bf-acts").getAttribute("data-pin"), "true", "the pin choice is remembered");
+    await desk.close();
+    console.log({ battleCards: true });
   }
   {
     // Fast clicks right after load count (no key may swallow an early click).

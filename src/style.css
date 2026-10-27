@@ -1083,7 +1083,7 @@ h1 {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: var(--rim)8c;
+  background: color-mix(in srgb, var(--rim) 45%, transparent);
   animation: bf-fade 200ms ease-out;
 }
 .bf-coach-card {
@@ -1114,8 +1114,9 @@ h1 {
 }
 .bf-coach-tip {
   position: absolute;
-  border: 2px dotted var(--k-sys);
+  border: 3px dashed var(--k-sys-ink);
   border-radius: 12px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent);
   pointer-events: none;
 }
 .bf-coach-tip > :is(button, p) {
@@ -1187,6 +1188,21 @@ h1 {
 }
 .bf-coach-tip[data-at^="below"] > p {
   top: calc(100% + 34px);
+}
+/* Desktop bottom bar: the label sits right above its group (never over the next group) and the
+   note opens above the label. */
+.bf-coach-tip[data-at="above"] > * {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+}
+.bf-coach-tip[data-at="above"] > p {
+  bottom: calc(100% + 38px);
+}
+/* Desktop: the tips card sits up top, clear of the bottom bar it explains. */
+[data-ui="desk"] .bf-coach-card {
+  top: 76px;
+  bottom: auto;
 }
 @keyframes bf-fade {
   from {
@@ -4439,11 +4455,8 @@ canvas.bf-ico {
 [data-theme="light"] .bf-overlay :is(.bf-flag-sticker, .bf-new-sticker) {
   background: var(--k-flag);
 }
-[data-theme="light"] .bf-overlay :is(.bf-flag-sticker, .bf-new-sticker) .bf-start-icon svg [stroke] {
+[data-theme="light"] .bf-overlay .bf-new-sticker .bf-start-icon svg [stroke] {
   stroke: var(--rim);
-}
-[data-theme="light"] .bf-overlay .bf-flag-sticker .bf-start-icon svg [fill="#f6f3ff"] {
-  fill: var(--rim);
 }
 .bf-overlay .bf-start.go {
   color: var(--rim);
@@ -4640,7 +4653,7 @@ canvas.bf-ico {
   position: fixed;
   z-index: 20;
   width: max-content;
-  padding: 30px 12px 12px;
+  padding: 44px 12px 12px;
   background: color-mix(in srgb, var(--surface) 70%, transparent);
   border: 2px solid color-mix(in srgb, var(--line) 80%, transparent);
   border-radius: 12px;
@@ -4659,8 +4672,8 @@ canvas.bf-ico {
 }
 [data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics .bf-platoon-tag {
   position: absolute;
-  left: 12px;
-  top: 11px;
+  left: 14px;
+  top: 16px;
 }
 [data-ui="desk"]:is([data-full="true"], .platoon-floating).dock-icons #bf-tactics .bf-platoon-tag {
   display: none;
@@ -4717,12 +4730,12 @@ canvas.bf-ico {
 [data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout),
 [data-ui="desk"].platoon-floating .bf-roster-layout {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 9px;
+  right: 9px;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 22px !important;
+  width: 28px;
+  height: 24px !important;
   min-height: 0 !important;
   padding: 0;
   border-width: 1.5px;
@@ -4740,7 +4753,7 @@ canvas.bf-ico {
 }
 [data-ui="desk"][data-full="true"] :is(.bf-dock-cmd, .bf-quick) {
   gap: 10px;
-  padding: 30px 12px 12px;
+  padding: 44px 12px 12px;
 }
 [data-ui="desk"][data-full="true"] :is(.bf-task, .bf-quick > .bf-aim) {
   padding: 0 0 10px;
@@ -4759,8 +4772,8 @@ canvas.bf-ico {
 }
 [data-ui="desk"][data-full="true"] .bf-task .bf-group-label,
 [data-ui="desk"][data-full="true"] .bf-quick > .bf-aim::before {
-  margin-top: -20px;
-  margin-right: 30px;
+  margin-top: -30px;
+  margin-right: 34px;
 }
 [data-ui="desk"][data-full="true"].dock-icons .bf-dock button :is(span, kbd),
 [data-ui="desk"][data-full="true"].dock-icons .bf-dock .bf-group-label,
@@ -5450,4 +5463,99 @@ canvas.bf-ico {
 }
 #battlefield[data-ui="touch"][data-stage="battle"].commanding .bf-fire circle {
   opacity: 0;
+}
+
+/* From the hub's cartridge the doors arrive shut: the whole boot holds, frozen at its first frame,
+   until the game has loaded and opens them. */
+#battlefield[data-boot-doors="hold"] .bf-boot * {
+  animation-play-state: paused !important;
+}
+/* LOADING and PRESS START share one spot, halfway between the sticker and the bottom edge, so
+   the key landing never shifts the sticker. */
+.bf-boot-low {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  top: calc(50% - 3vh + var(--boot-half, calc(46 * var(--u))));
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.bf-boot-low > * {
+  grid-area: 1 / 1;
+  pointer-events: auto;
+}
+/* Desktop battle: the Plan card sits in the top-left corner (drag it anywhere). */
+#battlefield[data-ui="desk"][data-stage="battle"] #bf-cmd {
+  left: calc(var(--sl, 0px) + 12px);
+  top: 12px;
+  translate: none;
+}
+
+/* SURRENDER: you wave the white flag. The icon is your team's colour in any theme with the flag
+   always white; pressed, the squares white out one by one, the flag waves, then the key blows up
+   (with a losing sound). */
+.bf-surrender-icon .bf-cells rect {
+  fill: var(--team);
+}
+.bf-surrender-icon .bf-grid {
+  fill: none;
+  stroke: #07060f;
+  stroke-opacity: 0.3;
+}
+.bf-surrender-icon .bf-frame {
+  fill: none;
+  stroke: #f6f3ff;
+  stroke-width: 2;
+}
+.bf-surrender-icon :is(.bf-pole, .bf-cloth) {
+  fill: #f6f3ff;
+  stroke: #07060f;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+}
+#battlefield .bf-overlay .bf-flag-sticker .bf-start-icon svg {
+  background: var(--team);
+}
+#battlefield .bf-overlay .bf-flag-sticker.go {
+  color: var(--ink);
+  background: var(--surface);
+}
+[data-theme="light"] #battlefield .bf-overlay .bf-flag-sticker.go {
+  background: var(--k-flag);
+}
+.bf-flag-sticker.go .bf-cells rect {
+  animation: bf-whiteout 160ms calc(var(--i) * 18ms) steps(2) forwards;
+}
+@keyframes bf-whiteout {
+  to {
+    fill: #f6f3ff;
+  }
+}
+.bf-flag-sticker .bf-cloth {
+  transform-box: fill-box;
+  transform-origin: 0 50%;
+}
+.bf-flag-sticker.go .bf-cloth {
+  animation: bf-wave 120ms ease-in-out 4 alternate;
+}
+@keyframes bf-wave {
+  from {
+    transform: skewY(-12deg) scaleX(0.9);
+  }
+  to {
+    transform: skewY(10deg) scaleX(1.05);
+  }
+}
+
+/* The icons switch shows the mode it is on: a list with labels, a grid of icons only. */
+.bf-dock-fold .bf-l-grid,
+.dock-icons .bf-dock-fold .bf-l-list {
+  display: none;
+}
+.dock-icons .bf-dock-fold .bf-l-grid {
+  display: inline;
 }

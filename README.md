@@ -87,6 +87,17 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.0 — Phase 1 go-live
+
+- **Cartridge hand-off.** Launched from the hub's console, the pink doors close over the screen and stay shut through the page load (the stand-in DEPLOYING SQUAD board is gone). The game paints the same shut doors, holds its whole boot until it has loaded, then opens them onto the grid. A one-time session flag (`dom-virus:doors`) carries the hand-off; a direct link or a refresh plays the boot as before.
+- **Boot screen.** LOADING and PRESS START share one spot, halfway between the sticker and the bottom edge, so the key landing never shifts the sticker. Once pressed and blown up, the key stays gone while the screen clears (it no longer fades back in under the pointer).
+- **Command mode on desktop keeps out of the way.** In a battle the Plan card starts shrunk in the top-left corner and the orders card unpinned beside it. Shrinking, opening, pinning and unpinning are remembered (`dom-battlefield:battle-cards`). Planning keeps its pinned tooltip card.
+- **Wave the white flag.** SURRENDER's icon is your team's colour in any theme with the flag always white. Pressed, the squares white out one by one, the flag waves, a losing sound plays and the key blows up over the next setup screen.
+- **Button tips read on every theme.** The page now dims behind them (the backdrop colour was invalid), rings are thicker dashed lines with a light halo, and each ring hugs its keys (not the spacers beside them). On desktop the bottom bar's labels sit above their group, and the tips card moves to the top.
+- **Full screen.** The floating cards have room in their header for the label and the corner switch, and the switch shows its mode (a list with labels, a grid for icons only). Entering full screen during planning no longer loses the platoon card when the battle starts.
+- Platoon keys no longer spring up and back down on release (the selection paints at once).
+- Size budget 66 KB.
+
 ### 0.17.1 — Boot screen, back-button guard
 
 - **A boot screen when you open the game directly.** The hub's pink cartridge doors fold open, the grid fades in and lights up square by square, the two HQs draw in, and the BATTLEFIELD sticker (with the DOM VIRUS cartridge skull) slams down and presses in. LOADING gives way to **PRESS START** (click, tap, Enter or Space). Pressing it blasts the key, the sticker breaks up, the header and readouts drop in from the top, the map frame draws in from the top and down the sides, and the location card opens in the middle. Coming from the hub skips the doors (the cartridge already opened them); reduced motion skips the screen.

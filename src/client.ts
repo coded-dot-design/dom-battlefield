@@ -277,6 +277,15 @@ function lineUp(layer: HTMLElement) {
     }
   }
 }
+/** The ring around a control group hugs its visible keys (not its spacers or dividers). */
+function ring(n: HTMLElement) {
+  const box = n.getBoundingClientRect();
+  if (n.classList.contains("bf-card")) return box;
+  const keys = [...n.querySelectorAll<HTMLElement>("button")].map((b) => b.getBoundingClientRect()).filter((b) => b.width && b.height);
+  if (!keys.length) return box;
+  const l = Math.min(...keys.map((b) => b.left)), t = Math.min(...keys.map((b) => b.top));
+  return new DOMRect(l, t, Math.max(...keys.map((b) => b.right)) - l, Math.max(...keys.map((b) => b.bottom)) - t);
+}
 /** Tip labels and their notes never leave the screen: nudge each one back inside. */
 function keepOnScreen(layer: HTMLElement) {
   const pad = 6;
@@ -322,14 +331,16 @@ function coach(show: boolean) {
     layer.querySelectorAll(".bf-coach-tip").forEach((n) => n.remove());
     const mid = innerWidth / 2;
     for (const n of controls()) {
-      const r = n.getBoundingClientRect();
+      const r = ring(n);
       if (!r.width || !r.height) continue;
       const tip = document.createElement("div");
       tip.className = "bf-coach-tip";
       tip.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
       const left = r.left + r.width / 2 < mid,
         t = tipOf(n);
-      tip.dataset.at = touchUi ? (left ? "right" : "left") : (n.dataset.tipAt ?? (r.top < 60 ? (left ? "below" : "below-r") : left ? "right" : "left"));
+      tip.dataset.at = touchUi
+        ? left ? "right" : "left"
+        : (n.dataset.tipAt ?? (r.top < 60 ? (left ? "below" : "below-r") : r.top > innerHeight * 0.6 ? "above" : left ? "right" : "left"));
       const label = document.createElement("button");
       label.className = "bf-tip-label";
       label.textContent = t ? t[1] : n.dataset.tip!;
@@ -623,6 +634,7 @@ function setCommand(on: boolean, pick = true) {
     $("#bf-cmd").hidden = true;
     if (!planning) follow = true;
   } else {
+    if (battleDesk()) battleLayout();
     if (selected < 0 && pick) nextTank();
     say(
       planning
@@ -754,6 +766,8 @@ function startBattle() {
   syncUi();
   fit();
   view.center();
+  // Full screen from planning: the platoon card goes under the sector map that just appeared.
+  requestAnimationFrame(placePlatoon);
   audio.play("start");
   say("Battle started. Tap Command any time to redirect your squad.");
   if (tipsPending) (tipsPending = false), requestAnimationFrame(() => coach(true));
@@ -1219,8 +1233,9 @@ function deploy(quick = false) {
   void entering.then(() => requestAnimationFrame(checkGate));
   if (!coarse.matches) ready();
 }
-function reset() {
-  launchEffects.cancel();
+/** Back to setup. A burst already flying (the surrender key's) may finish over the new screen. */
+function reset(keepBurst = false) {
+  if (!keepBurst) launchEffects.cancel();
   if (quickSaved) {
     ({ side, formation, per } = quickSaved);
     roles = quickSaved.roles;
@@ -1316,7 +1331,9 @@ function updateHUD() {
       const n = document.createElement("button");
       n.className = "bf-arcade bf-unit";
       n.innerHTML = unitKey(u.role, "");
-      press(n, () => selectUnit(u.id, true));
+      // Repaint the keys at once: a frame without .active between release and the next HUD
+      // pass would let the key spring up and back down.
+      press(n, () => (selectUnit(u.id, true), updateHUD()));
       roster.append(n);
     }
   if (roster.dataset.n !== String(allies.length)) (roster.dataset.n = String(allies.length)), requestAnimationFrame(barIcons);
@@ -1659,10 +1676,51 @@ for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
   }) as EventListener);
   for (const t of ["pointerup", "pointercancel"]) listen(h, t, () => (from = null));
 }
-const planningCards = bindPlanningCards(root, abort.signal, () => buzz(10));
+const planningCards = bindPlanningCards(root, abort.signal, () => {
+  buzz(10);
+  if (battleDesk()) saveBattleCards({ fold: $("#bf-cmd").classList.contains("folded") });
+});
+/* Desktop battle: command mode keeps out of the way. The Plan card starts shrunk in the top-left
+   corner and the orders card unpinned beside it; whatever you change sticks (remembered). */
+const BATTLE_CARDS = "dom-battlefield:battle-cards";
+const battleDesk = () => !planning && !railLayout.matches;
+function battleCards(): { fold: boolean; pin: boolean } {
+  try {
+    return { fold: true, pin: false, ...JSON.parse(localStorage.getItem(BATTLE_CARDS) || "{}") };
+  } catch {
+    return { fold: true, pin: false };
+  }
+}
+function saveBattleCards(change: Partial<{ fold: boolean; pin: boolean }>) {
+  try {
+    localStorage.setItem(BATTLE_CARDS, JSON.stringify({ ...battleCards(), ...change }));
+  } catch {}
+}
+function pinActs(pin: boolean) {
+  const acts = $("#bf-acts");
+  acts.dataset.pin = String(pin);
+  $("#bf-acts-pin").setAttribute("aria-pressed", String(pin));
+  actsWidth = actsHeight = 0;
+}
+/** Entering command mode in a desktop battle: apply the remembered card layout. */
+function battleLayout() {
+  const prefs = battleCards(),
+    card = $("#bf-cmd");
+  planningCards.fold(card, prefs.fold);
+  pinActs(prefs.pin);
+  if (prefs.pin) return;
+  // Unpinned orders start under the Plan card (beside it when the map is short).
+  requestAnimationFrame(() => {
+    const below = card.offsetTop + card.offsetHeight + 10;
+    if (below + (actsHeight || 120) < view.vh) (actsAt.x = card.offsetLeft), (actsAt.y = below);
+    else (actsAt.x = card.offsetLeft + card.offsetWidth + 10), (actsAt.y = card.offsetTop);
+    rideAlong();
+  });
+}
 /** Cards back to their places: unfolded, undragged, full height. */
 function undrag() {
   planningCards.reset();
+  pinActs(true);
   for (const c of document.querySelectorAll<HTMLElement>(".bf-card")) {
     delete c.dataset.moved;
     c.style.left = c.style.top = c.style.right = c.style.bottom = c.style.height = "";
@@ -1722,6 +1780,8 @@ const fullHome = $("#bf-fullscreen").parentElement!,
 function placePlatoon() {
   if (railLayout.matches || (root.dataset.full !== "true" && !root.classList.contains("platoon-floating")) || tactics.dataset.moved !== undefined) return;
   const m = $(".bf-mini").getBoundingClientRect();
+  // No sector map yet (planning): leave the card where the stylesheet puts it.
+  if (!m.width) return void (tactics.style.top = tactics.style.left = tactics.style.right = "");
   tactics.style.top = `${Math.round(m.bottom + 10)}px`;
   tactics.style.left = "auto";
   tactics.style.right = `${Math.round(innerWidth - m.right)}px`;
@@ -1766,7 +1826,10 @@ new ResizeObserver(() => barIcons()).observe($("#bf-controls"));
 const DOCK = "dom-battlefield:dock";
 function dockIcons(on: boolean) {
   root.classList.toggle("dock-icons", on);
-  for (const b of document.querySelectorAll(".bf-dock-fold")) b.setAttribute("aria-pressed", String(on));
+  for (const b of document.querySelectorAll(".bf-dock-fold")) {
+    b.setAttribute("aria-pressed", String(on));
+    b.setAttribute("aria-label", on ? "Show labels" : "Icons only");
+  }
 }
 try {
   dockIcons(localStorage.getItem(DOCK) === "icons");
@@ -1823,14 +1886,19 @@ listen(railLayout, "change", () => {
 });
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
 listen($("#bf-giveup-no"), "click", () => setPause(false));
-listen($("#bf-giveup-yes"), "click", () => {
-  const b = $("#bf-giveup-yes");
+// The white flag: the icon whites out and waves, then the key blows up with a losing sound.
+listen($<HTMLButtonElement>("#bf-giveup-yes"), "click", () => {
+  const b = $<HTMLButtonElement>("#bf-giveup-yes");
+  if (b.classList.contains("go")) return;
   b.classList.add("go");
+  audio.play("hurt");
   setTimeout(() => {
-    b.classList.remove("go");
-    reset();
-    say("White flag raised. Pick your next operation.");
-  }, reduced.matches ? 0 : 450);
+    audio.play("gameover");
+    launchEffects.play(b, () => {
+      reset(true);
+      say("White flag raised. Pick your next operation.");
+    }, () => b.classList.remove("go"));
+  }, reduced.matches ? 0 : 480);
 });
 /* Header keyboard key: hover (fine pointers) or click shows the controls as keycaps. */
 function keysPanel(open: boolean) {
@@ -1848,7 +1916,7 @@ if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
 listen(document, "click", ((e: MouseEvent) => {
   if (!(e.target as Element).closest(".bf-keys")) keysPanel(false);
 }) as EventListener);
-listen($("#bf-new-operation"), "click", reset);
+listen($("#bf-new-operation"), "click", () => reset());
 // Phones that can't go full screen (iPhone Safari) get the add-to-home-screen card instead.
 listen($("#bf-fullscreen"), "click", () => {
   if (coarse.matches && !canFullscreen() && !isInstalled()) return installCard(true);
@@ -1869,7 +1937,7 @@ listen(portrait, "change", () => {
 listen($("#bf-gate-go"), "click", () => {
   void enterFullscreen().then(() => requestAnimationFrame(checkGate));
 });
-listen($("#bf-gate-exit"), "click", reset);
+listen($("#bf-gate-exit"), "click", () => reset());
 // iOS ignores user-scalable=no: block pinch and double-tap zoom while a battle runs.
 for (const type of ["gesturestart", "gesturechange"])
   document.addEventListener(type, (e) => playing && e.preventDefault(), { signal: abort.signal, passive: false });
@@ -1927,11 +1995,9 @@ for (const b of document.querySelectorAll<HTMLElement>("[data-page]"))
 /* Pin: the orders card rides along with the tank as a tooltip. Unpinned it grows a grab bar and
    stays wherever you drag it, to keep the tanks in view. */
 listen($("#bf-acts-pin"), "click", () => {
-  const acts = $("#bf-acts"),
-    pin = acts.dataset.pin !== "true";
-  acts.dataset.pin = String(pin);
-  $("#bf-acts-pin").setAttribute("aria-pressed", String(pin));
-  actsWidth = actsHeight = 0;
+  const pin = $("#bf-acts").dataset.pin !== "true";
+  pinActs(pin);
+  if (battleDesk()) saveBattleCards({ pin });
   say(pin ? "Orders pinned to the tank." : "Orders unpinned: drag the bar to move them.");
   rideAlong();
 });
@@ -2471,9 +2537,19 @@ if (root.dataset.boot === "on") {
   const field = boot.querySelector<HTMLElement>(".bf-boot-field")!,
     tile = parseFloat(getComputedStyle(field).getPropertyValue("--tile")) || 40;
   glints(field, Math.ceil(innerWidth / tile), Math.ceil(innerHeight / tile));
+  // Half the sticker's height places LOADING / PRESS START halfway down to the bottom edge.
+  const sticker = boot.querySelector<HTMLElement>(".bf-boot-sticker")!;
+  boot.style.setProperty("--boot-half", `${sticker.offsetHeight / 2}px`);
   const ready = () => boot.classList.add("ready"),
-    wait = (root.dataset.bootDoors === "off" ? 0 : 650) + 1700;
-  setTimeout(() => (document.readyState === "complete" ? ready() : addEventListener("load", ready, { once: true })), wait);
+    loaded = (then: () => void) => (document.readyState === "complete" ? then() : addEventListener("load", then, { once: true })),
+    run = () => setTimeout(() => loaded(ready), (root.dataset.bootDoors === "off" ? 0 : 650) + 1700);
+  // Shut doors (from the hub) open once the game has loaded; the boot runs from there.
+  if (root.dataset.bootDoors === "hold")
+    loaded(() => requestAnimationFrame(() => {
+      root.dataset.bootDoors = "open";
+      run();
+    }));
+  else run();
   const go = $<HTMLButtonElement>("#bf-boot-go");
   listen(go, "click", () =>
     launchEffects.play(go, () => {
@@ -2485,7 +2561,8 @@ if (root.dataset.boot === "on") {
         delete root.dataset.boot;
         delete root.dataset.bootDoors;
       }, 1500);
-    }),
+    // Blown up: the key stays gone while the screen clears (no fade back under the pointer).
+    }, () => (go.style.visibility = "hidden")),
   );
   // Any key starts too, once PRESS START shows.
   listen(document, "keydown", ((e: KeyboardEvent) => {
