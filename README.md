@@ -73,6 +73,17 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.16.1 — Polish: overlays, phone header, first screen, cards
+
+- **Overlays grey the field out on their own** (a gunmetal veil with the field desaturated), on every stage and both layouts. The sticker header now slams in: it drops with a soft shadow far below it, hits with its hard base, then presses itself into the screen. Keys are bigger, and on the phone they sit at the bottom where START BATTLE and the setup keys are; the toast moves to the top.
+- **Phone:** the Menu key lets go when the menu closes (it stayed pressed). The setup / plan header is taller, with a bigger logo, title and full-size keys.
+- **First screen:** a clearer grid whose squares light up at random in the control colours; the two HQs face off across the middle (the enemy HQ takes its spot once you pick a place).
+- **Cards:** a foldable card says so the first time it opens ("double-tap ▣ to fold"). An over-budget Loadout turns red, shakes and says what to fix, and no other card opens until it's fixed. Changing side (by hand or with the dice) puts the Platoon card back on the side away from your team.
+- **Colour:** tank identity (your star, the wingman numbers, on the field and in Loadout) and the Loadout, Plan and formation icons use the command violet; no yellow left in the controls. The idle Auto / Lock key is a dim red cap that stands off the dark rim. The ★ key on your own tank lights in your team colour.
+- **Orders card:** its pointer sits behind the keys (it no longer cuts one in half). Follow me on your own tank is a grey key resting pressed in.
+- **Desktop:** the plan card in battle drops the planning-only Move HQ / Move Tanks switch. The left group is RADIO · EACH TANK (you radio a tank its coordinates). Every bar key is the same height. In full screen the map cards stack their keys in a column, and a corner key switches both to icons only (remembered).
+- Size budget 57.5 KB.
+
 ### 0.16.0 — One control palette, locked orders, cleaner overlays
 
 - **One colour system for every control, the same on desktop and phone, dark and light.** Cyberpunk meets Tron: neon caps on an ink rim. Cyan = navigation, violet = command (Command, routes, the check, and every locked order), red = the gun with Auto and Lock as its lighter twin, magenta = Attack, orange = Advance, lime = Fall in / Follow me, your team colour = Retreat to HQ, yellow = tank identity only (your star, wingman numbers). Faces read on both themes; text uses a deeper twin on light. All palette tokens live in one block (ready to be passed in from config later); duplicate and overridden rules were removed.

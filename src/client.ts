@@ -370,6 +370,26 @@ function mapSize() {
       : Math.floor(viewport.clientWidth / unit);
   return { cols: Math.max(18, Math.min(48, cols)), rows: Math.max(14, Math.min(30, rows)) };
 }
+/** The blank first screen: squares of the grid light up one by one in the control colours. Each
+ *  glint moves to a new square when its pulse ends, so the field keeps flickering, cheaply. */
+const GLINT = ["var(--k-sys)", "var(--k-cmd)", "var(--k-attack)", "var(--k-fallin)", "var(--k-advance)", "var(--team-a)", "var(--team-b)"];
+function glints(world: HTMLElement, cols: number, rows: number) {
+  if (reduced.matches) return;
+  const place = (g: HTMLElement) => {
+    g.style.setProperty("--x", String(Math.floor(Math.random() * cols)));
+    g.style.setProperty("--y", String(Math.floor(Math.random() * rows)));
+    g.style.setProperty("--g", GLINT[Math.floor(Math.random() * GLINT.length)]!);
+  };
+  for (let i = 0; i < 16; i++) {
+    const g = document.createElement("i");
+    g.className = "bf-glint";
+    g.style.animationDelay = `${(Math.random() * 3).toFixed(2)}s`;
+    g.style.animationDuration = `${(2.2 + Math.random() * 1.6).toFixed(2)}s`;
+    place(g);
+    g.addEventListener("animationiteration", () => place(g));
+    world.append(g);
+  }
+}
 /** The screen's safe-area insets (notch, camera, rounded corners), read once per layout. */
 let safe = { l: 0, r: 0, t: 0, b: 0 };
 function readSafe() {
@@ -404,9 +424,12 @@ function preview(resized = false) {
   // Phones: the HQs (and the platoons in front of them) sit far enough in from the edges to
   // clear the notch, so every tank can be tapped. The enemy HQ moves round its own zone.
   const inset = hqInset(cols, rows),
-    b = generate(cols, rows, mission, seed, density, inset);
-  scatterHq(b, 1 - side, seed, inset);
-  if (hqMove && hqMove.key === mapKey(cols, rows)) moveBase(b, side, hqMove.cell);
+    b = generate(cols, rows, mission, seed, density, inset),
+    blank = !picked && !playing;
+  // The blank first screen sets the stage: both HQs face off across the middle. Once a place is
+  // picked the enemy HQ takes up its spot in its own zone.
+  if (!blank) scatterHq(b, 1 - side, seed, inset);
+  if (!blank && hqMove && hqMove.key === mapKey(cols, rows)) moveBase(b, side, hqMove.cell);
   state = createBattle(
     b,
     mission,
@@ -420,6 +443,7 @@ function preview(resized = false) {
   root.dataset.side = String(side);
   root.toggleAttribute("data-blank", !picked && !playing);
   view = new View(viewport, state, selectUnit);
+  if (blank) glints(view.world, cols, rows);
   syncUi();
   view.resize();
   view.center();
@@ -734,12 +758,21 @@ function showCards() {
   for (const c of document.querySelectorAll<HTMLElement>(".bf-pcard, #bf-cmd")) c.dataset.away = away;
   syncUi();
 }
+const hinted = new Set<string>();
 function showPanel(next: Panel, pick = true) {
   if (!planning) return;
+  if (panel === "loadout" && next !== "loadout" && overBudget()) return;
   if (panel === "plan" && next !== "plan") commitDraft();
   panel = next;
   hqPick = false;
   showCards();
+  // The first time a card opens, it shows that its icon folds it (double-tap).
+  const card = next === "plan" ? $("#bf-cmd") : document.querySelector<HTMLElement>(`#bf-card-${next}`);
+  if (card && card.querySelector(".bf-fold-hint") && !hinted.has(next)) {
+    hinted.add(next);
+    card.classList.add("hinting");
+    setTimeout(() => card.classList.remove("hinting"), 5000);
+  }
   if (next === "plan") setCommand(true, pick);
   else {
     commanding = false;
@@ -955,7 +988,8 @@ function setPause(value: boolean) {
     frame = requestAnimationFrame(loop);
   }
   lease.setActive(!paused);
-  if (!paused) root.classList.remove("menu-open");
+  // Resuming closes the menu, and its key lets go with it.
+  if (!paused) root.classList.remove("menu-open"), $("#bf-squad").setAttribute("aria-expanded", "false");
   pauseButton();
   status.textContent = paused ? "PAUSED" : planning ? "PLAN" : "LIVE";
   say(
@@ -976,7 +1010,6 @@ function pauseButton() {
     card.hidden = !show;
     if (show) $<HTMLButtonElement>("#bf-giveup-no").focus({ preventScroll: true });
   }
-  $("#bf-dim").hidden = !show;
 }
 function fullscreen() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -1154,7 +1187,6 @@ function deploy(quick = false) {
   setup.hidden = true;
   $("#bf-go").hidden = true;
   $("#bf-result").hidden = true;
-  $("#bf-dim").hidden = true;
   $("#bf-controls").hidden = false;
   pauseButton();
   lease.setActive(true);
@@ -1218,7 +1250,6 @@ function reset() {
   undrag();
   $("#bf-go").hidden = !picked;
   $("#bf-result").hidden = true;
-  $("#bf-dim").hidden = true;
   $("#bf-controls").hidden = true;
   preview();
 }
@@ -1365,7 +1396,6 @@ function loop(now: number) {
         result = $("#bf-result");
       result.hidden = false;
       result.dataset.tone = won ? "won" : "lost";
-      $("#bf-dim").hidden = false;
       $("#bf-result-kicker").textContent = won ? "STAGE CLEAR" : "INSERT COIN";
       $("#bf-result-title").textContent = won ? "MISSION COMPLETE" : "GAME OVER";
       // The debrief goes out over comms; the overlay is just the sticker and two keys.
@@ -1478,7 +1508,19 @@ listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
   if (!b) return;
   roles[Number(b.closest<HTMLElement>("[data-slot]")!.dataset.slot)] = b.dataset.role as Role;
   preview();
+  overBudget();
 }) as EventListener);
+/** Over budget: the Loadout card turns red and says so; nothing else opens until it's fixed. */
+function overBudget() {
+  const cost = loadoutCost(roles);
+  if (cost <= 12) return false;
+  say(`Over budget: ${cost} / 12 points. Downgrade a tank to continue.`);
+  const card = $("#bf-card-loadout");
+  card.classList.remove("bf-shake");
+  void card.offsetWidth;
+  card.classList.add("bf-shake");
+  return true;
+}
 listen($("#bf-deploy"), "click", () => deploy());
 // Quick start: everything this page didn't set (platoon, loadout) is rolled at random.
 let quickSaved: { side: number; formation: string; per: number; roles: Role[] } | null = null;
@@ -1523,7 +1565,10 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-rand]"))
   listen(n, "click", () => {
     rollDie(n);
     if (n.dataset.rand === "bf-card-platoon") {
+      const was = side;
       randomPlatoon();
+      // A new side moves the card to the other side of the field (its keys flip with it).
+      if (side !== was) undrag();
       preview();
       showCards();
       say(`Platoon: ${side ? "B" : "A"} side, ${formation}, ${per} tanks a side.`);
@@ -1690,8 +1735,8 @@ function dockFull() {
 function barIcons() {
   const bar = $("#bf-controls");
   if (railLayout.matches || bar.hidden) return root.classList.remove("bar-icons");
-  // Full screen: the cards share the map's bottom edge; smaller screens get the icon keys.
-  if (root.dataset.full === "true") return root.classList.toggle("bar-icons", innerWidth < 1400);
+  // Full screen: the cards stack their keys; their own corner key picks labels or icons.
+  if (root.dataset.full === "true") return root.classList.remove("bar-icons");
   root.classList.remove("bar-icons");
   // The platoon is centred, so each side gets half of what it leaves: both must fit there.
   const side = (bar.clientWidth - $("#bf-roster").scrollWidth) / 2 - 24,
@@ -1699,6 +1744,23 @@ function barIcons() {
   root.classList.toggle("bar-icons", tight);
 }
 new ResizeObserver(() => barIcons()).observe($("#bf-controls"));
+/* Full screen: one key in either card's corner folds both cards to icons only (remembered). */
+const DOCK = "dom-battlefield:dock";
+function dockIcons(on: boolean) {
+  root.classList.toggle("dock-icons", on);
+  for (const b of document.querySelectorAll(".bf-dock-fold")) b.setAttribute("aria-pressed", String(on));
+}
+try {
+  dockIcons(localStorage.getItem(DOCK) === "icons");
+} catch {}
+for (const b of document.querySelectorAll<HTMLElement>(".bf-dock-fold"))
+  listen(b, "click", () => {
+    const on = !root.classList.contains("dock-icons");
+    dockIcons(on);
+    try {
+      localStorage.setItem(DOCK, on ? "icons" : "labels");
+    } catch {}
+  });
 // Desktop tiles scale to the viewport: refit when the docked card (or anything else) resizes it.
 let vpSize = "";
 new ResizeObserver(() => {

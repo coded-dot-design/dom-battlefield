@@ -20,4 +20,4 @@ console.log(`Total: ${total} gzip bytes`);
 // 0.14.0 (the redesigned flow: location card with terrain thumbnails, plan cards with orbits,
 // per-tank order bubble, the touch cockpit rails, intro card, touch tips); 54 KB in 0.15.0
 // (sprite-drawn icons, readable card type, dice, emblems, safe-area HQs).
-if (total > 56000) throw Error("56KB compressed app budget exceeded");
+if (total > 57500) throw Error("57.5KB compressed app budget exceeded");

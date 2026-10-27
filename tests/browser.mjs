@@ -527,7 +527,7 @@ try {
       await page.waitForTimeout(120);
       assert.deepEqual(await page.evaluate(() => window.battlefield.snapshot()), frozen);
       assert.equal(await page.locator("#bf-giveup").isVisible(), true, "pausing asks: keep fighting or give up");
-      assert.equal(await page.locator("#bf-dim").isVisible(), true, "the field dims behind the card");
+      assert.equal(await page.locator("#bf-giveup").evaluate((n) => getComputedStyle(n).backgroundColor !== "rgba(0, 0, 0, 0)"), true, "the field dims behind the sticker");
       if (!mobile) {
         await page.locator("#bf-keys").hover();
         assert.equal(await page.locator("#bf-keys-panel").isVisible(), true, "the key icon shows the controls");
@@ -544,7 +544,7 @@ try {
       await resize(page, mobile ? { width: 844, height: 390 } : { width: 1440, height: 1000 });
       await page.locator("#bf-giveup-no").click();
       assert.equal(await page.evaluate(() => window.battlefield.paused), false);
-      assert.equal(await page.locator("#bf-dim").isVisible(), false);
+      assert.equal(await page.locator("#bf-giveup").isVisible(), false);
       if (mobile) {
         // Menu: pauses and brings the header in over the dim; Tips closes it and shows the tips.
         await page.locator("#bf-squad").click();

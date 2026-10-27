@@ -21,11 +21,11 @@ const BOX: Record<string, [number, number]> = {
 };
 const SCALE: Record<string, number> = { scout: 0.78, medium: 0.92, heavy: 1.08 };
 
-type Colors = { team: string; a: string; b: string; yellow: string; cyan: string; ink: string };
+type Colors = { team: string; a: string; b: string; cmd: string; cyan: string; ink: string };
 function colors(root: HTMLElement): Colors {
   const css = getComputedStyle(root),
     v = (n: string) => css.getPropertyValue(n).trim();
-  return { team: v("--team"), a: v("--team-a"), b: v("--team-b"), yellow: v("--yellow"), cyan: v("--cyan"), ink: v("--rim") || "#07060f" };
+  return { team: v("--team"), a: v("--team-a"), b: v("--team-b"), cmd: v("--k-cmd"), cyan: v("--k-sys"), ink: v("--rim") || "#07060f" };
 }
 /** A dashed pixel line from point to point (horizontal or vertical runs only). */
 function dashes(c: CanvasRenderingContext2D, pts: [number, number][], color: string) {
@@ -56,7 +56,7 @@ function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
     for (const [i, w] of [14, 24, 34].entries()) {
       c.fillStyle = k.cyan;
       c.fillRect(56, 20 + i * 14, w, 6);
-      c.fillStyle = k.yellow;
+      c.fillStyle = k.cmd;
       c.fillRect(56 + w - 6, 18 + i * 14, 6, 10);
     }
   } else if (kind === "plan") {
@@ -65,7 +65,7 @@ function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
     tank(16, 56, 0, k.team, 0.7);
     c.fillStyle = k.ink;
     c.fillRect(77, 6, 5, 28);
-    c.fillStyle = k.yellow;
+    c.fillStyle = k.cmd;
     c.fillRect(78, 7, 3, 26);
     c.fillRect(81, 7, 13, 10);
     c.fillStyle = k.ink;
@@ -77,7 +77,7 @@ function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
       "f-line": [[30, 8], [30, 22], [30, 36]],
       "f-column": [[46, 22], [30, 22], [14, 22]],
     };
-    for (const [i, [x, y]] of at[kind]!.entries()) tank(x, y, 0, i === 0 ? k.yellow : k.team, 0.5);
+    for (const [i, [x, y]] of at[kind]!.entries()) tank(x, y, 0, i === 0 ? k.cmd : k.team, 0.5);
   } else if (kind in SCALE) tank(16, 16, 0, k.team, SCALE[kind]);
   else tank(16, 16, 0, kind === "side0" ? k.a : kind === "side1" ? k.b : k.team, 0.9);
 }
