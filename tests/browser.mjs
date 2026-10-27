@@ -181,15 +181,23 @@ try {
         const after = await box(page, "#bf-card-platoon .bf-card-grip");
         assert.ok(Math.abs(after.x - (g.x - 80)) < 6, "it landed under the finger");
       }
-      // Double-tap the card's icon: it folds to that square (shortcuts tucked away), and back.
+      // Click the card's icon box: it shrinks to that square (shortcuts tucked away), and back.
       {
         const b = await box(page, "#bf-card-platoon .bf-card-icon");
-        for (let i = 0; i < 2; i++) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-        assert.equal(await page.locator("#bf-card-platoon").evaluate((n) => n.classList.contains("folded")), true, "double-tap folds the card");
+        await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+        assert.equal(await page.locator("#bf-card-platoon").evaluate((n) => n.classList.contains("folded")), true, "a click shrinks the card");
         assert.equal(await page.locator("#bf-side").isVisible(), false);
+        assert.equal(await page.locator("#bf-card-platoon .bf-card-icon").getAttribute("data-hover"), "CLICK TO OPEN");
         const f = await box(page, "#bf-card-platoon .bf-card-icon");
-        for (let i = 0; i < 2; i++) await page.mouse.click(f.x + f.width / 2, f.y + f.height / 2);
-        assert.equal(await page.locator("#bf-side").isVisible(), true, "double-tap opens it again");
+        await page.mouse.click(f.x + f.width / 2, f.y + f.height / 2);
+        assert.equal(await page.locator("#bf-side").isVisible(), true, "a click opens it again");
+      }
+      // Step keys (desktop): Platoon's Next opens Loadout; Loadout's Previous goes back.
+      if (!mobile) {
+        await page.locator("#bf-card-platoon .bf-nav-next").click();
+        assert.equal(await page.locator("#bf-card-loadout").isVisible(), true, "Next: Loadout");
+        await page.locator("#bf-card-loadout .bf-nav-prev").click();
+        assert.equal(await page.locator("#bf-card-platoon").isVisible(), true, "Previous: Platoon");
       }
       // Orbit: hop straight to Loadout. Over budget blocks the start keys.
       await page.locator('#bf-card-platoon .bf-orb[data-open="loadout"]').click();
@@ -369,10 +377,9 @@ try {
         assert.match(await page.locator("#bf-cmd-tank").textContent(), /^YOUR TANK/);
         assert.equal(await page.locator('#bf-acts [data-act="follow"]').isDisabled(), true, "your tank doesn't follow itself");
       }
-      // Start: the sticker flashes red and leaves; command mode ends; aim returns.
+      // Start: the sticker blows apart (a short-lived effect copy) and the battle begins at once.
       await page.locator("#bf-start").click();
-      assert.equal(await page.locator("#bf-start").evaluate((n) => n.classList.contains("go")), true);
-      await page.waitForFunction(() => document.querySelector("#bf-start").hidden);
+      assert.equal(await page.locator("#bf-start").isHidden(), true);
       assert.equal(await page.locator("#battlefield").getAttribute("data-stage"), "battle");
       assert.equal(await page.locator(".bf-mode").isVisible(), false, "Move HQ is planning only");
       assert.deepEqual(

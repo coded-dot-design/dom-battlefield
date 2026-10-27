@@ -1,3 +1,4 @@
+import { blast } from "./fx";
 import {
   generate,
   createBattle,
@@ -741,6 +742,7 @@ function startBattle() {
   undrag();
   clearInput();
   syncUi();
+  requestAnimationFrame(barIcons);
   fit();
   view.center();
   audio.play("start");
@@ -759,6 +761,23 @@ function showCards() {
   syncUi();
 }
 const hinted = new Set<string>();
+function cardTips(card: HTMLElement) {
+  const top = card.querySelector<HTMLElement>(".bf-tip-top")!,
+    bottom = card.querySelector<HTMLElement>(".bf-tip-bottom"),
+    box = card.querySelector<HTMLElement>(".bf-card-icon, #bf-cmd-badge");
+  if (box) {
+    // Beside the icon box, its arrow pointing at it.
+    const b = box.getBoundingClientRect(),
+      c = card.getBoundingClientRect();
+    top.style.left = `${Math.round(b.right - c.left + 10)}px`;
+    top.style.top = `${Math.round(b.top - c.top + b.height / 2)}px`;
+  }
+  card.classList.add("tip-top");
+  setTimeout(() => {
+    card.classList.remove("tip-top");
+    if (bottom) card.classList.add("tip-bottom"), setTimeout(() => card.classList.remove("tip-bottom"), 4200);
+  }, 4200);
+}
 function showPanel(next: Panel, pick = true) {
   if (!planning) return;
   if (panel === "loadout" && next !== "loadout" && overBudget()) return;
@@ -766,12 +785,12 @@ function showPanel(next: Panel, pick = true) {
   panel = next;
   hqPick = false;
   showCards();
-  // The first time a card opens, it shows that its icon folds it (double-tap).
+  // The first time a card opens: a tip by its icon box (click to shrink), then one by its bottom
+  // edge (grab it to make the card shorter).
   const card = next === "plan" ? $("#bf-cmd") : document.querySelector<HTMLElement>(`#bf-card-${next}`);
-  if (card && card.querySelector(".bf-fold-hint") && !hinted.has(next)) {
+  if (card && card.querySelector(".bf-tip-top") && !hinted.has(next)) {
     hinted.add(next);
-    card.classList.add("hinting");
-    setTimeout(() => card.classList.remove("hinting"), 5000);
+    requestAnimationFrame(() => cardTips(card));
   }
   if (next === "plan") setCommand(true, pick);
   else {
@@ -1000,7 +1019,13 @@ function setPause(value: boolean) {
         : "Battle resumed.",
   );
 }
+/** Overlays: their keys sit on the map's bottom edge (above the desktop bar). */
+function overlayKeys() {
+  const r = viewport.getBoundingClientRect();
+  root.style.setProperty("--ob", `${Math.max(0, Math.round(innerHeight - r.bottom))}px`);
+}
 function pauseButton() {
+  overlayKeys();
   $("#bf-pause").setAttribute("aria-pressed", String(paused));
   // The white flag pauses the battle and asks: keep fighting or give up. Not for the
   // rotate / full-screen gate or the tips, which pause on their own.
@@ -1305,7 +1330,8 @@ function updateHUD() {
       const n = document.createElement("button");
       n.className = "bf-arcade bf-unit";
       n.innerHTML = unitKey(u.role, "");
-      press(n, () => selectUnit(u.id, true));
+      // The key goes active at once (not on the next HUD tick), so it never rises between.
+      press(n, () => (selectUnit(u.id, true), updateHUD()));
       roster.append(n);
     }
   if (roster.dataset.n !== String(allies.length)) (roster.dataset.n = String(allies.length)), requestAnimationFrame(barIcons);
@@ -1394,6 +1420,7 @@ function loop(now: number) {
       lease.setActive(false);
       const won = state.winner === side,
         result = $("#bf-result");
+      overlayKeys();
       result.hidden = false;
       result.dataset.tone = won ? "won" : "lost";
       $("#bf-result-kicker").textContent = won ? "STAGE CLEAR" : "INSERT COIN";
@@ -1521,11 +1548,12 @@ function overBudget() {
   card.classList.add("bf-shake");
   return true;
 }
-listen($("#bf-deploy"), "click", () => deploy());
+listen($("#bf-deploy"), "click", () => (blast($("#bf-deploy"), root), deploy()));
 // Quick start: everything this page didn't set (platoon, loadout) is rolled at random.
 let quickSaved: { side: number; formation: string; per: number; roles: Role[] } | null = null;
 listen($("#bf-quick"), "click", () => {
   // The rolled platoon is for this battle only; your own setup comes back afterwards.
+  blast($("#bf-quick"), root);
   quickSaved = { side, formation, per, roles: [...roles] };
   randomPlatoon();
   randomLoadout();
@@ -1643,24 +1671,31 @@ for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
   }) as EventListener);
   for (const t of ["pointerup", "pointercancel"]) listen(h, t, () => (from = null));
 }
-/* Double-tap a card's icon box (the plan card's tank badge) to fold the card down to that square,
-   with its round shortcuts tucked behind it; double-tap again to open it. It still drags. */
+/* Click (tap) a card's icon box (the plan card's tank badge) to fold the card down to that
+   square, its round shortcuts tucked behind it; click again to open it. It still drags. Hovering
+   the box says so, arcade style. */
+function foldCard(card: HTMLElement, box: HTMLElement) {
+  const folded = card.classList.toggle("folded");
+  box.setAttribute("aria-expanded", String(!folded));
+  box.dataset.hover = folded ? "CLICK TO OPEN" : "CLICK TO SHRINK";
+  buzz(10);
+}
 for (const box of document.querySelectorAll<HTMLElement>(".bf-pcard .bf-card-icon, #bf-cmd-badge")) {
   const card = box.closest<HTMLElement>(".bf-card")!;
   // Also a real control: focusable, and Enter / Space fold or open it.
   box.removeAttribute("aria-hidden");
   box.setAttribute("role", "button");
   box.tabIndex = 0;
-  box.setAttribute("aria-label", "Fold or open this card");
+  box.setAttribute("aria-label", "Shrink or open this card");
   box.setAttribute("aria-expanded", "true");
+  box.dataset.hover = "CLICK TO SHRINK";
   listen(box, "keydown", ((e: KeyboardEvent) => {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();
     e.stopPropagation();
-    box.setAttribute("aria-expanded", String(!card.classList.toggle("folded")));
+    foldCard(card, box);
   }) as EventListener);
-  let lastUp = 0,
-    down: { x: number; y: number } | null = null;
+  let down: { x: number; y: number } | null = null;
   // The card captures the pointer for dragging, so the release is heard on the card.
   listen(box, "pointerdown", ((e: PointerEvent) => {
     down = { x: e.clientX, y: e.clientY };
@@ -1668,20 +1703,15 @@ for (const box of document.querySelectorAll<HTMLElement>(".bf-pcard .bf-card-ico
   listen(card, "pointerup", ((e: PointerEvent) => {
     const from = down;
     down = null;
-    if (!from || Math.hypot(e.clientX - from.x, e.clientY - from.y) > 8) return void (lastUp = 0);
-    const now = e.timeStamp;
-    if (now - lastUp < 350) {
-      lastUp = 0;
-      const folded = card.classList.toggle("folded");
-      box.setAttribute("aria-expanded", String(!folded));
-      buzz(10);
-    } else lastUp = now;
+    // A click, not the end of a drag.
+    if (!from || Math.hypot(e.clientX - from.x, e.clientY - from.y) > 8) return;
+    foldCard(card, box);
   }) as EventListener);
 }
 /** Cards back to their places: unfolded, undragged, full height. */
 function undrag() {
   for (const c of document.querySelectorAll<HTMLElement>(".folded")) c.classList.remove("folded");
-  for (const b of document.querySelectorAll<HTMLElement>(".bf-card-icon, #bf-cmd-badge")) b.setAttribute("aria-expanded", "true");
+  for (const b of document.querySelectorAll<HTMLElement>(".bf-card-icon, #bf-cmd-badge")) b.setAttribute("aria-expanded", "true"), (b.dataset.hover = "CLICK TO SHRINK");
   for (const c of document.querySelectorAll<HTMLElement>(".bf-card")) {
     delete c.dataset.moved;
     c.style.left = c.style.top = c.style.right = c.style.bottom = c.style.height = "";
@@ -1689,7 +1719,8 @@ function undrag() {
 }
 for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
 // Desktop full screen: the bar's cards on the map drag too.
-for (const c of document.querySelectorAll<HTMLElement>(".bf-dock, #bf-tactics")) dragCard(c, () => root.dataset.full === "true");
+for (const c of document.querySelectorAll<HTMLElement>(".bf-dock")) dragCard(c, () => root.dataset.full === "true");
+dragCard($("#bf-tactics"), () => root.dataset.full === "true" || root.dataset.detach === "true");
 /* Full screen: the platoon card lays its keys out as a grid, a column or a row (remembered). */
 const ROSTER = "dom-battlefield:roster",
   LAYOUTS = ["grid", "column", "row"] as const;
@@ -1738,7 +1769,7 @@ const fullHome = $("#bf-fullscreen").parentElement!,
   tactics = $("#bf-tactics");
 /** The platoon card sits just under the sector map until you drag it somewhere else. */
 function placePlatoon() {
-  if (root.dataset.full !== "true" || tactics.dataset.moved !== undefined) return;
+  if ((root.dataset.full !== "true" && root.dataset.detach !== "true") || tactics.dataset.moved !== undefined) return;
   const m = $(".bf-mini").getBoundingClientRect();
   tactics.style.top = `${Math.round(m.bottom + 10)}px`;
   tactics.style.left = "auto";
@@ -1763,14 +1794,25 @@ function dockFull() {
 /** Desktop bar: labels on the keys give way to icons when a group would overflow its slot. */
 function barIcons() {
   const bar = $("#bf-controls");
-  if (railLayout.matches || bar.hidden) return root.classList.remove("bar-icons");
+  if (railLayout.matches || bar.hidden) return root.classList.remove("bar-icons"), delete root.dataset.detach;
   // Full screen: the cards stack their keys; their own corner key picks labels or icons.
   if (root.dataset.full === "true") return root.classList.remove("bar-icons");
   root.classList.remove("bar-icons");
-  // The platoon is centred, so each side gets half of what it leaves: both must fit there.
-  const side = (bar.clientWidth - $("#bf-roster").scrollWidth) / 2 - 24,
-    tight = [...bar.querySelectorAll<HTMLElement>(".bf-dock")].some((g) => g.scrollWidth > side);
-  root.classList.toggle("bar-icons", tight);
+  // The platoon is centred, so each side gets half of what it leaves: both must fit there. When
+  // they don't, the platoon leaves the bar for its own card under the sector map (as in full
+  // screen); only if the bar is still too tight do its keys drop to icons.
+  const docks = [...bar.querySelectorAll<HTMLElement>(".bf-dock")],
+    was = root.dataset.detach === "true";
+  delete root.dataset.detach;
+  const side = (bar.clientWidth - $("#bf-roster").scrollWidth) / 2 - 24;
+  if (docks.some((g) => g.scrollWidth > side)) {
+    // Planning has no sector map to sit under: the bar just takes icons.
+    if (root.dataset.stage !== "battle") return root.classList.add("bar-icons");
+    root.dataset.detach = "true";
+    if (!was) delete tactics.dataset.moved;
+    requestAnimationFrame(placePlatoon);
+    root.classList.toggle("bar-icons", docks.reduce((w, g) => w + g.scrollWidth, 0) + 40 > bar.clientWidth);
+  }
 }
 new ResizeObserver(() => barIcons()).observe($("#bf-controls"));
 /* Full screen: one key in either card's corner folds both cards to icons only (remembered). */
@@ -1971,13 +2013,19 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-act]"))
 listen($("#bf-start"), "click", () => {
   const b = $("#bf-start");
   if (!planning) return;
-  b.classList.add("go");
+  const key = b.getBoundingClientRect();
   startBattle();
-  if (planning) return b.classList.remove("go");
-  setTimeout(() => {
-    b.hidden = true;
-    b.classList.remove("go");
-  }, reduced.matches ? 0 : 450);
+  if (planning) return;
+  // On the battle camera: your HQ fires toward theirs (it may be off screen; the shot flies on).
+  const v = viewport.getBoundingClientRect(),
+    at = (c: number) => {
+      const p = view.toStage(point(state.board, c));
+      return { x: v.left + p.x, y: v.top + p.y };
+    },
+    shot = { from: at(state.board.bases[side]!), to: at(state.board.bases[1 - side]!) };
+  // How wars start: the key blows apart and the first shot crosses the field.
+  blast(b, root, { ...shot, color: getComputedStyle(root).getPropertyValue("--team").trim() }, key);
+  b.hidden = true;
 });
 // Move HQ (planning): the next tap on the map moves your HQ, and your platoon with it.
 // Move HQ / Move Tanks: a two-way switch, one side always on (tap the other side to switch).

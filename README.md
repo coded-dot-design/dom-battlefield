@@ -73,6 +73,17 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.16.3 — Big moments, cleaner keys, guided cards
+
+- **START BATTLE, Quick start and Plan battle blow apart:** the key sinks into the page, flashes and bursts into neon pixels with a shock ring (the DOM VIRUS hit burst, in the DOM; a short-lived copy plays it, so the game moves on at once). START BATTLE also fires the first shot: a tracer from your HQ toward theirs, bursting where it lands. Reduced motion skips it.
+- **START BATTLE no longer jumps** when cards open and close: it holds the open side (your side) for the whole plan step.
+- **Overlays, one rule:** a grey veil that blocks the field; the sticker slams in slightly above centre and presses itself in (deeper now, so it reads on every sticker, Game over included); the two keys sit centred at the bottom of the map on desktop too.
+- **Keys:** releasing a locked key no longer snaps its base ahead of its top (the locked glow is a filter now, never the base). Platoon keys go active at once on a click, so they never rise between press and lock.
+- **Cards:** click (tap) the icon box to shrink a card (no more double-tap); the box is a 3D key with an arcade "CLICK TO SHRINK" tooltip. The first time a card opens, a tip with a pointer sits by that box, then one by the bottom edge ("grab it to make the card shorter").
+- **Step keys:** desktop Platoon / Loadout cards end in a violet bar with reversed keys (Next · Loadout; Platoon / Next · Plan). On phones the round shortcuts carry NEXT / BACK tags.
+- **Desktop bar:** on smaller screens the platoon leaves the bar for its own card under the sector map (as in full screen), so the bar keeps its labels; it drops to icons only if it still can't fit.
+- Size budget 60 KB.
+
 ### 0.16.2 — Desktop full screen: a platoon card of its own
 
 - The platoon leaves the sector map card for its own see-through card, just under the map until you drag it anywhere. It sizes to its keys (square), and its corner key cycles **grid** (2, 3 or 4 a row by squad size) → **column** (wraps to a second column past six tanks) → **row**; the choice is remembered.

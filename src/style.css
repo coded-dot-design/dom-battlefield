@@ -245,12 +245,11 @@ button.down {
   background: var(--lock, var(--c));
   animation: bf-locked 1.8s ease-in-out infinite;
 }
+/* The breath is a filter, never the box shadow: the shadow is the key's base, and it must keep
+   easing in step with the top when the key is released (no snap, no bounce). */
 @keyframes bf-locked {
   50% {
-    box-shadow:
-      0 0 0 transparent,
-      0 0 0 calc(3px + 0.15em) color-mix(in srgb, var(--lock, var(--c)) 35%, transparent),
-      0 0 26px color-mix(in srgb, var(--lock, var(--c)) 80%, transparent);
+    filter: drop-shadow(0 0 7px color-mix(in srgb, var(--lock, var(--c)) 85%, transparent));
   }
 }
 /* Call: a ring leaves the bottom of the base (the key itself stays up). */
@@ -4152,11 +4151,13 @@ canvas.bf-ico {
 #battlefield {
   --card-span: calc(468 * var(--u));
 }
-#battlefield:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) #bf-start {
-  left: calc((var(--sl) + var(--card-span) + 100% - var(--sr)) / 2);
-}
-#battlefield:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) #bf-start {
+/* It holds that spot for the whole plan step (cards open or closed), so it never jumps: the
+   cards always sit on the side away from your team, START on your side. */
+#battlefield[data-stage="plan"] #bf-start {
   left: calc((var(--sl) + 100% - var(--sr) - var(--card-span)) / 2);
+}
+#battlefield[data-stage="plan"][data-side="1"] #bf-start {
+  left: calc((var(--sl) + var(--card-span) + 100% - var(--sr)) / 2);
 }
 /* The white flag (back out to setup) sits in the bottom corner on your side, clear of START and
    of the notch, which is always at mid height. */
@@ -4180,7 +4181,7 @@ canvas.bf-ico {
 #battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
   left: 50%;
   right: auto;
-  top: calc(60 * var(--u));
+  top: calc(var(--th, 60px) + calc(10 * var(--u)));
   bottom: auto;
   translate: -50% calc(-8 * var(--u));
   max-width: calc(100% - var(--sl) - var(--sr) - calc(40 * var(--u)));
@@ -4326,7 +4327,7 @@ canvas.bf-ico {
   background: var(--tone);
   border: calc(2.5 * var(--u)) solid var(--rim);
   border-radius: calc(10 * var(--u));
-  box-shadow: 0 calc(5 * var(--u)) 0 var(--rim);
+  box-shadow: 0 calc(8 * var(--u)) 0 var(--rim);
   rotate: -4deg;
   animation: bf-slam 1100ms linear both;
 }
@@ -4341,29 +4342,30 @@ canvas.bf-ico {
     box-shadow: 0 calc(46 * var(--u)) calc(34 * var(--u)) color-mix(in srgb, var(--rim) 55%, transparent);
     animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
   }
-  36% {
+  34% {
     opacity: 1;
     scale: 1;
     rotate: -4deg;
     translate: 0 0;
-    box-shadow: 0 calc(5 * var(--u)) 0 var(--rim);
+    box-shadow: 0 calc(8 * var(--u)) 0 var(--rim);
     animation-timing-function: ease-out;
   }
-  46% {
+  44% {
     scale: 1.04;
   }
-  58%,
-  72% {
+  56%,
+  70% {
     scale: 1;
     translate: 0 0;
-    box-shadow: 0 calc(5 * var(--u)) 0 var(--rim);
-    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+    box-shadow: 0 calc(8 * var(--u)) 0 var(--rim);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.4);
   }
+  /* Pressed in: the face sinks onto its base, and the base is gone. */
   100% {
     opacity: 1;
-    scale: 1;
+    scale: 0.985;
     rotate: -4deg;
-    translate: 0 calc(5 * var(--u));
+    translate: 0 calc(8 * var(--u));
     box-shadow: 0 0 0 var(--rim);
   }
 }
@@ -4411,16 +4413,17 @@ canvas.bf-ico {
   letter-spacing: calc(1.6 * var(--u));
   white-space: nowrap;
 }
-/* Phone: the keys sit at the bottom, where START BATTLE and the setup keys sit; the sticker
-   holds the middle of the screen. */
-[data-ui="touch"] .bf-overlay-keys {
+/* Every overlay, both layouts: the sticker sits a little above the middle, the two keys sit
+   centred at the bottom of the map (where START BATTLE sits on the phone). --ob is how far the
+   map's bottom edge is from the screen's, set by the client. */
+.bf-overlay-keys {
   position: fixed;
   left: 50%;
-  bottom: calc(20 * var(--u));
+  bottom: calc(var(--ob, 0px) + calc(20 * var(--u)));
   translate: -50% 0;
 }
-[data-ui="touch"] .bf-overlay {
-  padding-bottom: calc(80 * var(--u));
+.bf-overlay {
+  padding-bottom: 14vh;
 }
 /* The second choice (surrender, a new campaign) is the dark key with a white glyph. */
 .bf-overlay :is(.bf-flag-sticker, .bf-new-sticker) {
@@ -4588,7 +4591,7 @@ canvas.bf-ico {
 }
 /* Full screen: the platoon is its own see-through card (under the sector map until dragged),
    sized to its keys: a grid (2, 3 or 4 a row by squad size), a column or a row. */
-[data-ui="desk"][data-full="true"] #bf-tactics {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics {
   position: fixed;
   z-index: 20;
   width: max-content;
@@ -4599,17 +4602,17 @@ canvas.bf-ico {
   box-shadow: 0 4px 0 color-mix(in srgb, var(--line) 80%, transparent);
   cursor: grab;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-platoon {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics .bf-platoon {
   align-items: stretch;
   min-width: 96px;
 }
 /* Square keys in the card. */
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-roster .bf-unit {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics .bf-roster .bf-unit {
   width: 44px;
   height: 44px;
   padding: 0;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-platoon-tag {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics .bf-platoon-tag {
   position: absolute;
   left: 12px;
   top: 11px;
@@ -4617,27 +4620,27 @@ canvas.bf-ico {
 [data-ui="desk"][data-full="true"].dock-icons #bf-tactics .bf-platoon-tag {
   display: none;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-roster {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics .bf-roster {
   display: grid;
   grid-template-columns: repeat(var(--cols, 2), max-content);
   gap: 6px;
 }
-[data-ui="desk"][data-full="true"][data-per="8"] #bf-tactics .bf-roster {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"])[data-per="8"] #bf-tactics .bf-roster {
   --cols: 3;
 }
-[data-ui="desk"][data-full="true"][data-per="12"] #bf-tactics .bf-roster {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"])[data-per="12"] #bf-tactics .bf-roster {
   --cols: 4;
 }
 /* Column: one tall column, wrapping to a second one past six tanks so it never runs off. */
-[data-ui="desk"][data-full="true"] #bf-tactics[data-layout="column"] .bf-roster {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics[data-layout="column"] .bf-roster {
   grid-template-columns: none;
   grid-template-rows: repeat(var(--rows, 4), max-content);
   grid-auto-flow: column;
 }
-[data-ui="desk"][data-full="true"][data-per="12"] #bf-tactics[data-layout="column"] .bf-roster {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"])[data-per="12"] #bf-tactics[data-layout="column"] .bf-roster {
   --rows: 6;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics[data-layout="row"] .bf-roster {
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) #bf-tactics[data-layout="row"] .bf-roster {
   grid-template-columns: none;
   grid-auto-flow: column;
 }
@@ -4666,7 +4669,8 @@ canvas.bf-ico {
 }
 /* Full screen: the cards stack their keys in a column; the small key in a card's corner switches
    both cards to icons only (remembered). */
-[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) {
+[data-ui="desk"][data-full="true"] .bf-dock-fold,
+[data-ui="desk"]:is([data-full="true"], [data-detach="true"]) .bf-roster-layout {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -4680,7 +4684,7 @@ canvas.bf-ico {
   border-radius: 6px;
   --py: 2px;
 }
-[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) svg {
+[data-ui="desk"] :is(.bf-dock-fold, .bf-roster-layout) svg {
   width: 14px;
   height: 14px;
 }
@@ -4752,35 +4756,191 @@ canvas.bf-ico {
   display: none;
 }
 
-/* ---------- Folding cards: say so the first time a card opens ---------- */
-.bf-fold-hint {
+/* ---------- Card tips: the first time a card opens ----------
+   Arcade call-outs: a violet pill with an ink rim and a pointer. One by the icon box ("click to
+   shrink"), then one by the bottom edge ("grab it to make the card shorter"). */
+.bf-tip {
   position: absolute;
-  z-index: 3;
-  left: calc(14 * var(--u));
-  bottom: calc(-11 * var(--u));
-  padding: calc(3 * var(--u)) calc(8 * var(--u));
-  font: 800 calc(8 * var(--u)) / 1 ui-monospace, monospace;
-  letter-spacing: calc(1 * var(--u));
+  z-index: 6;
+  padding: calc(5 * var(--u)) calc(10 * var(--u));
+  font: 900 calc(8.5 * var(--u)) / 1.1 ui-monospace, monospace;
+  letter-spacing: calc(1.2 * var(--u));
+  white-space: nowrap;
+  color: var(--rim);
+  background: var(--k-cmd);
+  border: calc(2 * var(--u)) solid var(--rim);
+  border-radius: calc(6 * var(--u));
+  box-shadow: 0 calc(3 * var(--u)) 0 var(--rim), 0 0 calc(16 * var(--u)) color-mix(in srgb, var(--k-cmd) 70%, transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms, scale 220ms var(--spring);
+  scale: 0.85;
+}
+/* The pointer: a little ink-rimmed diamond on the side facing what to touch. */
+.bf-tip::before {
+  content: "";
+  position: absolute;
+  width: calc(9 * var(--u));
+  height: calc(9 * var(--u));
+  background: inherit;
+  border: inherit;
+  rotate: 45deg;
+  z-index: -1;
+}
+.bf-tip-top {
+  translate: 0 -50%;
+  transform-origin: left center;
+}
+.bf-tip-top::before {
+  left: calc(-6 * var(--u));
+  top: calc(50% - calc(4.5 * var(--u)));
+  border-width: 0 0 calc(2 * var(--u)) calc(2 * var(--u));
+}
+.bf-tip-bottom {
+  left: 50%;
+  bottom: calc(14 * var(--u));
+  translate: -50% 0;
+}
+.bf-tip-bottom::before {
+  left: calc(50% - calc(4.5 * var(--u)));
+  bottom: calc(-6 * var(--u));
+  border-width: 0 calc(2 * var(--u)) calc(2 * var(--u)) 0;
+}
+.tip-top > .bf-tip-top,
+.tip-bottom > .bf-tip-bottom {
+  opacity: 1;
+  scale: 1;
+  animation: bf-tip 1.1s ease-in-out 2;
+}
+@keyframes bf-tip {
+  50% {
+    box-shadow: 0 calc(3 * var(--u)) 0 var(--rim), 0 0 calc(26 * var(--u)) var(--k-cmd);
+  }
+}
+.folded > .bf-tip,
+.bf-w-tap,
+[data-ui="touch"] .bf-w-click {
+  display: none;
+}
+[data-ui="touch"] .bf-w-tap {
+  display: inline;
+}
+/* The icon box is a key: a 3D base, a lift on hover and a press, and an arcade tooltip. */
+.bf-pcard .bf-card-icon {
+  position: relative;
+  border: calc(2 * var(--u)) solid var(--rim);
+  box-shadow: 0 calc(4 * var(--u)) 0 var(--k-cmd-base);
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+.bf-pcard .bf-card-icon:active {
+  transform: translateY(calc(4 * var(--u)));
+  box-shadow: 0 0 0 var(--k-cmd-base);
+}
+:is(.bf-pcard .bf-card-icon, #bf-cmd-badge)[data-hover]::after {
+  content: attr(data-hover);
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  top: calc(100% + calc(10 * var(--u)));
+  translate: -50% calc(-4 * var(--u));
+  padding: calc(4 * var(--u)) calc(8 * var(--u));
+  font: 900 calc(8 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(1.2 * var(--u));
   white-space: nowrap;
   color: var(--rim);
   background: var(--k-cmd);
   border: calc(2 * var(--u)) solid var(--rim);
   border-radius: calc(5 * var(--u));
-  box-shadow: 0 calc(2 * var(--u)) 0 var(--rim);
-  pointer-events: none;
+  box-shadow: 0 calc(3 * var(--u)) 0 var(--rim);
   opacity: 0;
-  translate: 0 calc(4 * var(--u));
-  transition: opacity 240ms, translate 240ms;
+  pointer-events: none;
+  transition: opacity 140ms, translate 140ms;
 }
-.bf-fold-hint b {
-  font-weight: 900;
+#bf-cmd-badge {
+  position: relative;
 }
-.hinting > .bf-fold-hint {
-  opacity: 1;
-  translate: 0 0;
+@media (hover: hover) and (pointer: fine) {
+  .bf-pcard .bf-card-icon:hover {
+    transform: translateY(calc(-1 * var(--u)));
+    box-shadow: 0 calc(5 * var(--u)) 0 var(--k-cmd-base);
+  }
+  :is(.bf-pcard .bf-card-icon, #bf-cmd-badge)[data-hover]:hover::after {
+    opacity: 1;
+    translate: -50% 0;
+  }
 }
-.folded > .bf-fold-hint {
+/* ---------- Step keys on the Platoon / Loadout cards ----------
+   Desktop: a violet bar across the card's foot with reversed keys (ink faces, violet type).
+   Phone: no room for a bar, so the round shortcuts beside the card carry NEXT / BACK tags. */
+.bf-pcard {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.bf-card-nav {
   display: none;
+}
+[data-ui="desk"] .bf-card-nav {
+  display: flex;
+  gap: calc(8 * var(--u));
+  justify-content: flex-end;
+  margin: 0 calc(-14 * var(--u)) calc(-14 * var(--u));
+  padding: calc(9 * var(--u)) calc(12 * var(--u)) calc(11 * var(--u));
+  background: var(--k-cmd);
+  border-top: calc(2 * var(--u)) solid var(--rim);
+  border-radius: 0 0 calc(12 * var(--u)) calc(12 * var(--u));
+}
+[data-ui="desk"] .bf-card-nav button {
+  --c: var(--rim);
+  --py: calc(3 * var(--u));
+  --hy: calc(1 * var(--u));
+  --edge: color-mix(in srgb, var(--k-cmd) 40%, var(--rim));
+  --edge-hover: var(--edge);
+  --border-hover: var(--rim);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  min-height: 0;
+  padding: calc(6 * var(--u)) calc(12 * var(--u));
+  font: 900 calc(8.5 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(1.2 * var(--u));
+  color: var(--k-cmd);
+  background: var(--rim);
+  border: calc(2 * var(--u)) solid var(--rim);
+  border-radius: calc(7 * var(--u));
+}
+[data-ui="desk"] .bf-card-nav .bf-nav-prev {
+  margin-right: auto;
+  color: color-mix(in srgb, var(--k-cmd) 70%, var(--ink));
+}
+[data-ui="desk"] .bf-card-nav svg {
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  stroke-width: 3;
+}
+[data-theme="light"][data-ui="desk"] .bf-card-nav button {
+  color: #f6f3ff;
+}
+#battlefield.bf-over #bf-card-loadout .bf-card-nav {
+  background: var(--alert);
+}
+[data-ui="touch"] .bf-orb[data-nav]::after {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + calc(4 * var(--u)));
+  translate: -50% 0;
+  padding: calc(2 * var(--u)) calc(6 * var(--u));
+  font: 900 calc(7 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(1 * var(--u));
+  white-space: nowrap;
+  color: var(--rim);
+  background: var(--k-cmd);
+  border: calc(1.5 * var(--u)) solid var(--rim);
+  border-radius: calc(4 * var(--u));
+}
+[data-ui="touch"] .bf-orb[data-nav="next"]::after {
+  content: "NEXT ›";
+}
+[data-ui="touch"] .bf-orb[data-nav="back"]::after {
+  content: "‹ BACK";
 }
 /* ---------- Over budget: the Loadout card turns red until it's fixed ---------- */
 #battlefield.bf-over #bf-card-loadout {
@@ -4810,4 +4970,52 @@ canvas.bf-ico {
   80% {
     translate: calc(6 * var(--u)) 0;
   }
+}
+
+/* ---------- Big-moment blast (fx.ts): pixels, a shock ring, the first shot ---------- */
+.bf-fx {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bf-fx > * {
+  pointer-events: none;
+}
+.bf-px,
+.bf-ring,
+.bf-tracer,
+.bf-flash {
+  position: fixed;
+  display: block;
+}
+.bf-px {
+  border: 1px solid var(--rim);
+  box-shadow: 0 0 6px currentColor;
+}
+.bf-ring {
+  border: 3px solid var(--k-sys);
+  border-radius: 50%;
+  box-shadow: 0 0 14px var(--k-sys);
+}
+.bf-tracer {
+  height: 3px;
+  margin-top: -1.5px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, transparent, var(--tc) 30%, #fff);
+  box-shadow: 0 0 10px var(--tc);
+  border-radius: 2px;
+}
+.bf-flash {
+  inset: 0;
+  background: #fff;
+}
+
+/* Platoon detached (a smaller desktop in battle): the bar is just its two ends. */
+[data-ui="desk"][data-detach="true"]:not([data-full="true"]) .bf-controls {
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+}
+[data-ui="desk"][data-detach="true"]:not([data-full="true"]) .bf-quick {
+  grid-column: 3;
 }
