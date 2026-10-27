@@ -1477,7 +1477,31 @@ for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
   }) as EventListener);
   for (const t of ["pointerup", "pointercancel"]) listen(h, t, () => (from = null));
 }
+/* Double-tap a card's icon box (the plan card's tank badge) to fold the card down to that square,
+   with its round shortcuts tucked behind it; double-tap again to open it. It still drags. */
+for (const box of document.querySelectorAll<HTMLElement>(".bf-pcard .bf-card-icon, #bf-cmd-badge")) {
+  const card = box.closest<HTMLElement>(".bf-card")!;
+  let lastUp = 0,
+    down: { x: number; y: number } | null = null;
+  // The card captures the pointer for dragging, so the release is heard on the card.
+  listen(box, "pointerdown", ((e: PointerEvent) => {
+    down = { x: e.clientX, y: e.clientY };
+  }) as EventListener);
+  listen(card, "pointerup", ((e: PointerEvent) => {
+    const from = down;
+    down = null;
+    if (!from || Math.hypot(e.clientX - from.x, e.clientY - from.y) > 8) return void (lastUp = 0);
+    const now = e.timeStamp;
+    if (now - lastUp < 350) {
+      lastUp = 0;
+      const folded = card.classList.toggle("folded");
+      box.setAttribute("aria-expanded", String(!folded));
+      buzz(10);
+    } else lastUp = now;
+  }) as EventListener);
+}
 function undrag() {
+  for (const c of document.querySelectorAll<HTMLElement>(".folded")) c.classList.remove("folded");
   for (const c of document.querySelectorAll<HTMLElement>("[data-moved]")) {
     delete c.dataset.moved;
     c.style.left = c.style.top = c.style.right = c.style.bottom = "";

@@ -181,6 +181,16 @@ try {
         const after = await box(page, "#bf-card-platoon .bf-card-grip");
         assert.ok(Math.abs(after.x - (g.x - 80)) < 6, "it landed under the finger");
       }
+      // Double-tap the card's icon: it folds to that square (shortcuts tucked away), and back.
+      {
+        const b = await box(page, "#bf-card-platoon .bf-card-icon");
+        for (let i = 0; i < 2; i++) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+        assert.equal(await page.locator("#bf-card-platoon").evaluate((n) => n.classList.contains("folded")), true, "double-tap folds the card");
+        assert.equal(await page.locator("#bf-side").isVisible(), false);
+        const f = await box(page, "#bf-card-platoon .bf-card-icon");
+        for (let i = 0; i < 2; i++) await page.mouse.click(f.x + f.width / 2, f.y + f.height / 2);
+        assert.equal(await page.locator("#bf-side").isVisible(), true, "double-tap opens it again");
+      }
       // Orbit: hop straight to Loadout. Over budget blocks the start keys.
       await page.locator('#bf-card-platoon .bf-orb[data-open="loadout"]').click();
       assert.equal(await page.locator("#bf-card-loadout").isVisible(), true);

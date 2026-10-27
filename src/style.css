@@ -3796,7 +3796,7 @@ canvas.bf-ico {
   position: fixed;
   top: 0;
   bottom: 0;
-  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  background: color-mix(in srgb, var(--bg) 64%, transparent);
   pointer-events: auto;
 }
 [data-ui="touch"][data-stage="battle"] #bf-controls::before {
@@ -3866,7 +3866,7 @@ canvas.bf-ico {
   align-content: center;
   gap: calc(3 * var(--u)) calc(8 * var(--u));
   padding: calc(5 * var(--u)) calc(9 * var(--u));
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
   border: calc(1.5 * var(--u)) solid var(--line);
   border-radius: calc(5 * var(--u));
 }
@@ -3930,7 +3930,7 @@ canvas.bf-ico {
   grid-template-rows: auto 1fr;
   gap: calc(4 * var(--u));
   padding: calc(5 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u));
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
   border: 0;
   border-radius: 0 0 calc(6 * var(--u)) calc(6 * var(--u));
 }
@@ -4185,7 +4185,7 @@ canvas.bf-ico {
   min-height: calc(38 * var(--u));
 }
 /* A card open on the right: the toast moves to the left of the flag. */
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden]), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
   left: auto;
   right: calc(50% + calc(197 * var(--u)));
   max-width: calc(50% - calc(209 * var(--u)) - var(--sl));
@@ -4209,7 +4209,7 @@ canvas.bf-ico {
   left: calc(50% + calc(94 * var(--u)));
   max-width: calc(50% - calc(106 * var(--u)) - var(--sr));
 }
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden]), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
   left: auto;
   right: calc(50% + calc(162 * var(--u)));
   max-width: calc(50% - calc(174 * var(--u)) - var(--sl));
@@ -4507,10 +4507,10 @@ canvas.bf-ico {
 #battlefield {
   --card-span: calc(468 * var(--u));
 }
-#battlefield:has(.bf-pcard[data-away="left"]:not([hidden])) #bf-start {
+#battlefield:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) #bf-start {
   left: calc((var(--sl) + var(--card-span) + 100% - var(--sr)) / 2);
 }
-#battlefield:has(.bf-pcard[data-away="right"]:not([hidden])) #bf-start {
+#battlefield:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) #bf-start {
   left: calc((var(--sl) + 100% - var(--sr) - var(--card-span)) / 2);
 }
 /* The white flag (back out to setup) sits in the bottom corner on your side, clear of START and
@@ -4532,7 +4532,7 @@ canvas.bf-ico {
 }
 /* Plan toast: at the top of the open space, so it never covers a card or START. */
 #battlefield[data-ui="touch"][data-stage="plan"] .bf-footer,
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden]), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
   left: 50%;
   right: auto;
   top: calc(60 * var(--u));
@@ -4543,11 +4543,11 @@ canvas.bf-ico {
 #battlefield[data-ui="touch"][data-stage="plan"] .bf-footer.show {
   translate: -50% 0;
 }
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="left"]:not([hidden])) .bf-footer {
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) .bf-footer {
   left: calc((var(--sl) + var(--card-span) + 100% - var(--sr)) / 2);
   max-width: calc(100% - var(--sl) - var(--sr) - var(--card-span) - calc(24 * var(--u)));
 }
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden])) .bf-footer {
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) .bf-footer {
   left: calc((var(--sl) + 100% - var(--sr) - var(--card-span)) / 2);
   max-width: calc(100% - var(--sl) - var(--sr) - var(--card-span) - calc(24 * var(--u)));
 }
@@ -4573,4 +4573,53 @@ canvas.bf-ico {
 .bf-roster:has(> :nth-child(6)) .bf-pips s {
   width: 4px;
   height: 4px;
+}
+/* The bottom-middle grab still resizes the card, but has no visual handle. */
+.bf-card .bf-card-size {
+  background: transparent;
+  border-color: transparent;
+  width: calc(90 * var(--u));
+  height: calc(22 * var(--u));
+  bottom: calc(-12 * var(--u));
+}
+.bf-card .bf-card-size > i {
+  display: none;
+}
+/* Folded: the card shrinks to its icon box (the plan card to its tank badge); the round
+   shortcuts tuck in behind it. Double-tap the box again to open the card. */
+.bf-card-icon,
+#bf-cmd-badge {
+  cursor: pointer;
+}
+#battlefield .bf-card.folded {
+  width: auto !important;
+  height: auto !important;
+  min-height: 0;
+  padding: calc(10 * var(--u));
+}
+.bf-card.folded > :not(.bf-card-head, .bf-cmd-info, .bf-orbit, .bf-card-grip),
+.bf-card.folded .bf-card-head > :not(.bf-card-icon),
+.bf-card.folded .bf-cmd-info > :not(#bf-cmd-badge) {
+  display: none !important;
+}
+.bf-card.folded .bf-card-grip {
+  width: calc(26 * var(--u));
+}
+.bf-card .bf-orbit {
+  transition: translate 220ms ease, scale 220ms ease, opacity 180ms ease;
+}
+.bf-card.folded .bf-orbit {
+  z-index: -1;
+  translate: calc(-100% - calc(13 * var(--u))) 0;
+  scale: 0.4;
+  opacity: 0;
+  pointer-events: none;
+}
+.bf-card.folded[data-away="right"] > .bf-orbit {
+  translate: calc(100% + calc(13 * var(--u))) 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-card .bf-orbit {
+    transition: none;
+  }
 }
