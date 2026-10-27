@@ -73,6 +73,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.2 — Rotate hint turns the natural way
+
+- The "Rotate to landscape" phone now turns counter-clockwise, the way most people turn a phone.
+
 ### 0.15.1 — Full-height cards
 
 - Location, Platoon and Loadout cards run the full height of the field (with a margin) and scroll; drag the yellow handle on the bottom edge to make one shorter (down to 30% of the window).

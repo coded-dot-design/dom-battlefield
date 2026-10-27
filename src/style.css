@@ -1322,7 +1322,7 @@ html.bf-playing body {
   animation: bf-rotate 2.2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
 }
 .bf-gate[data-reason="fullscreen"] .bf-gate-phone {
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
   stroke: var(--green);
 }
 @keyframes bf-rotate {
@@ -1332,7 +1332,7 @@ html.bf-playing body {
   }
   60%,
   100% {
-    transform: rotate(90deg);
+    transform: rotate(-90deg);
   }
 }
 
