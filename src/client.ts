@@ -62,8 +62,10 @@ let panel: Panel = "home";
 let armed = false;
 /** Touch: auto-aim stays on until you switch it off (a lock overrides it while it lasts). */
 let autoOn = true;
-const mapKey = () => `${mission}:${seed}:${density}:${per}:${side}`;
+/** A moved HQ belongs to one map, including its size (the cell index means nothing on another). */
+const mapKey = (cols = state?.board.cols, rows = state?.board.rows) => `${mission}:${seed}:${density}:${per}:${side}:${cols}x${rows}`;
 function remember() {
+  if (quickSaved) return;
   try {
     localStorage.setItem(SETUP, JSON.stringify({ mission, side, density, seed, formation, per, roles }));
   } catch {}
@@ -98,8 +100,6 @@ function syncUi() {
   if (root.dataset.panel !== panel) root.dataset.panel = panel;
   if (view) view.fitAll = ui === "desk" || stage !== "battle";
 }
-/** While planning, the command card can be tucked away (Hide); a tank tap or Command reopens it. */
-let cmdHidden = false;
 /** A platoon key's inside: the tank number over 1-3 size pips. */
 const PIPS: Record<string, number> = { scout: 1, medium: 2, heavy: 3 };
 const unitKey = (role: string, no: string) => `<b>${no}</b><i class="bf-pips" data-n="${PIPS[role]}">${"<s></s>".repeat(PIPS[role] ?? 1)}</i>`;
@@ -135,21 +135,40 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
 function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
+/** After a touch press, the browser may still send a click when the finger lifts, and by then the
+ *  layout may have changed under it (the menu drops the header in; pause shows the dim). That
+ *  click is swallowed wherever it lands, so a press acts exactly once. */
+let swallowId = -1,
+  swallowUntil = 0;
+document.addEventListener(
+  "pointerup",
+  (e) => {
+    if (e.pointerId === swallowId) (swallowId = -1), (swallowUntil = performance.now() + 500);
+  },
+  { capture: true, signal: abort.signal },
+);
+document.addEventListener(
+  "click",
+  (e) => {
+    if (performance.now() < swallowUntil) {
+      swallowUntil = 0;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  },
+  { capture: true, signal: abort.signal },
+);
 /** A key that works while another finger is down (driving with the stick or held keys): touch
- *  presses act the moment the finger lands, like Fire, because phones and tablets send no
- *  click for a second touch and may cancel its release. The click that can follow is ignored.
- *  Mouse and keyboard still use click. */
+ *  presses act the moment the finger lands, like Fire (phones and tablets send no click for a
+ *  second touch and may cancel its release). Mouse and keyboard use click. */
 function press(el: HTMLElement, fn: () => void) {
-  let at = -Infinity;
   listen(el, "pointerdown", ((e: PointerEvent) => {
     if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
     e.preventDefault();
-    at = performance.now();
+    swallowId = e.pointerId;
     fn();
   }) as EventListener);
-  listen(el, "click", () => {
-    if (performance.now() - at > 700) fn();
-  });
+  listen(el, "click", () => fn());
 }
 let toastTimer = 0;
 function say(text: string) {
@@ -351,7 +370,9 @@ function preview(resized = false) {
   syncUi();
   const { cols, rows } = mapSize();
   // Planning: a resize that doesn't change the map size (address bars, rails) just re-fits.
-  if (resized && planning && state && state.board.cols === cols && state.board.rows === rows) return fit();
+  // Planning: a resize (address bar, full screen, rotation) only re-fits. Routes and the ground
+  // you planned on stay as they are.
+  if (resized && planning && state) return fit();
   view?.destroy();
   $("#bf-roster").replaceChildren();
   // Phones: the HQs (and the platoons in front of them) sit far enough in from the edges to
@@ -359,7 +380,7 @@ function preview(resized = false) {
   const inset = hqInset(cols, rows),
     b = generate(cols, rows, mission, seed, density, inset);
   scatterHq(b, 1 - side, seed, inset);
-  if (hqMove && hqMove.key === mapKey()) moveBase(b, side, hqMove.cell);
+  if (hqMove && hqMove.key === mapKey(cols, rows)) moveBase(b, side, hqMove.cell);
   state = createBattle(
     b,
     mission,
@@ -419,7 +440,6 @@ function selectUnit(id: number, fromList = false) {
   if (!playing || paused || pan) return;
   // Planning: tapping one of your tanks from any card jumps straight to Plan (Move Tanks).
   if (planning && hqPick) return say("Move HQ is on: tap behind the dashed line, or switch to Move Tanks.");
-  cmdHidden = false;
   const u = state.units.find((u) => u.id === id);
   if (!u || u.hp <= 0) return;
   if (planning && panel !== "plan" && u.side === side) showPanel("plan", false);
@@ -665,6 +685,7 @@ function startBattle() {
   setCommand(false);
   setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
   follow = true;
+  undrag();
   syncUi();
   fit();
   view.center();
@@ -705,7 +726,7 @@ function cmdPanel() {
   if (root.dataset.plan !== String(planning)) root.dataset.plan = String(planning);
   const panelEl = $("#bf-cmd");
   // Touch battle: the field is the card (no info box); orders sit beside the tank.
-  panelEl.hidden = !commanding || (planning && cmdHidden) || (!planning && railLayout.matches);
+  panelEl.hidden = !commanding || (!planning && railLayout.matches);
   rideAlong();
   if (panelEl.hidden) return;
   const u = draft ? state.units[draft.id] : undefined,
@@ -1103,7 +1124,14 @@ function deploy(quick = false) {
   if (!coarse.matches) ready();
 }
 function reset() {
-  cmdHidden = false;
+  if (quickSaved) {
+    ({ side, formation, per } = quickSaved);
+    roles = quickSaved.roles;
+    quickSaved = null;
+    pressed("#bf-side", "side", String(side));
+    pressed("#bf-formation", "formation", formation);
+    pressed("#bf-size", "size", String(per));
+  }
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   $("#bf-giveup").hidden = true;
   keysPanel(false);
@@ -1374,7 +1402,8 @@ function picker(sel: string, attr: string, apply: (v: string) => void) {
     preview();
   }) as EventListener);
 }
-picker("#bf-side", "side", (v) => (side = Number(v)));
+// A new side moves the cards to the other side, so dragged positions start over.
+picker("#bf-side", "side", (v) => ((side = Number(v)), undrag()));
 picker("#bf-size", "size", (v) => (per = Number(v)));
 press($("#bf-auto"), autoAim);
 press($("#bf-target"), startPick);
@@ -1387,7 +1416,10 @@ listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
 }) as EventListener);
 listen($("#bf-deploy"), "click", () => deploy());
 // Quick start: everything this page didn't set (platoon, loadout) is rolled at random.
+let quickSaved: { side: number; formation: string; per: number; roles: Role[] } | null = null;
 listen($("#bf-quick"), "click", () => {
+  // The rolled platoon is for this battle only; your own setup comes back afterwards.
+  quickSaved = { side, formation, per, roles: [...roles] };
   randomPlatoon();
   randomLoadout();
   preview();
@@ -1474,11 +1506,10 @@ function dragCard(card: HTMLElement) {
     card.style.right = card.style.bottom = "auto";
   }) as EventListener);
   for (const t of ["pointerup", "pointercancel"])
-    listen(card, t, ((e: Event) => {
-      // A drag never doubles as a tap on the card.
-      if (from?.moved) card.addEventListener("click", (c) => c.stopPropagation(), { capture: true, once: true });
+    listen(card, t, ((e: PointerEvent) => {
+      // A mouse drag never doubles as a click on the card (a touch drag sends no click).
+      if (from?.moved && e.pointerType === "mouse") card.addEventListener("click", (c) => c.stopPropagation(), { capture: true, once: true });
       from = null;
-      void e;
     }) as EventListener);
 }
 /* The yellow handle on a card's bottom edge: drag it up to make the card shorter (down to 30% of
@@ -1506,6 +1537,18 @@ for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
    with its round shortcuts tucked behind it; double-tap again to open it. It still drags. */
 for (const box of document.querySelectorAll<HTMLElement>(".bf-pcard .bf-card-icon, #bf-cmd-badge")) {
   const card = box.closest<HTMLElement>(".bf-card")!;
+  // Also a real control: focusable, and Enter / Space fold or open it.
+  box.removeAttribute("aria-hidden");
+  box.setAttribute("role", "button");
+  box.tabIndex = 0;
+  box.setAttribute("aria-label", "Fold or open this card");
+  box.setAttribute("aria-expanded", "true");
+  listen(box, "keydown", ((e: KeyboardEvent) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    e.stopPropagation();
+    box.setAttribute("aria-expanded", String(!card.classList.toggle("folded")));
+  }) as EventListener);
   let lastUp = 0,
     down: { x: number; y: number } | null = null;
   // The card captures the pointer for dragging, so the release is heard on the card.
@@ -1525,14 +1568,18 @@ for (const box of document.querySelectorAll<HTMLElement>(".bf-pcard .bf-card-ico
     } else lastUp = now;
   }) as EventListener);
 }
+/** Cards back to their places: unfolded, undragged, full height. */
 function undrag() {
   for (const c of document.querySelectorAll<HTMLElement>(".folded")) c.classList.remove("folded");
-  for (const c of document.querySelectorAll<HTMLElement>("[data-moved]")) {
+  for (const b of document.querySelectorAll<HTMLElement>(".bf-card-icon, #bf-cmd-badge")) b.setAttribute("aria-expanded", "true");
+  for (const c of document.querySelectorAll<HTMLElement>(".bf-card")) {
     delete c.dataset.moved;
-    c.style.left = c.style.top = c.style.right = c.style.bottom = "";
+    c.style.left = c.style.top = c.style.right = c.style.bottom = c.style.height = "";
   }
 }
 for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
+// Grips and the resize grab are pointer gestures; cards keep working without them.
+for (const g of document.querySelectorAll<HTMLElement>(".bf-card-grip, .bf-card-size")) g.setAttribute("aria-hidden", "true");
 /* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
    on the right rail inside the stage (its rail CSS is positioned against the stage). */
 const aimHome = $(".bf-aim").parentElement!,
@@ -1677,7 +1724,7 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
 press($("#bf-pause"), () => setPause(!paused));
 press($("#bf-command"), () => {
   // While planning, Command brings a hidden card back; in battle it toggles command mode.
-  if (planning) return (cmdHidden = false), cmdPanel();
+  if (planning) return showPanel("plan");
   setCommand(!commanding);
 });
 listen($("#bf-check"), "click", () => {
@@ -1700,11 +1747,13 @@ listen($("#bf-start"), "click", () => {
   }, reduced.matches ? 0 : 450);
 });
 // Move HQ (planning): the next tap on the map moves your HQ, and your platoon with it.
-// Move HQ / Move Tanks: a two-way switch, one side always on. Tapping either flips it.
+// Move HQ / Move Tanks: a two-way switch, one side always on (tap the other side to switch).
 for (const n of document.querySelectorAll<HTMLElement>("[data-mode]"))
   listen(n, "click", () => {
     if (!planning || panel !== "plan") return;
-    hqPick = !hqPick;
+    const next = n.dataset.mode === "hq";
+    if (next === hqPick) return;
+    hqPick = next;
     if (hqPick) {
       commitDraft();
       selected = -1;
@@ -1776,7 +1825,7 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
     if (e.code === "KeyQ") autoAim();
     if (e.code === "KeyO") setCommand(!commanding);
     if (commanding) {
-      if (e.code === "Enter") lockRoute();
+      if (e.code === "Enter") e.preventDefault(), lockRoute();
       if (e.code === "Backspace") plan("clear");
       if (e.code === "KeyN") plan("next");
       if (e.code === "KeyH") plan("hq");
@@ -2043,10 +2092,10 @@ listen($("#bf-minimap"), "click", ((e: MouseEvent) => {
   const r = $("#bf-minimap").getBoundingClientRect();
   viewport.scrollTo({
     left:
-      ((e.clientX - r.left) / r.width) * view.world.clientWidth -
+      view.ox + ((e.clientX - r.left) / r.width) * view.world.clientWidth -
       viewport.clientWidth / 2,
     top:
-      ((e.clientY - r.top) / r.height) * view.world.clientHeight -
+      view.oy + ((e.clientY - r.top) / r.height) * view.world.clientHeight -
       viewport.clientHeight / 2,
     behavior: "instant",
   });

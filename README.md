@@ -73,6 +73,17 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.8 — Audit fixes
+
+- **Fix (0.15.7): tapping Menu on a phone could open the coded.design link** that drops in under the finger with the header. After a touch press, the click that follows is swallowed wherever it lands, so every key acts exactly once (a long hold no longer toggles twice; Pause no longer clicks the dim).
+- Planning survives a resize (address bar, full screen, rotation): the map re-fits instead of regenerating, so routes and ground stay. A moved HQ is tied to the map size it was placed on.
+- Enter (lock route) no longer also clicks the focused order button and clears the route.
+- Cards: dragged, folded and resized cards go back to place when the battle starts and when you switch sides; a touch drag no longer eats the next tap on the card.
+- Phone sector map taps aim where you tap (the rail margin is included). The Command key during desktop planning opens Plan.
+- Move HQ / Move Tanks: tapping the lit side does nothing; tap the other side to switch. Fold boxes are focusable (Enter / Space); grips are hidden from screen readers.
+- Quick start's rolled platoon is for that battle only: your own setup comes back afterwards.
+- Removed dead CSS.
+
 ### 0.15.7 — Every key answers a second finger
 
 - Touch presses on battle keys act the moment the finger lands (like Fire), so the orders, aim keys and platoon keys work while another finger drives or holds, in the phone cockpit and in the desktop layout on touch screens (tablets, touch laptops).

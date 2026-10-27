@@ -883,16 +883,6 @@ h1 {
   stroke: none;
   flex: none;
 }
-.bf-swatch {
-  width: 10px;
-  height: 10px;
-  background: var(--team-a);
-  border: 1px solid #07060f;
-  flex: none;
-}
-.bf-swatch.b {
-  background: var(--team-b);
-}
 .bf-loadout {
   display: grid;
   gap: 6px;
@@ -2841,8 +2831,7 @@ canvas.bf-ico {
   gap: calc(7 * var(--u));
 }
 .bf-card .bf-seg button,
-.bf-rand,
-.bf-x {
+.bf-rand {
   --px: calc(2.5 * var(--u));
   --py: calc(2.5 * var(--u));
   --edge: var(--line);
@@ -2915,10 +2904,6 @@ canvas.bf-ico {
   .roll .bf-die {
     animation: none;
   }
-}
-.bf-x svg {
-  width: calc(14 * var(--u));
-  height: calc(14 * var(--u));
 }
 
 /* ---------- Step 1: location + terrain ---------- */
@@ -3210,11 +3195,6 @@ canvas.bf-ico {
   min-height: calc(32 * var(--u));
   padding: 0 calc(10 * var(--u));
   font-size: calc(9 * var(--u));
-}
-.bf-x {
-  width: calc(34 * var(--u));
-  min-height: calc(32 * var(--u));
-  padding: 0;
 }
 .bf-pcard .bf-field {
   display: grid;

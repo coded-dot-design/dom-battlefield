@@ -249,7 +249,9 @@ try {
       assert.equal(await page.locator("#bf-mode-tanks").getAttribute("aria-checked"), "false");
       assert.equal(await page.locator("#bf-acts").isVisible(), false, "Move HQ: no tank orders");
       await page.locator("#bf-mode-hq").click();
-      assert.equal(await page.locator("#bf-mode-tanks").getAttribute("aria-checked"), "true", "tapping the lit side flips it back");
+      assert.equal(await page.locator("#bf-mode-hq").getAttribute("aria-checked"), "true", "tapping the lit side does nothing");
+      await page.locator("#bf-mode-tanks").click();
+      assert.equal(await page.locator("#bf-mode-tanks").getAttribute("aria-checked"), "true", "the other side switches back");
       assert.equal((await cmd(page)).selected, 1);
       // Attack HQ: on, and tapping it again clears the order (the tank fights on its own).
       await page.locator('#bf-acts [data-act="hq"]').click();
@@ -343,6 +345,17 @@ try {
       assert.match(await page.locator("#bf-cmd-state").textContent(), /^EN ROUTE/);
       assert.equal(await page.locator("#bf-check").getAttribute("data-state"), "locked", "the check stays lit by the flag");
       await page.waitForFunction(() => !document.querySelector(".bf-route.draft"), null, { timeout: 2000 });
+      // A resize while planning (address bar, full screen) keeps the plan and the ground.
+      {
+        const before = await page.evaluate(() => { const s = window.battlefield.snapshot(); return { route: s.units[1].route.join(), cols: s.board.cols, seed: s.board.seed }; });
+        const vs = page.viewportSize();
+        await page.setViewportSize({ width: vs.width, height: vs.height - 30 });
+        await page.waitForTimeout(250);
+        const after = await page.evaluate(() => { const s = window.battlefield.snapshot(); return { route: s.units[1].route.join(), cols: s.board.cols, seed: s.board.seed }; });
+        await page.setViewportSize(vs);
+        await page.waitForTimeout(250);
+        assert.deepEqual(after, before, "planning survives a resize");
+      }
       // Next: on to the next tank.
       await page.locator("#bf-next").click();
       assert.equal((await cmd(page)).selected, 2);
@@ -628,6 +641,31 @@ try {
           await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
           await cdp.detach();
         }
+      }
+      if (mobile) {
+        // Real touch taps (not mouse clicks): Menu opens the menu and never follows the link
+        // that drops in under the finger; a long hold on Auto toggles it exactly once.
+        const url0 = page.url();
+        const m = await box(page, "#bf-squad");
+        await page.touchscreen.tap(m.x + m.width / 2, m.y + m.height / 2);
+        await page.waitForTimeout(300);
+        assert.equal(page.url(), url0, "tapping Menu stays in the game");
+        assert.equal(await page.evaluate(() => document.querySelector("#battlefield").classList.contains("menu-open")), true);
+        await page.locator("#bf-giveup-no").click();
+        const cdp = await page.context().newCDPSession(page);
+        const a = await box(page, "#bf-auto"),
+          pt = { x: a.x + a.width / 2, y: a.y + a.height / 2, id: 9 };
+        const before = await page.locator("#bf-auto").getAttribute("aria-pressed");
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [pt] });
+        await page.waitForTimeout(900);
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+        await page.waitForTimeout(200);
+        assert.notEqual(await page.locator("#bf-auto").getAttribute("aria-pressed"), before, "a long hold toggles Auto once");
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [pt] });
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+        await page.waitForTimeout(200);
+        assert.equal(await page.locator("#bf-auto").getAttribute("aria-pressed"), before, "and a tap toggles it back");
+        await cdp.detach();
       }
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.screenshot({ path: `artifacts/battle-${mobile ? "mobile" : "desktop"}-${light ? "light" : "dark"}.png` });
