@@ -39,14 +39,22 @@ state; a hot-seat/couch mode first.
 
 ### Performance and size
 
-- Win back headroom under the 30 KB budget (29.3 KB now); the CSS is about 8 KB gzip and is the
-  main candidate (2,086 lines in `src/style.css`).
+- Win back headroom under the **61,500-byte** gzip gate. Version 0.17.0 measures **60,672 bytes**
+  (HTML 8,453 + JavaScript 33,061 + CSS 19,158), leaving 828 bytes. The allowance was explicitly
+  raised from 57,500 bytes for card navigation, launch feedback, overlays and responsive controls;
+  the measured increase from 0.16.2 is 3,353 bytes, with no new runtime dependency. Audit duplicated
+  CSS and shared control rules without weakening the physical-button or responsive behaviour.
 - Measure 12-per-side battles on a low-end Android device.
 
 ### Tests
 
-- Split `tests/browser.mjs` (one long pass) into named scenarios so failures point at one flow.
-- Add a 3D button audit to the browser test (base fixed on hover, press lands exactly).
+- `tests/browser.mjs` already reports named scenarios, including desktop/mobile themes, compact
+  desktop feedback, mobile overlays, installation, touch controls, narrow layouts and preferences.
+  Consider making those scenarios independently runnable to shorten focused regression checks.
+- The 0.17.0 regression suite covers planning navigation and native fold activation, bounded
+  launch cleanup, repeatable overlay presses and interaction blocking, and stationary desktop
+  button bases during release. Extend the broader 3D-button audit across hover, held, selected
+  and disabled states in every button family, including real touch hardware.
 
 ### Accessibility
 

@@ -19,5 +19,7 @@ console.log(`Total: ${total} gzip bytes`);
 // 0.13.0 (commanding your own tank, movable command card, comms panel, team colours); 52 KB in
 // 0.14.0 (the redesigned flow: location card with terrain thumbnails, plan cards with orbits,
 // per-tank order bubble, the touch cockpit rails, intro card, touch tips); 54 KB in 0.15.0
-// (sprite-drawn icons, readable card type, dice, emblems, safe-area HQs).
-if (total > 57500) throw Error("57.5KB compressed app budget exceeded");
+// (sprite-drawn icons, readable card type, dice, emblems, safe-area HQs); 57.5 KB in 0.16.1
+// (desktop controls, overlays and planning cards); 61.5 KB in 0.17.0 (accessible card navigation,
+// bounded launch effects, modal lifecycle and compact desktop platoon). No runtime dependencies.
+if (total > 61500) throw Error("61.5KB compressed app budget exceeded");

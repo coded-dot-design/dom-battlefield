@@ -47,12 +47,46 @@ async function restart(page) {
 async function plan(page, mobile, mission = 0) {
   await page.locator(".bf-mission").nth(mission).click();
   await page.locator("#bf-deploy").click();
+  await page.waitForFunction(() => window.battlefield.playing && window.battlefield.command.planning);
   if (mobile) await passGate(page);
 }
 const cmd = (page) => page.evaluate(() => window.battlefield.command);
 const visibleTanks = (page) => page.locator(".bf-tank:visible").count();
 /** A box in viewport pixels, or null. */
 const box = (page, sel) => page.locator(sel).first().boundingBox();
+/** Pause and results share the same physical sticker landing and map-bottom action layout. */
+async function checkOverlay(page, id) {
+  const sticker = page.locator(`${id} .bf-sticker`);
+  await sticker.evaluate(async (n) => {
+    await Promise.all(n.getAnimations().filter((a) => a.animationName === "bf-slam").map((a) => a.finished));
+  });
+  const layout = await page.evaluate((id) => {
+    const overlay = document.querySelector(id),
+      vp = document.querySelector("#bf-viewport").getBoundingClientRect(),
+      // The camera may pan a larger world off center; the controls stay anchored to the
+      // visible map viewport, rather than following that moving world underneath them.
+      map = { left: Math.max(0, vp.left), top: Math.max(0, vp.top), right: Math.min(innerWidth, vp.right), bottom: Math.min(innerHeight, vp.bottom) },
+      sticker = overlay.querySelector(".bf-sticker"),
+      label = sticker.getBoundingClientRect(),
+      keys = overlay.querySelector(".bf-overlay-keys").getBoundingClientRect(),
+      shadow = getComputedStyle(sticker).boxShadow.match(/(-?[\d.]+)px\s+(-?[\d.]+)px/),
+      hit = document.elementFromPoint(vp.left + 8, vp.top + 8);
+    return {
+      map, label: { center: label.top + label.height / 2, bottom: label.bottom },
+      keys: { x: keys.left + keys.width / 2, top: keys.top, bottom: keys.bottom },
+      shadowY: shadow ? Number(shadow[2]) : 0,
+      blocksMap: Boolean(hit?.closest(id)),
+    };
+  }, id);
+  const height = layout.map.bottom - layout.map.top;
+  assert.ok(Math.abs(layout.keys.x - (layout.map.left + layout.map.right) / 2) < 3, "overlay actions center on the map");
+  assert.ok(layout.keys.bottom <= layout.map.bottom + 2, "overlay actions stay inside the map");
+  assert.ok(layout.keys.bottom > layout.map.top + height * 0.75, "overlay actions sit toward the bottom on every layout");
+  assert.ok(layout.label.center < layout.map.top + height * 0.52, "hero sticker balances just above the map center");
+  assert.ok(layout.label.bottom < layout.keys.top, "hero sticker and actions do not overlap");
+  assert.ok(Math.abs(layout.shadowY) < 1, "hero sticker finishes pressed into its base");
+  assert.equal(layout.blocksMap, true, "the grey overlay intercepts background map input");
+}
 let where = "start";
 try {
   for (const mobile of [false, true])
@@ -132,7 +166,7 @@ try {
       }
       await page.locator(".bf-mission").first().click();
       await page.locator("#bf-deploy").click();
-      await page.waitForTimeout(100);
+      await page.waitForFunction(() => window.battlefield.playing);
       assert.equal(await page.evaluate(() => window.battlefield.playing), true);
       if (mobile) {
         // Leaving full screen mid-battle locks the gate; one tap restores it.
@@ -163,9 +197,14 @@ try {
       await page.locator('.bf-home-card[data-open="platoon"]').click();
       assert.equal(await page.locator("#bf-card-platoon").isVisible(), true);
       assert.equal(await page.locator("#bf-card-platoon").getAttribute("data-away"), "right", "side A: the card sits right");
+      const startBeforeSide = await box(page, "#bf-start");
       await page.locator('#bf-side [data-side="1"]').click();
       assert.equal(await page.evaluate(() => window.battlefield.snapshot().side), 1);
       assert.equal(await page.locator("#bf-card-platoon").getAttribute("data-away"), "left", "side B: the card hops left");
+      if (!mobile) {
+        const startAfterSide = await box(page, "#bf-start");
+        assert.ok(Math.abs(startAfterSide.x - startBeforeSide.x) < 1, "desktop Start stays anchored when the planning card switches sides");
+      }
       assert.equal((await cmd(page)).planning, true, "still planning after a change");
       await page.locator('#bf-side [data-side="0"]').click();
       await page.locator('#bf-formation [data-formation="line"]').click();
@@ -181,22 +220,44 @@ try {
         const after = await box(page, "#bf-card-platoon .bf-card-grip");
         assert.ok(Math.abs(after.x - (g.x - 80)) < 6, "it landed under the finger");
       }
-      // Double-tap the card's icon: it folds to that square (shortcuts tucked away), and back.
+      // A single click shrinks the card; the same native button also opens it from the keyboard.
       {
-        const b = await box(page, "#bf-card-platoon .bf-card-icon");
-        for (let i = 0; i < 2; i++) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-        assert.equal(await page.locator("#bf-card-platoon").evaluate((n) => n.classList.contains("folded")), true, "double-tap folds the card");
+        const fold = page.locator("#bf-card-platoon .bf-fold-key");
+        assert.equal(await fold.evaluate((n) => n.tagName), "BUTTON");
+        assert.equal(await fold.getAttribute("aria-expanded"), "true");
+        assert.equal(await fold.getAttribute("data-fold-tip"), "Click to shrink");
+        await fold.click();
+        assert.equal(await page.locator("#bf-card-platoon").evaluate((n) => n.classList.contains("folded")), true, "one click shrinks the card");
         assert.equal(await page.locator("#bf-side").isVisible(), false);
-        const f = await box(page, "#bf-card-platoon .bf-card-icon");
-        for (let i = 0; i < 2; i++) await page.mouse.click(f.x + f.width / 2, f.y + f.height / 2);
-        assert.equal(await page.locator("#bf-side").isVisible(), true, "double-tap opens it again");
+        assert.equal(await fold.getAttribute("aria-expanded"), "false");
+        assert.equal(await fold.getAttribute("data-fold-tip"), "Click to expand");
+        await fold.press("Enter");
+        assert.equal(await page.locator("#bf-side").isVisible(), true, "Enter opens the card exactly once");
+        assert.equal(await fold.getAttribute("aria-expanded"), "true");
+      }
+      // Desktop gives the cards an explicit Next / Previous footer. Touch keeps the circular
+      // shortcuts with small captions, so the controls do not cost another row of map space.
+      if (!mobile) {
+        await page.locator('#bf-card-platoon .bf-card-next[data-open="loadout"]').click();
+        assert.equal(await page.locator("#bf-card-loadout").isVisible(), true, "Next opens Loadout");
+        await page.locator('#bf-card-loadout .bf-card-prev[data-open="platoon"]').click();
+        assert.equal(await page.locator("#bf-card-platoon").isVisible(), true, "Previous returns to Platoon");
+      } else {
+        assert.equal(await page.locator("#bf-card-platoon .bf-card-nav").isVisible(), false, "touch cards have no extra footer");
+        assert.equal(await page.locator('#bf-card-platoon .bf-orb[data-open="loadout"] .bf-orb-caption').isVisible(), true, "touch Next is labelled on the existing circle");
       }
       // Orbit: hop straight to Loadout. Over budget blocks the start keys.
       await page.locator('#bf-card-platoon .bf-orb[data-open="loadout"]').click();
       assert.equal(await page.locator("#bf-card-loadout").isVisible(), true);
       assert.equal(await page.locator("#bf-card-platoon").isVisible(), false);
+      await page.locator("#bf-card-loadout .bf-fold-key").click();
+      assert.equal(await page.locator("#bf-loadout").isVisible(), false, "Loadout also shrinks with one click");
+      await page.locator("#bf-card-loadout .bf-fold-key").press("Space");
+      assert.equal(await page.locator("#bf-loadout").isVisible(), true, "Space opens Loadout exactly once");
       await page.locator('[data-slot="1"] [data-role="heavy"]').click();
       assert.equal(await page.locator("#bf-start").isDisabled(), true, "over budget blocks Start");
+      await page.locator(mobile ? '#bf-card-loadout .bf-orb[data-open="plan"]' : '#bf-card-loadout .bf-card-next[data-open="plan"]').click();
+      assert.equal(await page.locator("#bf-card-loadout").isVisible(), true, "Next respects the loadout budget guard");
       await page.locator('[data-slot="1"] [data-role="scout"]').click();
       assert.equal(await page.locator('[data-slot="1"] [data-role="scout"]').getAttribute("aria-pressed"), "true");
       assert.equal(await page.locator("#bf-start").isDisabled(), false);
@@ -369,10 +430,24 @@ try {
         assert.match(await page.locator("#bf-cmd-tank").textContent(), /^YOUR TANK/);
         assert.equal(await page.locator('#bf-acts [data-act="follow"]').isDisabled(), true, "your tank doesn't follow itself");
       }
-      // Start: the sticker flashes red and leaves; command mode ends; aim returns.
+      // The numbered Plan badge has the same single-click and keyboard fold contract.
+      {
+        const badge = page.locator("#bf-cmd-badge");
+        const selectedBefore = (await cmd(page)).selected;
+        await badge.click();
+        assert.equal(await page.locator("#bf-cmd").evaluate((n) => n.classList.contains("folded")), true);
+        assert.equal(await badge.getAttribute("aria-expanded"), "false");
+        await badge.press("Enter");
+        assert.equal(await badge.getAttribute("aria-expanded"), "true");
+        assert.equal((await cmd(page)).selected, selectedBefore, "folding does not change the selected tank");
+      }
+      // Start presses and bursts using a bounded effect; command mode ends and aim returns.
       await page.locator("#bf-start").click();
       assert.equal(await page.locator("#bf-start").evaluate((n) => n.classList.contains("go")), true);
+      assert.equal(await page.locator(".bf-launch-burst").count(), 1, "one launch burst is active");
+      assert.ok((await page.locator(".bf-launch-pixel").count()) <= 16, "launch fragments have a hard cap");
       await page.waitForFunction(() => document.querySelector("#bf-start").hidden);
+      await page.waitForFunction(() => !document.querySelector(".bf-launch-burst"), null, { timeout: 1500 });
       assert.equal(await page.locator("#battlefield").getAttribute("data-stage"), "battle");
       assert.equal(await page.locator(".bf-mode").isVisible(), false, "Move HQ is planning only");
       assert.deepEqual(
@@ -528,12 +603,8 @@ try {
       assert.deepEqual(await page.evaluate(() => window.battlefield.snapshot()), frozen);
       assert.equal(await page.locator("#bf-giveup").isVisible(), true, "pausing asks: keep fighting or give up");
       assert.equal(await page.locator("#bf-giveup").evaluate((n) => getComputedStyle(n).backgroundColor !== "rgba(0, 0, 0, 0)"), true, "the field dims behind the sticker");
+      await checkOverlay(page, "#bf-giveup");
       if (!mobile) {
-        await page.locator("#bf-keys").hover();
-        assert.equal(await page.locator("#bf-keys-panel").isVisible(), true, "the key icon shows the controls");
-        assert.ok((await page.locator("#bf-keys-panel kbd").count()) > 15);
-        await page.mouse.move(5, 500);
-        assert.equal(await page.locator("#bf-keys-panel").isVisible(), false);
         // Platoon keys: colour is health, pips are size, the number matches the field.
         assert.ok((await page.locator("#bf-roster .bf-unit").evaluateAll((n) => n.map((b) => b.dataset.hp !== undefined && b.querySelectorAll(".bf-pips s").length >= 1))).every(Boolean));
       } else {
@@ -545,6 +616,14 @@ try {
       await page.locator("#bf-giveup-no").click();
       assert.equal(await page.evaluate(() => window.battlefield.paused), false);
       assert.equal(await page.locator("#bf-giveup").isVisible(), false);
+      if (!mobile) {
+        // Background help is usable again after the blocking modal closes.
+        await page.locator("#bf-keys").hover();
+        assert.equal(await page.locator("#bf-keys-panel").isVisible(), true, "the key icon shows the controls");
+        assert.ok((await page.locator("#bf-keys-panel kbd").count()) > 15);
+        await page.mouse.move(5, 500);
+        assert.equal(await page.locator("#bf-keys-panel").isVisible(), false);
+      }
       if (mobile) {
         // Menu: pauses and brings the header in over the dim; Tips closes it and shows the tips.
         await page.locator("#bf-squad").click();
@@ -700,6 +779,86 @@ try {
       console.log({ mobile, light, commands: true, paused: true, cleanup: true });
       await ctx.close();
     }
+  // After-action stickers use the same pressed landing as pause, including GAME OVER.
+  // A compact desktop also keeps the platoon usable instead of squeezing the numbered keys.
+  for (const mobile of [false, true]) {
+    where = mobile ? "overlay-mobile" : "compact-desktop-feedback";
+    const ctx = await browser.newContext({
+      viewport: mobile ? { width: 844, height: 390 } : { width: 1100, height: 800 },
+      hasTouch: mobile,
+      isMobile: mobile,
+    });
+    await ctx.addInitScript(() => {
+      localStorage.setItem("dom-battlefield:intro", "seen");
+      localStorage.setItem("dom-battlefield:tips", "off");
+    });
+    const page = await ctx.newPage();
+    await page.goto(`${URL}/?debug`);
+    await page.waitForFunction(() => window.battlefield);
+    await plan(page, mobile);
+    if (!mobile) {
+      await page.locator('.bf-home-card[data-open="platoon"]').click();
+      await page.locator('#bf-size [data-size="12"]').click();
+    }
+    await page.locator("#bf-start").click();
+    await page.waitForFunction(() => document.querySelector("#battlefield").dataset.stage === "battle");
+    if (!mobile) {
+      await page.waitForFunction(() => document.querySelector("#battlefield").classList.contains("platoon-floating"));
+      assert.equal(await page.locator("#bf-roster-layout").isVisible(), true, "compact desktop keeps the detached platoon layout control");
+      const keys = await page.locator("#bf-roster .bf-unit").evaluateAll((nodes) => nodes.map((n) => {
+        const r = n.getBoundingClientRect();
+        return { width: r.width, height: r.height };
+      }));
+      assert.equal(keys.length, 12);
+      assert.ok(keys.every((r) => r.width >= 43 && r.height >= 43), "all twelve platoon keys retain a usable size");
+      const controls = await page.locator("#bf-controls").evaluate((n) => ({ width: n.clientWidth, content: n.scrollWidth }));
+      assert.ok(controls.content <= controls.width + 2, "the desktop footer fits without horizontal squeezing or overflow");
+      for (const [pressed, release] of [
+        ["#bf-command", "#bf-command"],
+        ["#bf-roster .bf-unit:nth-child(2)", "#bf-roster .bf-unit:nth-child(3)"],
+      ]) {
+        await page.locator(pressed).hover();
+        const bases = await page.locator(pressed).evaluate(async (n, release) => {
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const base = () => {
+            const shadow = getComputedStyle(n).boxShadow.match(/(-?[\d.]+)px\s+(-?[\d.]+)px/);
+            return n.getBoundingClientRect().bottom + (shadow ? Number(shadow[2]) : 0);
+          };
+          n.click();
+          await sleep(160);
+          const values = [base()];
+          document.querySelector(release).click();
+          for (let i = 0; i < 12; i++) {
+            await new Promise(requestAnimationFrame);
+            values.push(base());
+          }
+          return values;
+        }, release);
+        assert.ok(Math.max(...bases) - Math.min(...bases) < 1.5, `${pressed}: the physical base stays planted throughout unlock`);
+      }
+      await page.screenshot({ path: "artifacts/compact-desktop-platoon.png" });
+    }
+    for (const won of [false, true]) {
+      await page.evaluate((won) => window.battlefield.end(won), won);
+      await page.waitForFunction(() => !document.querySelector("#bf-result").hidden);
+      assert.equal(await page.locator("#bf-result-title").textContent(), won ? "MISSION COMPLETE" : "GAME OVER");
+      await checkOverlay(page, "#bf-result");
+      await page.screenshot({ path: `artifacts/result-${mobile ? "mobile" : "desktop"}-${won ? "won" : "lost"}.png` });
+      if (!won) {
+        await page.locator("#bf-rematch").click();
+        if (mobile) await passGate(page);
+        await page.locator("#bf-start").click();
+      }
+    }
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator("#bf-new-operation").click();
+    await page.locator("#bf-quick").click();
+    if (mobile) await passGate(page);
+    assert.equal(await page.locator(".bf-launch-pixel").count(), 0, "reduced motion launches without moving fragments");
+    await page.waitForFunction(() => !document.querySelector(".bf-launch-burst"), null, { timeout: 1500 });
+    await ctx.close();
+    console.log({ overlays: true, compactDesktop: !mobile, reducedLaunch: true });
+  }
   // Install intro: iPhone Safari gets Add to Home Screen steps, once; desktop never sees it.
   {
     where = "install";
@@ -709,6 +868,10 @@ try {
       isMobile: true,
       userAgent:
         "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+    });
+    await ctx.addInitScript(() => {
+      Object.defineProperty(document, "fullscreenEnabled", { configurable: true, get: () => false });
+      localStorage.setItem("dom-battlefield:tips", "off");
     });
     const page = await ctx.newPage();
     await page.goto(URL);
@@ -720,6 +883,40 @@ try {
     await page.reload();
     await page.waitForFunction(() => window.battlefield);
     assert.equal(await page.evaluate(() => window.battlefield.install), null, "shown once");
+    await plan(page, true);
+    // A native button keeps Space / Enter semantics while planning, even on an iOS-shaped
+    // browser without the Fullscreen API. The compact orbit still advances the steps.
+    await page.locator('.bf-home-card[data-open="platoon"]').click();
+    await page.locator("#bf-card-platoon .bf-fold-key").press("Space");
+    assert.equal(await page.locator("#bf-card-platoon .bf-fold-key").getAttribute("aria-expanded"), "false");
+    await page.locator("#bf-card-platoon .bf-fold-key").press("Enter");
+    await page.locator('#bf-card-platoon .bf-orb[data-open="loadout"]').click();
+    assert.equal(await page.locator("#bf-card-loadout").isVisible(), true);
+    await page.locator("#bf-card-loadout .bf-fold-key").press("Enter");
+    assert.equal(await page.locator("#bf-card-loadout .bf-fold-key").getAttribute("aria-expanded"), "false");
+    await page.locator("#bf-card-loadout .bf-fold-key").press("Space");
+    // Fullscreen opens installation help; it must be clickable rather than trapped under the
+    // pause modal's inert background. Dismissing help restores the original planning state.
+    await page.locator("#bf-fullscreen").click();
+    assert.equal(await page.locator("#bf-install").isVisible(), true);
+    assert.equal(await page.locator("#bf-install").evaluate((n) => n.inert), false);
+    assert.equal(await page.locator("#bf-giveup").isVisible(), false);
+    await page.locator("#bf-install-later").click();
+    assert.equal(await page.evaluate(() => window.battlefield.paused), false);
+    assert.equal((await cmd(page)).planning, true);
+    await page.locator("#bf-start").click();
+    await page.waitForFunction(() => !window.battlefield.command.planning);
+    // The same installation help can be opened from an already-paused mobile Menu. Closing
+    // it returns to the pause choices, so the game does not resume behind the player.
+    await page.locator("#bf-squad").click();
+    await page.locator("#bf-fullscreen").click();
+    assert.equal(await page.locator("#bf-install").isVisible(), true);
+    assert.equal(await page.locator("#bf-install").evaluate((n) => n.inert), false);
+    await page.locator("#bf-install-later").click();
+    assert.equal(await page.evaluate(() => window.battlefield.paused), true);
+    assert.equal(await page.locator("#bf-giveup").isVisible(), true);
+    await page.locator("#bf-giveup-no").click();
+    assert.equal(await page.evaluate(() => window.battlefield.paused), false);
     await ctx.close();
     const desk = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await desk.goto(URL);

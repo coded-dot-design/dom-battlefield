@@ -18,6 +18,9 @@ import {
 import { drawIcons, dieFace, rollDie } from "./icons";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
+import { bindPlanningCards } from "./planning-cards";
+import { createLaunchEffects } from "./launch-effects";
+import { createBattleOverlays } from "./battle-overlays";
 import type { RouteLine } from "./view";
 import { createGameAudio } from "../shared/audio";
 import { createMobileSelectionLock } from "../shared/selection-lock";
@@ -95,11 +98,13 @@ const root = document.querySelector<HTMLElement>("#battlefield")!;
 function syncUi() {
   const ui = railLayout.matches ? "touch" : "desk",
     stage = !playing ? "setup" : planning ? "plan" : "battle";
+  const changed = root.dataset.ui !== ui || root.dataset.stage !== stage;
   if (root.dataset.ui !== ui) root.dataset.ui = ui;
   if (root.dataset.stage !== stage) root.dataset.stage = stage;
   if (root.dataset.panel !== panel) root.dataset.panel = panel;
   if (root.dataset.per !== String(per)) root.dataset.per = String(per);
   if (view) view.fitAll = ui === "desk" || stage !== "battle";
+  if (changed) requestAnimationFrame(barIcons);
 }
 /** A platoon key's inside: the tank number over 1-3 size pips. */
 const PIPS: Record<string, number> = { scout: 1, medium: 2, heavy: 3 };
@@ -133,6 +138,11 @@ const coarse = matchMedia("(pointer: coarse)"),
   TIPS = "dom-battlefield:tips";
 const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
   options = { signal: abort.signal };
+const launchEffects = createLaunchEffects(root, abort.signal, () => reduced.matches, () => {
+  audio.play("fire");
+  buzz(12);
+});
+const overlays = createBattleOverlays(root, viewport, abort.signal);
 function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
@@ -766,7 +776,7 @@ function showPanel(next: Panel, pick = true) {
   panel = next;
   hqPick = false;
   showCards();
-  // The first time a card opens, it shows that its icon folds it (double-tap).
+  // The first time a card opens, its arrow points to the single-click shrink key.
   const card = next === "plan" ? $("#bf-cmd") : document.querySelector<HTMLElement>(`#bf-card-${next}`);
   if (card && card.querySelector(".bf-fold-hint") && !hinted.has(next)) {
     hinted.add(next);
@@ -1004,12 +1014,9 @@ function pauseButton() {
   $("#bf-pause").setAttribute("aria-pressed", String(paused));
   // The white flag pauses the battle and asks: keep fighting or give up. Not for the
   // rotate / full-screen gate or the tips, which pause on their own.
-  const show = paused && $("#bf-gate").hidden && $("#bf-coach").hidden && state.winner === null,
+  const show = paused && $("#bf-gate").hidden && $("#bf-coach").hidden && $("#bf-install").hidden && state.winner === null,
     card = $("#bf-giveup");
-  if (card.hidden === show) {
-    card.hidden = !show;
-    if (show) $<HTMLButtonElement>("#bf-giveup-no").focus({ preventScroll: true });
-  }
+  overlays.set(card, show);
 }
 function fullscreen() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -1122,6 +1129,8 @@ function installCard(show: boolean) {
     setPause(true);
     installPaused = true;
   }
+  pauseButton();
+  if (mode) $<HTMLButtonElement>("#bf-install-later").focus({ preventScroll: true });
 }
 let installPaused = false;
 function installDone() {
@@ -1186,7 +1195,7 @@ function deploy(quick = false) {
   showCards();
   setup.hidden = true;
   $("#bf-go").hidden = true;
-  $("#bf-result").hidden = true;
+  overlays.set($("#bf-result"), false);
   $("#bf-controls").hidden = false;
   pauseButton();
   lease.setActive(true);
@@ -1210,6 +1219,7 @@ function deploy(quick = false) {
   if (!coarse.matches) ready();
 }
 function reset() {
+  launchEffects.cancel();
   if (quickSaved) {
     ({ side, formation, per } = quickSaved);
     roles = quickSaved.roles;
@@ -1219,7 +1229,7 @@ function reset() {
     pressed("#bf-size", "size", String(per));
   }
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-  $("#bf-giveup").hidden = true;
+  overlays.set($("#bf-giveup"), false);
   keysPanel(false);
   cancelAnimationFrame(frame);
   audio.close();
@@ -1249,7 +1259,7 @@ function reset() {
   setup.hidden = false;
   undrag();
   $("#bf-go").hidden = !picked;
-  $("#bf-result").hidden = true;
+  overlays.set($("#bf-result"), false);
   $("#bf-controls").hidden = true;
   preview();
 }
@@ -1394,10 +1404,10 @@ function loop(now: number) {
       lease.setActive(false);
       const won = state.winner === side,
         result = $("#bf-result");
-      result.hidden = false;
       result.dataset.tone = won ? "won" : "lost";
       $("#bf-result-kicker").textContent = won ? "STAGE CLEAR" : "INSERT COIN";
       $("#bf-result-title").textContent = won ? "MISSION COMPLETE" : "GAME OVER";
+      overlays.set(result, true);
       // The debrief goes out over comms; the overlay is just the sticker and two keys.
       const kills = state.units.filter((u) => u.side !== side && u.hp <= 0).length,
         lost = state.units.filter((u) => u.side === side && u.hp <= 0).length;
@@ -1521,16 +1531,21 @@ function overBudget() {
   card.classList.add("bf-shake");
   return true;
 }
-listen($("#bf-deploy"), "click", () => deploy());
+listen($("#bf-deploy"), "click", () => {
+  if (!playing) launchEffects.play($<HTMLButtonElement>("#bf-deploy"), () => deploy());
+});
 // Quick start: everything this page didn't set (platoon, loadout) is rolled at random.
 let quickSaved: { side: number; formation: string; per: number; roles: Role[] } | null = null;
 listen($("#bf-quick"), "click", () => {
-  // The rolled platoon is for this battle only; your own setup comes back afterwards.
-  quickSaved = { side, formation, per, roles: [...roles] };
-  randomPlatoon();
-  randomLoadout();
-  preview();
-  deploy(true);
+  if (playing) return;
+  launchEffects.play($<HTMLButtonElement>("#bf-quick"), () => {
+    // The rolled platoon is for this battle only; your own setup comes back afterwards.
+    quickSaved = { side, formation, per, roles: [...roles] };
+    randomPlatoon();
+    randomLoadout();
+    preview();
+    deploy(true);
+  });
 });
 picker("#bf-density", "density", (v) => (density = Number(v)));
 // Dice: a new layout at the chosen density (the density stays put).
@@ -1643,45 +1658,10 @@ for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
   }) as EventListener);
   for (const t of ["pointerup", "pointercancel"]) listen(h, t, () => (from = null));
 }
-/* Double-tap a card's icon box (the plan card's tank badge) to fold the card down to that square,
-   with its round shortcuts tucked behind it; double-tap again to open it. It still drags. */
-for (const box of document.querySelectorAll<HTMLElement>(".bf-pcard .bf-card-icon, #bf-cmd-badge")) {
-  const card = box.closest<HTMLElement>(".bf-card")!;
-  // Also a real control: focusable, and Enter / Space fold or open it.
-  box.removeAttribute("aria-hidden");
-  box.setAttribute("role", "button");
-  box.tabIndex = 0;
-  box.setAttribute("aria-label", "Fold or open this card");
-  box.setAttribute("aria-expanded", "true");
-  listen(box, "keydown", ((e: KeyboardEvent) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    e.preventDefault();
-    e.stopPropagation();
-    box.setAttribute("aria-expanded", String(!card.classList.toggle("folded")));
-  }) as EventListener);
-  let lastUp = 0,
-    down: { x: number; y: number } | null = null;
-  // The card captures the pointer for dragging, so the release is heard on the card.
-  listen(box, "pointerdown", ((e: PointerEvent) => {
-    down = { x: e.clientX, y: e.clientY };
-  }) as EventListener);
-  listen(card, "pointerup", ((e: PointerEvent) => {
-    const from = down;
-    down = null;
-    if (!from || Math.hypot(e.clientX - from.x, e.clientY - from.y) > 8) return void (lastUp = 0);
-    const now = e.timeStamp;
-    if (now - lastUp < 350) {
-      lastUp = 0;
-      const folded = card.classList.toggle("folded");
-      box.setAttribute("aria-expanded", String(!folded));
-      buzz(10);
-    } else lastUp = now;
-  }) as EventListener);
-}
+const planningCards = bindPlanningCards(root, abort.signal, () => buzz(10));
 /** Cards back to their places: unfolded, undragged, full height. */
 function undrag() {
-  for (const c of document.querySelectorAll<HTMLElement>(".folded")) c.classList.remove("folded");
-  for (const b of document.querySelectorAll<HTMLElement>(".bf-card-icon, #bf-cmd-badge")) b.setAttribute("aria-expanded", "true");
+  planningCards.reset();
   for (const c of document.querySelectorAll<HTMLElement>(".bf-card")) {
     delete c.dataset.moved;
     c.style.left = c.style.top = c.style.right = c.style.bottom = c.style.height = "";
@@ -1689,7 +1669,8 @@ function undrag() {
 }
 for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
 // Desktop full screen: the bar's cards on the map drag too.
-for (const c of document.querySelectorAll<HTMLElement>(".bf-dock, #bf-tactics")) dragCard(c, () => root.dataset.full === "true");
+for (const c of document.querySelectorAll<HTMLElement>(".bf-dock, #bf-tactics"))
+  dragCard(c, () => root.dataset.full === "true" || (c.id === "bf-tactics" && root.classList.contains("platoon-floating")));
 /* Full screen: the platoon card lays its keys out as a grid, a column or a row (remembered). */
 const ROSTER = "dom-battlefield:roster",
   LAYOUTS = ["grid", "column", "row"] as const;
@@ -1738,7 +1719,7 @@ const fullHome = $("#bf-fullscreen").parentElement!,
   tactics = $("#bf-tactics");
 /** The platoon card sits just under the sector map until you drag it somewhere else. */
 function placePlatoon() {
-  if (root.dataset.full !== "true" || tactics.dataset.moved !== undefined) return;
+  if (railLayout.matches || (root.dataset.full !== "true" && !root.classList.contains("platoon-floating")) || tactics.dataset.moved !== undefined) return;
   const m = $(".bf-mini").getBoundingClientRect();
   tactics.style.top = `${Math.round(m.bottom + 10)}px`;
   tactics.style.left = "auto";
@@ -1760,17 +1741,24 @@ function dockFull() {
   } else if (key.parentElement !== fullHome) fullHome.insertBefore(key, fullNext);
   barIcons();
 }
-/** Desktop bar: labels on the keys give way to icons when a group would overflow its slot. */
+/** Desktop groups get their natural width. Detach the platoon before its keys need shrinking. */
 function barIcons() {
   const bar = $("#bf-controls");
-  if (railLayout.matches || bar.hidden) return root.classList.remove("bar-icons");
-  // Full screen: the cards stack their keys; their own corner key picks labels or icons.
-  if (root.dataset.full === "true") return root.classList.remove("bar-icons");
+  const desktop = !railLayout.matches && !bar.hidden;
   root.classList.remove("bar-icons");
-  // The platoon is centred, so each side gets half of what it leaves: both must fit there.
-  const side = (bar.clientWidth - $("#bf-roster").scrollWidth) / 2 - 24,
-    tight = [...bar.querySelectorAll<HTMLElement>(".bf-dock")].some((g) => g.scrollWidth > side);
-  root.classList.toggle("bar-icons", tight);
+  const full = desktop && root.dataset.full === "true";
+  const docks = [...bar.querySelectorAll<HTMLElement>(".bf-dock")];
+  const width = bar.clientWidth;
+  const needed = desktop && !full ? docks.reduce((sum, dock) => sum + dock.scrollWidth, 0) : 0;
+  const floating = desktop && !full && playing && !planning && (width < 1180 || needed + 240 > width);
+  if (root.classList.contains("platoon-floating") !== floating) {
+    root.classList.toggle("platoon-floating", floating);
+    delete tactics.dataset.moved;
+    tactics.style.left = tactics.style.top = tactics.style.right = tactics.style.bottom = "";
+  }
+  if (!desktop || full) return;
+  root.classList.toggle("bar-icons", needed + (floating ? 32 : 240) > width);
+  if (floating) requestAnimationFrame(placePlatoon);
 }
 new ResizeObserver(() => barIcons()).observe($("#bf-controls"));
 /* Full screen: one key in either card's corner folds both cards to icons only (remembered). */
@@ -1894,7 +1882,7 @@ document.addEventListener(
 listen(document, "contextmenu", (e) => {
   if (playing) e.preventDefault();
 });
-// Touch: the menu pauses and drops the header in; tap it again (or resume) to play on.
+// Touch: the menu pauses and drops the header in; Keep Fighting resumes the battle.
 press($("#bf-squad"), () => {
   const open = !root.classList.contains("menu-open");
   if (open) setPause(true);
@@ -1967,17 +1955,11 @@ listen($("#bf-acts-pin"), "click", () => {
 }
 for (const n of document.querySelectorAll<HTMLElement>("[data-act]"))
   listen(n, "click", () => plan(n.dataset.act!));
-// START BATTLE: the sticker flashes red as the battle begins, then peels away.
+// The launch cap presses into its base, then breaks into Battlefield's own square debris.
 listen($("#bf-start"), "click", () => {
-  const b = $("#bf-start");
-  if (!planning) return;
-  b.classList.add("go");
-  startBattle();
-  if (planning) return b.classList.remove("go");
-  setTimeout(() => {
-    b.hidden = true;
-    b.classList.remove("go");
-  }, reduced.matches ? 0 : 450);
+  const button = $<HTMLButtonElement>("#bf-start");
+  if (!planning || overBudget()) return;
+  launchEffects.play(button, startBattle, () => { if (!planning) button.hidden = true; });
 });
 // Move HQ (planning): the next tap on the map moves your HQ, and your platoon with it.
 // Move HQ / Move Tanks: a two-way switch, one side always on (tap the other side to switch).
@@ -2008,6 +1990,15 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-order]"))
 listen(document, "keydown", ((e: KeyboardEvent) => {
   if ((e.target as Element).matches("input,select,textarea")) return;
   if (!playing) return;
+  if (overlays.active) {
+    if (!$("#bf-giveup").hidden && (e.code === "Escape" || e.code === "KeyP")) {
+      e.preventDefault();
+      if (!e.repeat) setPause(false);
+    }
+    return;
+  }
+  // Planning controls keep native keyboard activation; live battles keep Space as Fire.
+  if (planning && (e.code === "Enter" || e.code === "Space") && (e.target as Element).closest("button")) return;
   if (e.code === "Escape") {
     e.preventDefault();
     if (!$("#bf-giveup").hidden) return setPause(false);

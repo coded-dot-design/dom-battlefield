@@ -7,15 +7,19 @@ Preview: https://coded-dot-design.github.io/dom-battlefield/ (every checked `mai
 
 Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the preview deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
 
-## First release
+## The game
 
-Four seeded arcade operations: Hedgerow breach, Desert spearhead, Winter crossroads and Twin bridges. Choose either fictional side, one of three deployment formations, and four scout/medium/heavy tanks within a 12-point budget. Capture an opposing HQ, hold a contested crossroads, or eliminate a platoon. Your command tank must survive.
+Four seeded arcade operations: Hedgerow breach, Desert spearhead, Winter crossroads and Twin bridges. Choose either fictional side, one of three deployment formations, and a squad of 4, 8 or 12 tanks per side. A four-slot scout/medium/heavy loadout fits within a 12-point budget and repeats for larger squads. Capture an opposing HQ, hold a contested crossroads, or eliminate a platoon. Your command tank must survive.
 
 **Three stages.** *Setup:* an empty field with the two HQs and a location card; pick a place (each has a terrain thumbnail) and its ground appears, with Terrain (Light / Normal / Heavy, and a dice for a new layout at the same density) right under it. Then **Quick start** (anything not picked is rolled at random) or **Plan battle**. *Plan:* time is frozen and three cards float over the whole field: **Platoon** (side, formation, squad size), **Loadout** (four tanks, 12 points) and **Plan**. Cards open on the side away from your team, carry round shortcuts to the other cards, and can be dragged anywhere. *Battle:* on phones, a see-through rail on each side of a full-screen field.
 
-**Command your squad.** In Plan, tap a tank (or its number) and pick one of the three orders beside it: Attack HQ, Follow me, or Command (tap the map to plant a flag, drag the line or the flag, then the check). Tap a lit order again to clear it. The arrow above the orders locks any draft and moves to the next tank. Move HQ / Move Tanks is a switch on the plan card. Locked tanks drive their route and hold that square when they arrive (on the enemy HQ that is a capture). Start battle when you're ready. During the battle, Command is the third aim mode beside Auto and Lock: time runs at half speed and your gun is off, so redirect quickly and switch back. Fall in follows your command tank; Retreat returns to headquarters, where tanks repair. Advance returns the squad to the objective. Every map has alternate connected routes. Houses, hedges and parked cars can be destroyed into pixel debris and rubble. Rocks and water remain permanent; fences stop tanks but allow shells through.
+**Move through planning.** On desktop, a purple footer gives Platoon a **Next** key and Loadout **Previous / Next** keys. The round card shortcuts remain available; on phones their compact labels show the next step without adding a footer. Click or tap a card's raised icon (the number on Plan) once to shrink it, and again to expand it. An arcade hint points at that key, and hover or keyboard focus explains the action. The desktop **Start battle** key keeps its place at the bottom centre while cards and sides change.
+
+**Command your squad.** In Plan, tap a field tank or its platoon key and pick one of the three orders beside it: Attack HQ, Follow me, or Command (tap the map to plant a flag, drag the line or the flag, then the check). Tap a lit order again to clear it. The arrow above the orders locks any draft and moves to the next tank. Move HQ / Move Tanks is a switch on the plan card. Locked tanks drive their route and hold that square when they arrive (on the enemy HQ that is a capture). Start battle when you're ready. During the battle, Command is the third aim mode beside Auto and Lock: time runs at half speed and your gun is off, so redirect quickly and switch back. Fall in follows your command tank; Retreat returns to headquarters, where tanks repair. Advance returns the squad to the objective. Every map has alternate connected routes. Houses, hedges and parked cars can be destroyed into pixel debris and rubble. Rocks and water remain permanent; fences stop tanks but allow shells through.
 
 Setup and planning always show the whole field (fit to width or height). Desktop battles keep that view; phone battles zoom in with a camera (Pan, Center, minimap), and Command slides the right rail off so you can see and direct the squad. Auto-aim on phones is a switch: it stays on through Command and locks until you turn it off. The first time a phone loads the game, one card explains how to get true full screen (iPhone: Add to Home Screen; Android: Install); Full screen brings it back where the browser can't go full screen. On iPhone, sound plays through the silent switch (the mute key is the off switch). Resizing an active battle adjusts presentation without resetting terrain, damage or positions.
+
+When the desktop footer runs short of room, the platoon moves into its own draggable card below the sector map, with 44px tank keys and the same grid / column / row choices as full screen. Pause and result overlays grey out the field, block background interaction, and place their action keys near the map's bottom centre. Every entry repeats the sticker's slam and press, including Game over.
 
 ## Controls
 
@@ -30,9 +34,12 @@ Setup and planning always show the whole field (fit to width or height). Desktop
 | Send a tank | Command: click tank, then a square | Command: tap tank, then a square |
 | Bend / move a route | Drag the line / the flag | Drag the line / the flag |
 | Lock · clear · next · attack HQ | Enter · Backspace · N · H | Check · tap the lit order · arrow · flag |
-| Button tips | ? in the header | First battle of a visit; Menu → ?; tap a label for details |
+| Button tips | ? beside the battlefield title | First battle of a visit; Menu → ?; tap a label for details |
 | Keyboard controls | Keyboard icon beside the battlefield title (hover or click) | — |
+| Planning cards | Next / Previous footer keys or round shortcuts | Labeled round shortcuts |
+| Shrink / expand a card | Click its icon or Plan number; Enter / Space when focused | Tap its icon or Plan number |
 | Move a card | Drag its grip or any empty part | Same |
+| Platoon layout | Floating card corner key: grid / column / row | — |
 | Pause · surrender | White flag (P): Keep fighting or Surrender | White flag (Menu also pauses, with the header) |
 | Route your own tank | ★ platoon key, then a square, Lock · steer to override | Same |
 | Move HQ (plan only) | Drag your HQ, or Move HQ then a square | Same |
@@ -40,6 +47,8 @@ Setup and planning always show the whole field (fit to width or height). Desktop
 | Pause / deselect | P / Esc | Pause / select your tank |
 
 Sound is gesture-activated, optional, synthesized and bounded. Reduced motion keeps gameplay while reducing cosmetic effects. Pause, tab visibility, restart and exit clean up input, audio and mobile text-selection ownership.
+
+**Quick start**, **Plan battle** and **Start battle** share a short press-and-pixel launch effect made from the actual button. The action starts on the same click; the cosmetic burst cleans up after 560ms, uses at most 16 square fragments, and adds no runtime dependency. Reduced motion uses a brief press without fragments.
 
 ## Local development
 
@@ -54,24 +63,39 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 54KB gzip budget, checked by `npm run size` (0.15.0: ~52KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10, 46KB in 0.11–0.12, 48KB in 0.13).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm run size` checks the combined gzip size of JavaScript, styles and markup against **61,500 bytes**. Version 0.17.0 measures **60,672 bytes** (8,453 HTML + 33,061 JavaScript + 19,158 CSS), leaving 828 bytes of headroom. The allowance increases explicitly from 57,500 bytes for the requested navigation, launch feedback, overlay and responsive-control work; the measured increase over 0.16.2 is 3,353 bytes, with no new runtime dependency.
 
 ## Boundaries
 
 - `src/model.ts`: serializable map, units, commands, pathfinding, collision, objectives and combat. No DOM dependency.
 - `src/view.ts`: DOM grid/terrain and actor ownership, minimap, bounded projectiles and debris. Each tank is a DOM button carrying the original small cached Sherman canvas renderer; no fullscreen canvas board.
 - `src/client.ts`: input, camera, setup, UI, one animation loop and lifecycle.
+- `src/planning-cards.ts`: native fold keys, card state, navigation focus and reset behaviour.
+- `src/battle-overlays.ts`: pause/result focus containment, saved background `inert` state, map-relative placement and repeatable sticker entry.
+- `src/launch-effects.ts` and `src/launch-effects.css`: bounded launch feedback cloned from the pressed button; transient animations and timers clean up on completion, reset or abort.
 - `shared/`: generated snapshots from owning repositories, with source versions and SHA-256 provenance in `ORIGIN.json`. `node scripts/sync-shared.mjs` refreshes them from sibling checkouts. The tank artwork is not independently maintained here.
 
-Maps cap at 48×30 cells, with up to 24 tanks, 200 projectiles and 96 effects. One fixed 60Hz simulation clock with bounded catch-up. No timers or extra animation loops. Pause cancels the loop until resume. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
+Maps cap at 48×30 cells, with up to 24 tanks, 200 projectiles and 96 effects. One fixed 60Hz simulation clock uses bounded catch-up; pause cancels that loop until resume. Cosmetic launch feedback uses bounded Web Animations and short cleanup timers, without a second simulation loop. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
 
-This is a **single-player** first release. Multiplayer, friend invites, co-op/opposing players, extension overlays and cross-game mashups are future work. Command objects and DOM-independent state provide a boundary for a future authoritative transport; networking, synchronization, authentication and cheat prevention are not implemented or implied. A future entity adapter can add other games' actors without moving their assets into the map engine.
+This is a **single-player** game. Multiplayer, friend invites, co-op/opposing players, extension overlays and cross-game mashups are future work. Command objects and DOM-independent state provide a boundary for a future authoritative transport; networking, synchronization, authentication and cheat prevention are not implemented or implied. A future entity adapter can add other games' actors without moving their assets into the map engine.
 
 ## Historical inspiration
 
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+## Changelog
+
+### 0.17.0 — Clear planning, a dramatic launch and steady controls
+
+- **Planning has a visible next step.** Desktop Platoon gets a purple footer with Next; Loadout gets Previous and Next. Existing round shortcuts still work, with compact step labels on phones instead of another footer. The loadout budget guard applies to both routes through the cards.
+- **One press shrinks a card.** Platoon and Loadout icons and the Plan number are raised native buttons. Click, tap, Enter or Space shrinks or expands the card; a strong arcade hint points at the key, and its hover/focus tooltip says “Click to shrink” or “Click to expand”. This replaces double-click/double-tap folding.
+- **All three launch keys get the same impact.** Quick start, Plan battle and Start battle press into the page and break into up to 16 square fragments from the actual button, with a short flash and ring. The game action happens in the original click; the local 560ms cosmetic effect cleans up its clone, animations and timers. Reduced motion keeps a brief press without particles. No runtime dependency is added.
+- **Overlays follow one rule.** Pause and result panels grey out the field and make background controls inert, keep keyboard focus in the active panel, slam and press their sticker on every entry, and centre their action keys near the map's bottom edge on desktop and phone. Repeated Game over and Mission complete entries press correctly. Mobile menu and install-card flows retain their intended controls and pause state.
+- **Desktop planning stays still.** Start battle keeps a reserved bottom-centre lane when cards or sides change. A crowded gameplay footer gives the platoon its own draggable card below the sector map, with 44px keys and the remembered grid / column / row layout.
+- **Physical keys release cleanly.** Desktop radio, squad orders and platoon controls use matching cap and shadow timing, without the release bounce or a locked glow resetting the shadow between states.
+- **Size:** 60,672 bytes gzip, up 3,353 bytes from 0.16.2's 57,319 bytes. The explicit feature allowance rises from 57,500 to 61,500 bytes; 828 bytes remain. Browser regression coverage includes card navigation and native folding, launch cleanup, repeated overlays, compact platoon placement and stationary button bases during release.
 
 ### 0.16.2 — Desktop full screen: a platoon card of its own
 

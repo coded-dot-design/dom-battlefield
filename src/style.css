@@ -4013,6 +4013,12 @@ canvas.bf-ico {
 .bf-loc {
   width: calc(300 * var(--u));
 }
+/* A steady desktop launch lane keeps the centred START key clear of either tall planning
+   card. Its body scrolls when needed; the new Next / Previous footer stays in reach. */
+[data-ui="desk"][data-stage="plan"] .bf-pcard {
+  height: calc(100% - calc(110 * var(--u)));
+  max-height: calc(100% - calc(110 * var(--u)));
+}
 .bf-card-body {
   flex: 1;
   min-height: 0;
@@ -4147,15 +4153,15 @@ canvas.bf-ico {
 [data-ui="touch"] #bf-side canvas.bf-ico {
   width: calc(48 * var(--u));
 }
-/* START BATTLE moves into the open space beside a Platoon / Loadout card. The card plus its
-   orbit take this much of the screen: */
+/* Touch keeps START BATTLE in the remaining space beside a tall planning card. Desktop keeps
+   one fixed centre anchor, so switching side or planning step never moves the launch key. */
 #battlefield {
   --card-span: calc(468 * var(--u));
 }
-#battlefield:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) #bf-start {
+#battlefield[data-ui="touch"]:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) #bf-start {
   left: calc((var(--sl) + var(--card-span) + 100% - var(--sr)) / 2);
 }
-#battlefield:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) #bf-start {
+#battlefield[data-ui="touch"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) #bf-start {
   left: calc((var(--sl) + 100% - var(--sr) - var(--card-span)) / 2);
 }
 /* The white flag (back out to setup) sits in the bottom corner on your side, clear of START and
@@ -4201,21 +4207,22 @@ canvas.bf-ico {
   top: auto;
   bottom: calc(96 * var(--u));
 }
-/* Desktop bottom bar: big squads (8 or 12) get narrower platoon keys so the bar never overlaps. */
-.bf-roster:has(> :nth-child(6)) {
+/* The touch drawer keeps dense squads compact. Desktop keys keep their full size and the
+   platoon detaches into its own card when the command bar cannot give it enough room. */
+[data-ui="touch"] .bf-roster:has(> :nth-child(6)) {
   gap: 4px;
 }
-.bf-roster:has(> :nth-child(6)) .bf-unit {
+[data-ui="touch"] .bf-roster:has(> :nth-child(6)) .bf-unit {
   width: 32px;
   height: 40px;
 }
-.bf-roster:has(> :nth-child(10)) .bf-unit {
+[data-ui="touch"] .bf-roster:has(> :nth-child(10)) .bf-unit {
   width: 26px;
 }
-.bf-roster:has(> :nth-child(6)) .bf-unit b {
+[data-ui="touch"] .bf-roster:has(> :nth-child(6)) .bf-unit b {
   font-size: 13px;
 }
-.bf-roster:has(> :nth-child(6)) .bf-pips s {
+[data-ui="touch"] .bf-roster:has(> :nth-child(6)) .bf-pips s {
   width: 4px;
   height: 4px;
 }
@@ -4231,7 +4238,7 @@ canvas.bf-ico {
   display: none;
 }
 /* Folded: the card shrinks to its icon box (the plan card to its tank badge); the round
-   shortcuts tuck in behind it. Double-tap the box again to open the card. */
+   shortcuts tuck in behind it. Click or tap the icon again to expand the card. */
 .bf-card-icon,
 #bf-cmd-badge {
   cursor: pointer;
@@ -4311,6 +4318,9 @@ canvas.bf-ico {
 .bf-overlay[hidden] {
   display: none;
 }
+#battlefield:not(.menu-open):has(.bf-overlay:not([hidden])) .bf-header {
+  z-index: 30;
+}
 .bf-overlay[data-tone="won"] {
   --tone: var(--k-go);
 }
@@ -4318,6 +4328,10 @@ canvas.bf-ico {
   --tone: var(--k-attack);
 }
 .bf-sticker {
+  position: fixed;
+  left: var(--overlay-x, 50%);
+  top: var(--overlay-y, 42%);
+  transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
   gap: calc(4 * var(--u));
@@ -4384,8 +4398,13 @@ canvas.bf-ico {
   text-shadow: 0 calc(3 * var(--u)) 0 color-mix(in srgb, var(--rim) 35%, transparent);
 }
 .bf-overlay-keys {
+  position: fixed;
+  left: var(--overlay-x, 50%);
+  bottom: calc(var(--overlay-bottom, 0px) + calc(20 * var(--u)));
+  translate: -50% 0;
   display: flex;
   gap: calc(16 * var(--u));
+  max-width: calc(var(--overlay-width, 100vw) - calc(24 * var(--u)));
 }
 /* The keys: the same big sticker keys as Quick start / Plan battle. */
 .bf-overlay .bf-start {
@@ -4411,17 +4430,7 @@ canvas.bf-ico {
   letter-spacing: calc(1.6 * var(--u));
   white-space: nowrap;
 }
-/* Phone: the keys sit at the bottom, where START BATTLE and the setup keys sit; the sticker
-   holds the middle of the screen. */
-[data-ui="touch"] .bf-overlay-keys {
-  position: fixed;
-  left: 50%;
-  bottom: calc(20 * var(--u));
-  translate: -50% 0;
-}
-[data-ui="touch"] .bf-overlay {
-  padding-bottom: calc(80 * var(--u));
-}
+/* The map defines the same sticker / lower action placement on desktop and touch. */
 /* The second choice (surrender, a new campaign) is the dark key with a white glyph. */
 .bf-overlay :is(.bf-flag-sticker, .bf-new-sticker) {
   color: var(--ink);
@@ -4459,6 +4468,10 @@ canvas.bf-ico {
   .bf-sticker span {
     animation: none;
   }
+  .bf-sticker {
+    translate: 0 calc(5 * var(--u));
+    box-shadow: 0 0 0 var(--rim);
+  }
 }
 
 /* ---------- Desktop bar ----------
@@ -4473,9 +4486,9 @@ canvas.bf-ico {
   white-space: nowrap;
 }
 [data-ui="desk"] .bf-controls {
-  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  grid-template-columns: max-content minmax(200px, 1fr) max-content;
   align-items: end;
-  gap: 0 24px;
+  gap: 0 clamp(12px, 1.6vw, 24px);
 }
 [data-ui="desk"] .bf-dock {
   display: flex;
@@ -4515,6 +4528,8 @@ canvas.bf-ico {
 }
 [data-ui="desk"] #bf-tactics {
   justify-self: center;
+  min-width: 0;
+  max-width: 100%;
 }
 [data-ui="desk"] .bf-platoon {
   display: flex;
@@ -4524,6 +4539,14 @@ canvas.bf-ico {
 }
 [data-ui="desk"] .bf-roster {
   justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+}
+[data-ui="desk"] #bf-roster .bf-unit {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
 }
 [data-ui="desk"] .bf-platoon-tag {
   writing-mode: horizontal-tb;
@@ -4539,6 +4562,31 @@ canvas.bf-ico {
 }
 [data-ui="desk"].bar-icons #bf-controls :is(.bf-dock, .bf-task) button {
   padding: 6px 10px;
+}
+
+/* One physical travel for the cap and its hard base. The old locked glow animated box-shadow
+   itself; removing that animation snapped the base while transform was still releasing.
+   Footer keys retain a steady selected glow and both properties return on the same curve. */
+[data-ui="desk"] #bf-controls :is(.bf-dock button, .bf-roster .bf-unit) {
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out,
+    background-color 140ms, border-color 140ms;
+}
+[data-ui="desk"] #bf-controls .bf-arcade:is([aria-pressed="true"], .active) {
+  animation: none;
+}
+[data-ui="desk"] #bf-controls :is(.bf-dock button, .bf-roster .bf-unit):is(:active, .down) {
+  transition-duration: 50ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-ui="desk"] #bf-controls :is(.bf-dock button, .bf-roster .bf-unit) {
+    transition: none;
+  }
+}
+
+/* Compact desktop: keep the command groups on the footer and lift only the platoon onto the
+   map, using exactly the same card and layout switch as full screen. */
+[data-ui="desk"].platoon-floating .bf-controls {
+  grid-template-columns: minmax(0, 1fr) max-content;
 }
 
 /* ---------- Desktop full screen: the map is the screen ----------
@@ -4588,7 +4636,7 @@ canvas.bf-ico {
 }
 /* Full screen: the platoon is its own see-through card (under the sector map until dragged),
    sized to its keys: a grid (2, 3 or 4 a row by squad size), a column or a row. */
-[data-ui="desk"][data-full="true"] #bf-tactics {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics {
   position: fixed;
   z-index: 20;
   width: max-content;
@@ -4599,45 +4647,45 @@ canvas.bf-ico {
   box-shadow: 0 4px 0 color-mix(in srgb, var(--line) 80%, transparent);
   cursor: grab;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-platoon {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics .bf-platoon {
   align-items: stretch;
   min-width: 96px;
 }
 /* Square keys in the card. */
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-roster .bf-unit {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics .bf-roster .bf-unit {
   width: 44px;
   height: 44px;
   padding: 0;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-platoon-tag {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics .bf-platoon-tag {
   position: absolute;
   left: 12px;
   top: 11px;
 }
-[data-ui="desk"][data-full="true"].dock-icons #bf-tactics .bf-platoon-tag {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating).dock-icons #bf-tactics .bf-platoon-tag {
   display: none;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics .bf-roster {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics .bf-roster {
   display: grid;
   grid-template-columns: repeat(var(--cols, 2), max-content);
   gap: 6px;
 }
-[data-ui="desk"][data-full="true"][data-per="8"] #bf-tactics .bf-roster {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating)[data-per="8"] #bf-tactics .bf-roster {
   --cols: 3;
 }
-[data-ui="desk"][data-full="true"][data-per="12"] #bf-tactics .bf-roster {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating)[data-per="12"] #bf-tactics .bf-roster {
   --cols: 4;
 }
 /* Column: one tall column, wrapping to a second one past six tanks so it never runs off. */
-[data-ui="desk"][data-full="true"] #bf-tactics[data-layout="column"] .bf-roster {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics[data-layout="column"] .bf-roster {
   grid-template-columns: none;
   grid-template-rows: repeat(var(--rows, 4), max-content);
   grid-auto-flow: column;
 }
-[data-ui="desk"][data-full="true"][data-per="12"] #bf-tactics[data-layout="column"] .bf-roster {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating)[data-per="12"] #bf-tactics[data-layout="column"] .bf-roster {
   --rows: 6;
 }
-[data-ui="desk"][data-full="true"] #bf-tactics[data-layout="row"] .bf-roster {
+[data-ui="desk"]:is([data-full="true"], .platoon-floating) #bf-tactics[data-layout="row"] .bf-roster {
   grid-template-columns: none;
   grid-auto-flow: column;
 }
@@ -4666,7 +4714,8 @@ canvas.bf-ico {
 }
 /* Full screen: the cards stack their keys in a column; the small key in a card's corner switches
    both cards to icons only (remembered). */
-[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) {
+[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout),
+[data-ui="desk"].platoon-floating .bf-roster-layout {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -4680,7 +4729,8 @@ canvas.bf-ico {
   border-radius: 6px;
   --py: 2px;
 }
-[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) svg {
+[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) svg,
+[data-ui="desk"].platoon-floating .bf-roster-layout svg {
   width: 14px;
   height: 14px;
 }
@@ -4752,25 +4802,199 @@ canvas.bf-ico {
   display: none;
 }
 
-/* ---------- Folding cards: say so the first time a card opens ---------- */
+/* ---------- Planning navigation: full footer on desktop; labelled orbit keys on touch ---------- */
+.bf-card-nav {
+  display: flex;
+  align-items: center;
+  gap: calc(9 * var(--u));
+  flex: none;
+  margin: 0 calc(-14 * var(--u)) calc(-14 * var(--u));
+  padding: calc(6 * var(--u)) calc(14 * var(--u)) calc(7 * var(--u));
+  border-top: calc(2 * var(--u)) solid var(--k-cmd-base);
+  border-radius: 0 0 calc(7 * var(--u)) calc(7 * var(--u));
+  background: var(--k-cmd);
+}
+.bf-card-progress {
+  flex: 1;
+  color: #24163e;
+  font: 900 calc(9 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(0.7 * var(--u));
+}
+.bf-card-nav :is(.bf-card-next, .bf-card-prev) {
+  --py: calc(3 * var(--u));
+  --hy: calc(1 * var(--u));
+  --edge: var(--k-cmd-base);
+  --edge-hover: var(--edge);
+  --border-hover: var(--rim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(6 * var(--u));
+  min-height: calc(26 * var(--u));
+  padding: calc(5 * var(--u)) calc(11 * var(--u));
+  border: calc(2 * var(--u)) solid var(--rim);
+  border-radius: calc(5 * var(--u));
+  font: 900 calc(10 * var(--u)) / 1 ui-monospace, monospace;
+}
+.bf-card-next {
+  color: #33214f;
+  background: #f6f3ff;
+}
+.bf-card-prev {
+  color: #f6f3ff;
+  background: #6535ad;
+}
+.bf-card-nav button svg {
+  width: calc(15 * var(--u));
+  height: calc(15 * var(--u));
+}
+.bf-orb-caption,
+.bf-fold-touch {
+  display: none;
+}
+[data-ui="touch"] .bf-card-nav,
+[data-ui="touch"] .bf-fold-mouse {
+  display: none;
+}
+[data-ui="touch"] .bf-fold-touch {
+  display: inline;
+}
+[data-ui="touch"] .bf-orb-caption {
+  position: absolute;
+  left: 50%;
+  bottom: calc(5 * var(--u));
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: calc(2 * var(--u));
+  color: var(--k-cmd-ink);
+  font: 900 calc(8 * var(--u)) / 1 ui-monospace, monospace;
+  white-space: nowrap;
+}
+[data-ui="touch"] .bf-orb:has(.bf-orb-caption) canvas.bf-ico {
+  width: calc(34 * var(--u));
+  transform: translateY(calc(-5 * var(--u)));
+}
+[data-ui="touch"] .bf-orb-caption svg {
+  width: calc(9 * var(--u));
+  height: calc(9 * var(--u));
+  stroke-width: 3;
+}
+
+/* The header icons are real momentary keys. aria-expanded describes the card, so it must not
+   trigger the global locked-toggle style. A hover or keyboard focus shows the same arcade tip. */
+#battlefield .bf-card .bf-fold-key {
+  --py: calc(4 * var(--u));
+  --hy: calc(1 * var(--u));
+  --edge: var(--k-cmd-base);
+  position: relative;
+  z-index: 4;
+  flex: none;
+  min-height: 0;
+  padding: 0;
+  border: calc(2 * var(--u)) solid var(--rim);
+  transform: translateY(0);
+  box-shadow: 0 var(--py) 0 var(--edge);
+  animation: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  #battlefield .bf-card .bf-fold-key:hover {
+    transform: translateY(calc(-1 * var(--hy)));
+    box-shadow: 0 calc(var(--py) + var(--hy)) 0 var(--edge);
+  }
+}
+#battlefield .bf-card .bf-fold-key:active {
+  transform: translateY(var(--py));
+  box-shadow: 0 0 0 var(--edge);
+}
+.bf-fold-key::after,
+.bf-fold-key::before {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms ease;
+}
+.bf-fold-key::after {
+  content: attr(data-fold-tip);
+  left: calc(100% + calc(11 * var(--u)));
+  translate: 0 -50%;
+  width: max-content;
+  padding: calc(6 * var(--u)) calc(8 * var(--u));
+  color: #24163e;
+  background: #f6f3ff;
+  border: calc(2 * var(--u)) solid var(--k-cmd);
+  border-radius: calc(4 * var(--u));
+  box-shadow: 0 calc(3 * var(--u)) 0 var(--rim);
+  font: 900 calc(9 * var(--u)) / 1 ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: calc(0.3 * var(--u));
+}
+.bf-fold-key::before {
+  content: "";
+  left: calc(100% + calc(7 * var(--u)));
+  width: calc(8 * var(--u));
+  height: calc(8 * var(--u));
+  translate: 0 -50%;
+  rotate: 45deg;
+  background: #f6f3ff;
+  border-left: calc(2 * var(--u)) solid var(--k-cmd);
+  border-bottom: calc(2 * var(--u)) solid var(--k-cmd);
+  z-index: 6;
+}
+.bf-fold-key:focus-visible::after,
+.bf-fold-key:focus-visible::before {
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bf-fold-key:hover::after,
+  .bf-fold-key:hover::before {
+    opacity: 1;
+  }
+}
+.folded[data-away="right"] .bf-fold-key::after {
+  left: auto;
+  right: calc(100% + calc(11 * var(--u)));
+}
+.folded[data-away="right"] .bf-fold-key::before {
+  left: auto;
+  right: calc(100% + calc(7 * var(--u)));
+  rotate: 225deg;
+}
+
+/* ---------- Folding cards: a clear first-use pointer aimed at the clickable icon ---------- */
 .bf-fold-hint {
   position: absolute;
   z-index: 3;
-  left: calc(14 * var(--u));
-  bottom: calc(-11 * var(--u));
-  padding: calc(3 * var(--u)) calc(8 * var(--u));
-  font: 800 calc(8 * var(--u)) / 1 ui-monospace, monospace;
-  letter-spacing: calc(1 * var(--u));
+  left: calc(66 * var(--u));
+  top: calc(24 * var(--u));
+  padding: calc(6 * var(--u)) calc(8 * var(--u));
+  font: 900 calc(8 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(0.5 * var(--u));
   white-space: nowrap;
-  color: var(--rim);
-  background: var(--k-cmd);
-  border: calc(2 * var(--u)) solid var(--rim);
-  border-radius: calc(5 * var(--u));
-  box-shadow: 0 calc(2 * var(--u)) 0 var(--rim);
+  color: #f6f3ff;
+  background: var(--k-cmd-base);
+  border: calc(2 * var(--u)) solid var(--k-cmd);
+  border-radius: calc(4 * var(--u));
+  box-shadow: 0 calc(3 * var(--u)) 0 var(--rim);
   pointer-events: none;
   opacity: 0;
-  translate: 0 calc(4 * var(--u));
-  transition: opacity 240ms, translate 240ms;
+  translate: calc(4 * var(--u)) 0;
+  transition: opacity 160ms ease, translate 160ms ease;
+}
+.bf-fold-hint::before {
+  content: "";
+  position: absolute;
+  left: calc(-5 * var(--u));
+  top: 50%;
+  width: calc(8 * var(--u));
+  height: calc(8 * var(--u));
+  translate: 0 -50%;
+  rotate: 45deg;
+  background: inherit;
+  border-left: calc(2 * var(--u)) solid var(--k-cmd);
+  border-bottom: calc(2 * var(--u)) solid var(--k-cmd);
 }
 .bf-fold-hint b {
   font-weight: 900;
@@ -4781,6 +5005,21 @@ canvas.bf-ico {
 }
 .folded > .bf-fold-hint {
   display: none;
+}
+.bf-card:has(.bf-fold-key:focus-visible) > .bf-fold-hint {
+  opacity: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bf-card:has(.bf-fold-key:hover) > .bf-fold-hint {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-fold-hint,
+  .bf-fold-key::before,
+  .bf-fold-key::after {
+    transition: none;
+  }
 }
 /* ---------- Over budget: the Loadout card turns red until it's fixed ---------- */
 #battlefield.bf-over #bf-card-loadout {
