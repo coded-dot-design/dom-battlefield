@@ -61,7 +61,7 @@ function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
     }
   } else if (kind === "plan") {
     // A tank, its dashed route and the flag it drives to.
-    dashes(c, [[30, 56], [52, 56], [52, 22], [78, 22]], k.yellow);
+    dashes(c, [[30, 56], [52, 56], [52, 22], [78, 22]], k.team);
     tank(16, 56, 0, k.team, 0.7);
     c.fillStyle = k.ink;
     c.fillRect(77, 6, 5, 28);

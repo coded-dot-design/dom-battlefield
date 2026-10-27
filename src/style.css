@@ -1322,7 +1322,7 @@ html.bf-playing body {
   animation: bf-rotate 2.2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
 }
 .bf-gate[data-reason="fullscreen"] .bf-gate-phone {
-  transform: rotate(-90deg);
+  transform: rotate(90deg);
   stroke: var(--green);
 }
 @keyframes bf-rotate {
@@ -1332,7 +1332,7 @@ html.bf-playing body {
   }
   60%,
   100% {
-    transform: rotate(-90deg);
+    transform: rotate(90deg);
   }
 }
 
@@ -4623,3 +4623,48 @@ canvas.bf-ico {
     transition: none;
   }
 }
+/* The check and Next keys: halo rings drawn on their own layer, so hover and press (which change
+   the box shadow and transform) never knock them about. */
+.bf-check,
+.bf-act-next {
+  box-shadow: var(--px) var(--py) 0 var(--edge);
+}
+.bf-check::before,
+.bf-act-next::before {
+  content: "";
+  position: absolute;
+  inset: calc(-11 * var(--u));
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 54%, color-mix(in srgb, var(--c) 24%, transparent) 55% 72%, color-mix(in srgb, var(--c) 10%, transparent) 73%);
+  pointer-events: none;
+}
+.bf-check {
+  isolation: isolate;
+}
+/* Locked: the check rests pressed and lit, and taps do nothing. */
+.bf-check[data-state="locked"] {
+  pointer-events: none;
+  transform: translate(var(--px), var(--py));
+  box-shadow: 0 0 0 var(--edge), 0 0 calc(14 * var(--u)) color-mix(in srgb, var(--yellow) 75%, transparent);
+}
+/* Next: over the Command key, or beside the row. */
+.bf-acts[data-next="up"] .bf-act-next {
+  left: auto;
+  right: 0;
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+.bf-acts[data-next="right"] .bf-act-next {
+  left: calc(100% + 10px);
+  right: auto;
+  top: 0;
+  bottom: auto;
+}
+.bf-acts[data-next="left"] .bf-act-next {
+  left: auto;
+  right: calc(100% + 10px);
+  top: 0;
+  bottom: auto;
+}
+.bf-act-next { isolation: isolate; }

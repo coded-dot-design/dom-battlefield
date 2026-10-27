@@ -73,15 +73,17 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.4 — Steady keys
+
+- The route check no longer jumps on hover or press: it presses into its base like every key, and once the route is locked it rests pressed and ignores taps.
+- Next sits right over the Command key; with no room above it moves beside the row (right, or left near the edge), lined up and clear of the screen edges.
+- The Plan icon's dashed route is in your team colour (readable on white). The rotate hint's phone has its camera at the top again (and turns clockwise, as before).
+
 ### 0.15.3 — Fold a card
 
 - Double-tap a card's icon box (the plan card's tank badge) to fold the card down to that square, with its round shortcuts tucked behind it; drag it anywhere, double-tap to open it again.
 - The resize grab on a card's bottom edge has no visual handle any more: just grab the bottom middle.
 - Battle rails (and the stats and sector map panels) are about 20% more see-through, so tanks under them show.
-
-### 0.15.2 — Rotate hint turns the natural way
-
-- The "Rotate to landscape" phone now turns counter-clockwise, the way most people turn a phone.
 
 ### 0.15.1 — Full-height cards
 

@@ -786,20 +786,29 @@ function rideAlong() {
     H = view.vh,
     bw = (actsWidth ||= acts.offsetWidth) || 100,
     bh = (actsHeight ||= acts.offsetHeight) || 30,
-    // Keep clear of the notch, the screen edges and (on the right) the Next key.
-    lo = safe.l + 10 + bw / 2,
-    hi = W - safe.r - 10 - bw / 2 - 40;
+    gap = 10,
+    pad = 10;
   // Above the tank and its yellow hint label; below the tank when that would leave the screen.
   const above = p.y - view.tile * 0.5 - 26,
-    below = above - bh < 8;
-  const x = Math.max(lo, Math.min(hi, p.x)),
-    y = below ? Math.min(H - 8 - bh, p.y + view.tile * 0.7) : Math.min(H - 8, above);
+    below = above - bh < pad;
+  const y = below ? Math.min(H - pad - bh, p.y + view.tile * 0.7) : Math.min(H - pad, above),
+    rowTop = below ? y : y - bh;
+  // Next sits right over the Command key; with no room above, beside the row (right, else
+  // left), lined up with it. The whole stack keeps clear of the notch and the screen edges.
+  let next: "up" | "right" | "left" = !below && rowTop - gap - bh >= pad ? "up" : "right";
+  if (next === "right" && Math.min(p.x, W) + bw / 2 + gap + bh > W - safe.r - pad) next = "left";
+  const lo = safe.l + pad + bw / 2 + (next === "left" ? gap + bh : 0),
+    hi = W - safe.r - pad - bw / 2 - (next === "right" ? gap + bh : 0),
+    x = Math.max(lo, Math.min(hi, p.x));
+  acts.dataset.next = next;
   acts.classList.toggle("below", below);
   acts.style.transform = `translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;
   if (stops) {
     const end = point(state.board, stops.at(-1)!),
       q = view.toStage(end);
-    check.style.transform = `translate(${Math.max(safe.l + 30, Math.min(W - safe.r - 30, q.x + view.tile * 1.4)).toFixed(0)}px,${Math.max(30, Math.min(H - 30, q.y - view.tile * 0.6)).toFixed(0)}px)`;
+    // left/top, not transform: transform is the key's own press motion.
+    check.style.left = `${Math.max(safe.l + 30, Math.min(W - safe.r - 30, q.x + view.tile * 1.4)).toFixed(0)}px`;
+    check.style.top = `${Math.max(30, Math.min(H - 30, q.y - view.tile * 0.6)).toFixed(0)}px`;
   }
 }
 /** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
