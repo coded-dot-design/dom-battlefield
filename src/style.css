@@ -4586,25 +4586,69 @@ canvas.bf-ico {
 [data-ui="desk"][data-full="true"] .bf-mini {
   width: 180px;
 }
-.bf-mini #bf-tactics {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
+/* Full screen: the platoon is its own see-through card (under the sector map until dragged),
+   sized to its keys: a grid (2, 3 or 4 a row by squad size), a column or a row. */
+[data-ui="desk"][data-full="true"] #bf-tactics {
+  position: fixed;
+  z-index: 20;
+  width: max-content;
+  padding: 30px 12px 12px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 2px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--line) 80%, transparent);
+  cursor: grab;
 }
-.bf-mini .bf-platoon-tag {
+[data-ui="desk"][data-full="true"] #bf-tactics .bf-platoon {
+  align-items: stretch;
+  min-width: 96px;
+}
+/* Square keys in the card. */
+[data-ui="desk"][data-full="true"] #bf-tactics .bf-roster .bf-unit {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+[data-ui="desk"][data-full="true"] #bf-tactics .bf-platoon-tag {
+  position: absolute;
+  left: 12px;
+  top: 11px;
+}
+[data-ui="desk"][data-full="true"].dock-icons #bf-tactics .bf-platoon-tag {
   display: none;
 }
-.bf-mini .bf-roster {
+[data-ui="desk"][data-full="true"] #bf-tactics .bf-roster {
   display: grid;
-  grid-template-columns: repeat(var(--cols, 2), auto);
-  justify-content: center;
+  grid-template-columns: repeat(var(--cols, 2), max-content);
   gap: 6px;
 }
-[data-per="8"] .bf-mini .bf-roster {
+[data-ui="desk"][data-full="true"][data-per="8"] #bf-tactics .bf-roster {
   --cols: 3;
 }
-[data-per="12"] .bf-mini .bf-roster {
+[data-ui="desk"][data-full="true"][data-per="12"] #bf-tactics .bf-roster {
   --cols: 4;
+}
+/* Column: one tall column, wrapping to a second one past six tanks so it never runs off. */
+[data-ui="desk"][data-full="true"] #bf-tactics[data-layout="column"] .bf-roster {
+  grid-template-columns: none;
+  grid-template-rows: repeat(var(--rows, 4), max-content);
+  grid-auto-flow: column;
+}
+[data-ui="desk"][data-full="true"][data-per="12"] #bf-tactics[data-layout="column"] .bf-roster {
+  --rows: 6;
+}
+[data-ui="desk"][data-full="true"] #bf-tactics[data-layout="row"] .bf-roster {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+}
+/* The layout key shows the layout it is on. */
+.bf-roster-layout :is(.bf-l-grid, .bf-l-column, .bf-l-row) {
+  display: none;
+}
+.bf-roster-layout[data-layout="grid"] .bf-l-grid,
+.bf-roster-layout[data-layout="column"] .bf-l-column,
+.bf-roster-layout[data-layout="row"] .bf-l-row {
+  display: inline;
 }
 
 /* Planning-only controls (Move HQ / Move Tanks, the card shortcuts) never show in battle. */
@@ -4616,12 +4660,13 @@ canvas.bf-ico {
   height: 44px;
   min-height: 44px;
 }
-.bf-dock-fold {
+.bf-dock-fold,
+.bf-roster-layout {
   display: none;
 }
 /* Full screen: the cards stack their keys in a column; the small key in a card's corner switches
    both cards to icons only (remembered). */
-[data-ui="desk"][data-full="true"] .bf-dock-fold {
+[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -4635,7 +4680,7 @@ canvas.bf-ico {
   border-radius: 6px;
   --py: 2px;
 }
-[data-ui="desk"][data-full="true"] .bf-dock-fold svg {
+[data-ui="desk"][data-full="true"] :is(.bf-dock-fold, .bf-roster-layout) svg {
   width: 14px;
   height: 14px;
 }

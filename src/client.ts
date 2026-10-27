@@ -1689,7 +1689,28 @@ function undrag() {
 }
 for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
 // Desktop full screen: the bar's cards on the map drag too.
-for (const c of document.querySelectorAll<HTMLElement>(".bf-dock")) dragCard(c, () => root.dataset.full === "true");
+for (const c of document.querySelectorAll<HTMLElement>(".bf-dock, #bf-tactics")) dragCard(c, () => root.dataset.full === "true");
+/* Full screen: the platoon card lays its keys out as a grid, a column or a row (remembered). */
+const ROSTER = "dom-battlefield:roster",
+  LAYOUTS = ["grid", "column", "row"] as const;
+function rosterLayout(next: string) {
+  const b = $("#bf-roster-layout"),
+    l = (LAYOUTS as readonly string[]).includes(next) ? next : "grid";
+  $("#bf-tactics").dataset.layout = b.dataset.layout = l;
+  b.setAttribute("aria-label", `Platoon layout: ${l} (tap for ${LAYOUTS[(LAYOUTS.indexOf(l as "grid") + 1) % 3]})`);
+}
+try {
+  rosterLayout(localStorage.getItem(ROSTER) ?? "grid");
+} catch {
+  rosterLayout("grid");
+}
+listen($("#bf-roster-layout"), "click", () => {
+  const next = LAYOUTS[(LAYOUTS.indexOf($("#bf-tactics").dataset.layout as "grid") + 1) % 3]!;
+  rosterLayout(next);
+  try {
+    localStorage.setItem(ROSTER, next);
+  } catch {}
+});
 // Grips and the resize grab are pointer gestures; cards keep working without them.
 for (const g of document.querySelectorAll<HTMLElement>(".bf-card-grip, .bf-card-size")) g.setAttribute("aria-hidden", "true");
 /* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
@@ -1710,25 +1731,33 @@ function dockAim() {
   dockFull();
 }
 /* Desktop full screen: the header goes, its full-screen key (pressed) sits by the armour readout,
-   and the platoon moves into the sector map card. Dragged cards start over on the way out. */
+   and the platoon becomes its own card under the sector map. Dragged cards start over on the
+   way out. */
 const fullHome = $("#bf-fullscreen").parentElement!,
   fullNext = $("#bf-fullscreen").nextElementSibling,
-  tactics = $("#bf-tactics"),
-  tacticsNext = tactics.nextElementSibling!;
+  tactics = $("#bf-tactics");
+/** The platoon card sits just under the sector map until you drag it somewhere else. */
+function placePlatoon() {
+  if (root.dataset.full !== "true" || tactics.dataset.moved !== undefined) return;
+  const m = $(".bf-mini").getBoundingClientRect();
+  tactics.style.top = `${Math.round(m.bottom + 10)}px`;
+  tactics.style.left = "auto";
+  tactics.style.right = `${Math.round(innerWidth - m.right)}px`;
+}
 function dockFull() {
   const full = !railLayout.matches && !!document.fullscreenElement,
     key = $("#bf-fullscreen");
   if (root.dataset.full !== String(full)) {
     root.dataset.full = String(full);
-    for (const c of document.querySelectorAll<HTMLElement>(".bf-dock")) c.style.left = c.style.top = c.style.right = c.style.bottom = "";
+    for (const c of document.querySelectorAll<HTMLElement>(".bf-dock, #bf-tactics")) {
+      delete c.dataset.moved;
+      c.style.left = c.style.top = c.style.right = c.style.bottom = "";
+    }
   }
   if (full) {
     if (key.parentElement !== $(".bf-metrics")) $(".bf-metrics").append(key);
-    if (tactics.parentElement !== $(".bf-mini")) $(".bf-mini").append(tactics);
-  } else {
-    if (key.parentElement !== fullHome) fullHome.insertBefore(key, fullNext);
-    if (tactics.parentElement !== $("#bf-controls")) $("#bf-controls").insertBefore(tactics, tacticsNext);
-  }
+    requestAnimationFrame(placePlatoon);
+  } else if (key.parentElement !== fullHome) fullHome.insertBefore(key, fullNext);
   barIcons();
 }
 /** Desktop bar: labels on the keys give way to icons when a group would overflow its slot. */
@@ -2407,6 +2436,7 @@ listen($("#bf-sound"), "click", () => {
 listen(window, "resize", () => {
   readSafe();
   barIcons();
+  requestAnimationFrame(placePlatoon);
   actsWidth = actsHeight = 0;
   // Setup and planning use a bigger screen (full screen) for a bigger map; a live battle re-fits.
   if (playing && !planning) fit();

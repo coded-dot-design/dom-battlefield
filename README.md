@@ -73,6 +73,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.16.2 — Desktop full screen: a platoon card of its own
+
+- The platoon leaves the sector map card for its own see-through card, just under the map until you drag it anywhere. It sizes to its keys (square), and its corner key cycles **grid** (2, 3 or 4 a row by squad size) → **column** (wraps to a second column past six tanks) → **row**; the choice is remembered.
+
 ### 0.16.1 — Polish: overlays, phone header, first screen, cards
 
 - **Overlays grey the field out on their own** (a gunmetal veil with the field desaturated), on every stage and both layouts. The sticker header now slams in: it drops with a soft shadow far below it, hits with its hard base, then presses itself into the screen. Keys are bigger, and on the phone they sit at the bottom where START BATTLE and the setup keys are; the toast moves to the top.
