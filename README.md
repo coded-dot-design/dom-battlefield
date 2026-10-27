@@ -73,6 +73,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.7 — Every key answers a second finger
+
+- Touch presses on battle keys act the moment the finger lands (like Fire), so the orders, aim keys and platoon keys work while another finger drives or holds, in the phone cockpit and in the desktop layout on touch screens (tablets, touch laptops).
+
 ### 0.15.6 — First click counts
 
 - Fix: on desktop a key clicked in the first moments after the page loaded could be ignored (0.15.5).

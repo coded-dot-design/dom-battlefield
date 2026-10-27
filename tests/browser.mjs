@@ -705,6 +705,38 @@ try {
     console.log({ fast: true });
   }
   {
+    // Desktop layout on a touch screen (tablet, touch laptop): with one finger down, a second
+    // finger's taps on the bottom bar (orders, aim, platoon keys) still count.
+    where = "desk-touch";
+    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, hasTouch: true });
+    await ctx.addInitScript(() => localStorage.setItem("dom-battlefield:tips", "off"));
+    const page = await ctx.newPage();
+    await page.goto(URL);
+    await page.waitForFunction(() => window.battlefield);
+    await page.locator(".bf-mission").first().click();
+    await page.locator("#bf-quick").click();
+    await page.waitForTimeout(300);
+    const ui = await page.locator("#battlefield").getAttribute("data-ui");
+    const cdp = await ctx.newCDPSession(page);
+    const v = await box(page, "#bf-viewport"),
+      hold = { x: v.x + 40, y: v.y + v.height - 40, id: 1 };
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [hold] });
+    for (const o of ["follow", "retreat"]) {
+      const b = await box(page, `[data-order=${o}]`),
+        t = { x: b.x + b.width / 2, y: b.y + b.height / 2, id: 2 };
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [hold, t] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [t] });
+      await page.waitForTimeout(120);
+      assert.ok(
+        await page.evaluate((o) => { const s = window.battlefield.snapshot(); return s.units.filter((u) => u.side === s.side && u.id % s.per !== 0).every((u) => u.order === o); }, o),
+        `${ui}: ${o} answers a second finger`,
+      );
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await ctx.close();
+    console.log({ deskTouch: ui });
+  }
+  {
     // A narrow desktop window (no touch) gets the phone layout; the rails still fit side by side.
     where = "narrow";
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });

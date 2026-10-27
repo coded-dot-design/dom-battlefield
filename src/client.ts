@@ -135,24 +135,18 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
 function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
-/** A key that works while another finger is down (driving with the stick): phones send no
- *  click for a second touch, so on touch the key acts on release over it; the click that may
- *  follow is ignored. Mouse and keyboard still use click. */
+/** A key that works while another finger is down (driving with the stick or held keys): touch
+ *  presses act the moment the finger lands, like Fire, because phones and tablets send no
+ *  click for a second touch and may cancel its release. The click that can follow is ignored.
+ *  Mouse and keyboard still use click. */
 function press(el: HTMLElement, fn: () => void) {
-  let id = -1,
-    at = -Infinity;
+  let at = -Infinity;
   listen(el, "pointerdown", ((e: PointerEvent) => {
-    if (e.pointerType === "touch") id = e.pointerId;
-  }) as EventListener);
-  listen(el, "pointerup", ((e: PointerEvent) => {
-    if (e.pointerId !== id) return;
-    id = -1;
-    const r = el.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    e.preventDefault();
     at = performance.now();
     fn();
   }) as EventListener);
-  listen(el, "pointercancel", () => (id = -1));
   listen(el, "click", () => {
     if (performance.now() - at > 700) fn();
   });
@@ -1191,7 +1185,7 @@ function updateHUD() {
       const n = document.createElement("button");
       n.className = "bf-arcade bf-unit";
       n.innerHTML = unitKey(u.role, "");
-      n.onclick = () => selectUnit(u.id, true);
+      press(n, () => selectUnit(u.id, true));
       roster.append(n);
     }
   allies.forEach((u, i) => {
