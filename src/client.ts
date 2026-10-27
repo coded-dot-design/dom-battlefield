@@ -28,7 +28,7 @@ const viewport = $("#bf-viewport"),
 let mission = 0,
   side = 0,
   seed = 1207,
-  density = 1,
+  density = 0.6,
   formation = "wedge",
   per = 4,
   roles: Role[] = ["medium", "scout", "medium", "heavy"];
@@ -50,6 +50,16 @@ try {
 /** A moved HQ belongs to one map: same location, layout, density, squad size and side. */
 let hqMove: { key: string; cell: number } | null = null,
   hqPick = false;
+/** Step 1 starts on an empty grid: the ground appears once you pick a location. */
+let picked = false;
+/** Planning cards: home (Platoon / Loadout / Plan), one of the two settings cards, or Plan
+ *  (directing tanks, with Move HQ / Move Tanks). */
+type Panel = "home" | "platoon" | "loadout" | "plan";
+let panel: Panel = "home";
+/** Command: the selected tank's Command (flag) button is on, waiting for a tap on the map. */
+let armed = false;
+/** Touch: auto-aim stays on until you switch it off (a lock overrides it while it lasts). */
+let autoOn = true;
 const mapKey = () => `${mission}:${seed}:${density}:${per}:${side}`;
 function remember() {
   try {
@@ -76,6 +86,16 @@ let state: Battle,
 const tankNo = (id: number) => id % state.per;
 /** "Your tank" for the command tank, "Tank n" for a wingman. */
 const tankName = (id: number) => (id === commander(state).id ? "Your tank" : `Tank ${tankNo(id)}`);
+const root = document.querySelector<HTMLElement>("#battlefield")!;
+/** One place that says which screen and which layout we're in; CSS keys off both. */
+function syncUi() {
+  const ui = railLayout.matches ? "touch" : "desk",
+    stage = !playing ? "setup" : planning ? "plan" : "battle";
+  if (root.dataset.ui !== ui) root.dataset.ui = ui;
+  if (root.dataset.stage !== stage) root.dataset.stage = stage;
+  if (root.dataset.panel !== panel) root.dataset.panel = panel;
+  if (view) view.fitAll = ui === "desk" || stage !== "battle";
+}
 /** While planning, the command card can be tucked away (Hide); a tank tap or Command reopens it. */
 let cmdHidden = false;
 /** A platoon key's inside: the tank number over 1-3 size pips. */
@@ -86,7 +106,7 @@ const healthTone = (u: { hp: number; maxHp: number }) =>
 const audio = createGameAudio(document, "battlefield");
 /** Player aim: auto (nearest visible enemy), pointer (mouse), a locked tank, or a locked square. */
 type Aim =
-  | { mode: "auto" | "pointer" }
+  | { mode: "auto" | "pointer" | "free" }
   | { mode: "unit"; id: number }
   | { mode: "cell"; x: number; y: number };
 let follow = true,
@@ -105,15 +125,25 @@ const input: Input = { x: 0, y: 0, fire: false, aim: null },
   lease = createMobileSelectionLock(document),
   abort = new AbortController();
 const coarse = matchMedia("(pointer: coarse)"),
+  /** Phones and small tablets (and very narrow windows) get the touch layout. */
+  railLayout = matchMedia("(pointer: coarse) and (max-width: 1400px), (max-width: 759px)"),
   TIPS = "dom-battlefield:tips";
 const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
   options = { signal: abort.signal };
 function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
+let toastTimer = 0;
 function say(text: string) {
   if (announcement.textContent === text) return;
   announcement.textContent = text;
+  // Touch: comms is a radio toast. It shows briefly, then fades; tap or swipe it away sooner.
+  if (text) {
+    const f = $(".bf-footer");
+    f.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => f.classList.remove("show"), Math.min(5200, 1800 + text.length * 40));
+  }
   // The comms LED blinks once per new message: noticed, not distracting.
   const led = document.querySelector<HTMLElement>(".bf-comms-led");
   if (led) (led.classList.remove("rx"), void led.offsetWidth, led.classList.add("rx"));
@@ -128,6 +158,63 @@ function tipsOff() {
     return localStorage.getItem(TIPS) === "off";
   } catch {
     return false;
+  }
+}
+/** Touch tips: one short label per rail control, and a line more on tap. */
+const TOUCH_TIPS: [string, string, string][] = [
+  ["#bf-squad", "Menu", "Pauses, and shows the header: tips, full screen, sound, theme, eject."],
+  ["#bf-pause", "Surrender", "Pauses the battle and asks: keep fighting, or wave the white flag."],
+  ["#bf-command", "Command", "Half speed. The right rail slides away: tap a tank, then give it an order. Tap again to fight."],
+  ["#bf-center", "Center", "Snap the camera back to your tank and follow it."],
+  ["#bf-pan", "Pan", "Drag the map to look around. Tap again to stop."],
+  ["#bf-stick", "Drive", "Drag any way. A small push creeps, a full push is top speed."],
+  [".bf-mini", "Sector map", "The whole field. Tap it to look there."],
+  ["[data-order=attack]", "Attack", "The squad attacks your locked tank, or hunts the nearest enemy."],
+  ["[data-order=retreat]", "Retreat", "Back to HQ to repair."],
+  ["[data-order=advance]", "Advance", "Push to the objective."],
+  ["[data-order=follow]", "Fall in", "The squad forms up on you."],
+  ["#bf-auto", "Auto-aim", "On: fire at the nearest enemy you can see. Off: the gun points where you drive."],
+  ["#bf-target", "Lock", "Tap it, then an enemy tank or a square: you keep firing there. Tap again to release."],
+  [".bf-fire", "Fire", "Hold to keep firing."],
+];
+/** Touch: labels sit just inside the field, beside their rail, at their control's height, and
+ *  stack downwards where two would collide. Their notes open under them. */
+function lineUp(layer: HTMLElement) {
+  const tips = [...layer.querySelectorAll<HTMLElement>(".bf-coach-tip")].map((tip) => {
+      const r = tip.getBoundingClientRect();
+      return { tip, r, left: r.left + r.width / 2 < innerWidth / 2 };
+    }),
+    edge = (left: boolean) =>
+      left ? Math.max(...tips.filter((t) => t.left).map((t) => t.r.right)) : Math.min(...tips.filter((t) => !t.left).map((t) => t.r.left));
+  for (const left of [true, false]) {
+    const x = edge(left);
+    let floor = -Infinity;
+    for (const t of tips.filter((t) => t.left === left).sort((a, b) => a.r.top + a.r.height / 2 - b.r.top - b.r.height / 2)) {
+      const label = t.tip.querySelector<HTMLElement>(".bf-tip-label")!,
+        note = t.tip.querySelector<HTMLElement>("p")!,
+        h = label.offsetHeight,
+        y = Math.max(floor, t.r.top + t.r.height / 2 - h / 2);
+      floor = y + h + 4;
+      for (const n of [label, note]) {
+        n.style.translate = "none";
+        n.style.top = `${(n === note ? y + h + 4 : y) - t.r.top}px`;
+        n.style.left = left ? `${x + 8 - t.r.left}px` : "auto";
+        n.style.right = left ? "auto" : `${t.r.right - x + 8}px`;
+      }
+    }
+  }
+}
+/** Tip labels and their notes never leave the screen: nudge each one back inside. */
+function keepOnScreen(layer: HTMLElement) {
+  const pad = 6;
+  for (const n of layer.querySelectorAll<HTMLElement>(".bf-tip-label, .bf-coach-tip > p")) {
+    n.style.marginLeft = n.style.marginTop = "";
+    if (!n.getClientRects().length) continue;
+    const r = n.getBoundingClientRect(),
+      dx = r.left < pad ? pad - r.left : r.right > innerWidth - pad ? innerWidth - pad - r.right : 0,
+      dy = r.top < pad ? pad - r.top : r.bottom > innerHeight - pad ? innerHeight - pad - r.bottom : 0;
+    if (dx) n.style.marginLeft = `${dx}px`;
+    if (dy) n.style.marginTop = `${dy}px`;
   }
 }
 let coachTimer = 0,
@@ -149,7 +236,15 @@ function coach(show: boolean) {
     setPause(true);
     coachPaused = true;
   }
-  const controls = () => [...document.querySelectorAll<HTMLElement>("#battlefield [data-tip]")].filter((n) => n.getClientRects().length > 0);
+  // Touch labels each rail control on its own (the groups are split across both rails);
+  // desktop labels the groups in the bottom bar.
+  const touchUi = root.dataset.ui === "touch";
+  const tipOf = (n: HTMLElement) => (touchUi ? TOUCH_TIPS.find(([sel]) => n.matches(sel)) : undefined);
+  const controls = () =>
+    (touchUi
+      ? TOUCH_TIPS.map(([sel]) => document.querySelector<HTMLElement>(sel)!).filter(Boolean)
+      : [...document.querySelectorAll<HTMLElement>("#battlefield [data-tip]")]
+    ).filter((n) => n.getClientRects().length > 0 && n.getBoundingClientRect().width > 0);
   const place = () => {
     layer.querySelectorAll(".bf-coach-tip").forEach((n) => n.remove());
     const mid = innerWidth / 2;
@@ -159,17 +254,20 @@ function coach(show: boolean) {
       const tip = document.createElement("div");
       tip.className = "bf-coach-tip";
       tip.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
-      const left = r.left + r.width / 2 < mid;
-      tip.dataset.at = n.dataset.tipAt ?? (r.top < 60 ? (left ? "below" : "below-r") : left ? "right" : "left");
+      const left = r.left + r.width / 2 < mid,
+        t = tipOf(n);
+      tip.dataset.at = touchUi ? (left ? "right" : "left") : (n.dataset.tipAt ?? (r.top < 60 ? (left ? "below" : "below-r") : left ? "right" : "left"));
       const label = document.createElement("button");
       label.className = "bf-tip-label";
-      label.textContent = n.dataset.tip!;
+      label.textContent = t ? t[1] : n.dataset.tip!;
       label.setAttribute("aria-expanded", "false");
       const more = document.createElement("p");
-      more.textContent = n.dataset.tipMore ?? "";
+      more.textContent = t ? t[2] : (n.dataset.tipMore ?? "");
       tip.append(label, more);
       layer.append(tip);
     }
+    if (touchUi) lineUp(layer);
+    keepOnScreen(layer);
   };
   // Wait for a stable layout: the tip targets must not move for 8 frames in a row (max ~1.5 s).
   let last = "",
@@ -196,13 +294,17 @@ function mapTools() {
   const w = view.world, v = viewport;
   $("#battlefield").classList.toggle("map-fits", w.offsetWidth <= v.clientWidth + 1 && w.offsetHeight <= v.clientHeight + 1);
 }
-/** The field size the screen allows (clamped like generate()). Touch maps are fixed and scroll. */
+/** The field size the screen allows (clamped like generate()). */
 function mapSize() {
   const touchMap = innerWidth < 760 || coarse.matches,
     grow = per === 12 ? 12 : per === 8 ? 6 : 0,
     unit = per === 12 ? 28 : per === 8 ? 32 : 36,
-    cols = touchMap ? 26 + grow : Math.floor(viewport.clientWidth / unit),
-    rows = touchMap ? 20 + grow / 2 : Math.floor(viewport.clientHeight / unit);
+    // Touch: a fixed number of rows, and as many columns as the screen's shape asks for, so
+    // the whole field fills the screen while you set up and plan (the battle then zooms in).
+    rows = touchMap ? 16 + grow / 2 : Math.floor(viewport.clientHeight / unit),
+    cols = touchMap
+      ? Math.round((rows * viewport.clientWidth) / Math.max(1, viewport.clientHeight))
+      : Math.floor(viewport.clientWidth / unit);
   return { cols: Math.max(18, Math.min(48, cols)), rows: Math.max(14, Math.min(30, rows)) };
 }
 function preview(resized = false) {
@@ -210,6 +312,7 @@ function preview(resized = false) {
   if (playing && !planning) return;
   // The field fills the space it has (full screen adds squares); bigger squads get a bigger
   // field; the camera already scrolls on touch.
+  syncUi();
   const { cols, rows } = mapSize();
   // Planning: a resize that doesn't change the map size (address bars, rails) just re-fits.
   if (resized && planning && state && state.board.cols === cols && state.board.rows === rows) return fit();
@@ -225,51 +328,56 @@ function preview(resized = false) {
     formation,
     per,
   );
-  $("#battlefield").dataset.side = String(side);
+  // Step 1 before a location is picked: an empty grid with the two HQs, nothing else.
+  if (!picked && !playing) b.tiles.fill("ground"), b.health.fill(0), b.revision++;
+  root.dataset.side = String(side);
+  root.toggleAttribute("data-blank", !picked && !playing);
   view = new View(viewport, state, selectUnit);
+  syncUi();
+  view.resize();
   view.center();
   mapTools();
-  $("#bf-operation").textContent = MISSIONS[mission]!.name;
-  $("#bf-brief").textContent = MISSIONS[mission]!.brief;
-  $("#bf-tip").textContent = MISSIONS[mission]!.tip;
-  $("#bf-points").textContent = `${loadoutCost(roles)} / 12 points`;
-  setup.classList.toggle("bf-over", loadoutCost(roles) > 12);
+  $("#bf-operation").textContent = picked || playing ? MISSIONS[mission]!.name : "Pick a location";
+  const cost = loadoutCost(roles),
+    over = cost > 12;
+  $("#bf-points").textContent = `${cost} / 12 points`;
+  root.classList.toggle("bf-over", over);
+  for (const n of document.querySelectorAll<HTMLElement>("[data-badge=per]")) n.textContent = String(per);
+  for (const n of document.querySelectorAll<HTMLElement>("[data-badge=pts]")) n.textContent = String(cost);
   for (const n of document.querySelectorAll<HTMLElement>("[data-slot] [data-role]"))
     n.setAttribute(
       "aria-pressed",
       String(roles[Number(n.closest<HTMLElement>("[data-slot]")!.dataset.slot)] === n.dataset.role),
     );
-  const start = $<HTMLButtonElement>("#bf-deploy");
-  start.disabled = loadoutCost(roles) > 12;
-  $("#bf-cost-error").textContent = start.disabled
-    ? "Over budget — downgrade a tank before deploying."
-    : "";
+  for (const id of ["#bf-deploy", "#bf-quick", "#bf-start"]) $<HTMLButtonElement>(id).disabled = over;
+  $("#bf-cost-error").textContent = over ? "Over budget: downgrade a tank before you deploy." : "";
   $("#bf-objective-label").textContent =
     MISSIONS[mission]!.objective === "capture"
       ? "CAPTURE HQ / 12s"
       : MISSIONS[mission]!.objective === "hold"
         ? "HOLD CROSSROADS / 45s"
         : "ELIMINATE OPPOSING PLATOON";
-  const sum = `${side ? "B · CORAL" : "A · MINT"} · ${formation.toUpperCase()} · ${per} TANKS · ${loadoutCost(roles)}/12`;
-  text("#bf-strat-chip", `${side ? "B" : "A"} · ${formation.toUpperCase()} · ${per}`);
-  text("#bf-strat-summary", `STRATEGY · ${sum} · edit it while you plan`);
   remember();
   updateHUD();
   if (planning) {
     selected = -1;
     draft = null;
-    view.resize();
-    view.center();
-    nextTank();
+    armed = false;
+    if (panel === "plan") nextTank();
+    // A side change moves the cards to the other side.
+    showCards();
     cmdPanel();
-    $<HTMLButtonElement>("#bf-start").disabled = loadoutCost(roles) > 12;
   }
 }
 function selectUnit(id: number, fromList = false) {
   if (!playing || paused || pan) return;
+  // Planning: tapping one of your tanks from any card jumps straight to Plan (Move Tanks).
+  if (planning && hqPick) return say("Move HQ is on: tap behind the dashed line, or switch to Move Tanks.");
   cmdHidden = false;
   const u = state.units.find((u) => u.id === id);
   if (!u || u.hp <= 0) return;
+  if (planning && panel !== "plan" && u.side === side) showPanel("plan", false);
+  armed = false;
   if (u.side !== side) {
     // Tapping an enemy: with a wingman selected, it attacks that tank. Outside command mode
     // your own aim locks on too.
@@ -302,20 +410,24 @@ function selectUnit(id: number, fromList = false) {
           ? `Tank ${tankNo(id)}: tap a square to send it, or Attack HQ.`
           : `Tank ${tankNo(id)}: tap a square to move, or an enemy to attack it.`,
   );
-  setDrawer(false);
+  setMenu(false);
   cmdPanel();
   view.render(selected, paused, reduced.matches);
 }
 function aimButtons() {
-  $("#bf-auto").setAttribute("aria-pressed", String(!commanding && aim.mode === "auto"));
-  $("#bf-target").setAttribute("aria-pressed", String(!commanding && (picking || aim.mode === "unit" || aim.mode === "cell")));
+  const touch = railLayout.matches;
+  // Touch: Auto is a switch that stays on (through command mode and locks) until you turn it off.
+  $("#bf-auto").setAttribute("aria-pressed", String(touch ? autoOn : !commanding && aim.mode === "auto"));
+  $("#bf-target").setAttribute("aria-pressed", String((touch || !commanding) && (picking || aim.mode === "unit" || aim.mode === "cell")));
   $("#bf-command").setAttribute("aria-pressed", String(commanding));
   $("#battlefield").classList.toggle("picking", picking);
   $("#battlefield").classList.toggle("commanding", commanding);
 }
 function setAim(next: Aim, message?: string) {
-  // Aim and command are one switch: picking an aim mode leaves command mode (not while planning).
-  if (commanding && !planning) setCommand(false);
+  // Desktop: aim and command are one switch, so picking an aim mode leaves command mode.
+  if (commanding && !planning && !railLayout.matches) setCommand(false);
+  // Touch: "back to auto" means back to whatever the Auto switch says.
+  if (next.mode === "auto" && railLayout.matches && !autoOn) next = { mode: "free" };
   aim = next;
   picking = false;
   input.aim = null;
@@ -326,13 +438,20 @@ function lockUnit(id: number) {
   setAim({ mode: "unit", id }, "Aim locked on that tank. It returns to auto-aim when the tank is destroyed.");
 }
 function autoAim() {
+  if (railLayout.matches) {
+    // Touch: a switch. Off means the gun points where the tank drives; a lock still overrides.
+    autoOn = !autoOn;
+    if (aim.mode === "auto" || aim.mode === "free") setAim({ mode: autoOn ? "auto" : "free" });
+    else aimButtons();
+    return say(autoOn ? "Auto-aim on: nearest visible enemy." : "Auto-aim off: the gun points where you drive.");
+  }
   // On desktop, Auto toggles back to mouse aiming.
-  if (aim.mode === "auto" && !coarse.matches) setAim({ mode: "pointer" }, "Mouse aim.");
+  if (aim.mode === "auto") setAim({ mode: "pointer" }, "Mouse aim.");
   else setAim({ mode: "auto" }, "Auto-aim: nearest visible enemy.");
 }
 function startPick() {
   if (!playing || paused || planning) return;
-  if (picking) return setAim({ mode: "auto" }, "Auto-aim.");
+  if (picking || aim.mode === "unit" || aim.mode === "cell") return setAim({ mode: "auto" }, autoOn || !railLayout.matches ? "Lock released. Auto-aim." : "Lock released.");
   picking = true;
   aimButtons();
   say("Lock aim: tap an enemy tank, or any square to keep shooting there.");
@@ -350,18 +469,25 @@ function resolveAim() {
   }
   if (aim.mode === "cell") return { x: aim.x, y: aim.y };
   if (aim.mode === "pointer") return pointer;
+  if (aim.mode === "free") {
+    const u = commander(state);
+    return { x: u.x + Math.cos(u.angle) * 4, y: u.y + Math.sin(u.angle) * 4 };
+  }
   return null;
 }
-function setDrawer(open: boolean) {
-  $("#battlefield").classList.toggle("squad-open", open);
+/** Touch battle menu: the header drops in over the paused field. */
+function setMenu(open: boolean) {
+  root.classList.toggle("menu-open", open);
   $("#bf-squad").setAttribute("aria-expanded", String(open));
+  pauseButton();
 }
 /** Command mode on/off. Your gun stops and time halves, so directing the squad is a risk. */
 function setCommand(on: boolean, pick = true) {
-  if (planning && !on) return;
+  if (planning && !on && panel === "plan") return;
   if (!on) commitDraft();
   commanding = on;
   picking = false;
+  armed = false;
   if (!on) {
     // Back to fighting: squad orders go to the whole squad again.
     selected = -1;
@@ -370,7 +496,13 @@ function setCommand(on: boolean, pick = true) {
     $("#bf-cmd").hidden = true;
   } else {
     if (selected < 0 && pick) nextTank();
-    say(planning ? "Plan your attack: tap a tank, then a square. Lock each route, then Start battle." : "Command mode: half speed, your gun is off. Direct a tank, then switch back to Auto.");
+    say(
+      planning
+        ? "Plan your attack: tap a tank, then the map. Check locks the route; the arrow moves on."
+        : railLayout.matches
+          ? "Command mode: half speed. Tap a tank to direct it. Tap Command again to fight."
+          : "Command mode: half speed, your gun is off. Direct a tank, then switch back to Auto.",
+    );
   }
   aimButtons();
   cmdPanel();
@@ -401,7 +533,8 @@ function setDest(id: number) {
     draft.stops = before;
     return say("Unreachable from here. Choose another square.");
   }
-  if (draft.stops.length === 1 && before.length === 0) say("Route drawn. Drag the line to bend it, then Lock.");
+  armed = false;
+  if (draft.stops.length === 1 && before.length === 0) say("Flag planted. Drag the line or the flag to adjust, then tap the check.");
   cmdPanel();
 }
 /** Moving on (another tank, Start, leaving Command) never throws a drawn route away. */
@@ -419,11 +552,29 @@ function lockRoute() {
   } else say("That route is blocked now. Adjust it.");
   cmdPanel();
 }
+/** Which of the selected tank's three orders is on: Attack HQ, Follow me, or a Command route. */
+function actState() {
+  const u = draft ? state.units[draft.id] : undefined;
+  if (!u || u.hp <= 0) return null;
+  const enemyHq = state.board.bases[1 - side]!,
+    stops = draft!.stops.length ? draft!.stops : u.route,
+    hq = stops.at(-1) === enemyHq && (dirty() || (u.order === "hold" && u.route.length > 0));
+  return {
+    hq,
+    follow: u.order === "follow" && !draft!.stops.length,
+    route: armed || (!hq && (dirty() ? draft!.stops.length > 0 : u.order === "hold" && u.route.length > 0)),
+  };
+}
 function plan(action: string) {
   if (!playing || paused) return;
-  if (action === "next") return nextTank();
-  if (!draft) return say("Tap one of your numbered tanks first.");
-  const id = draft.id;
+  if (action === "next") return commitDraft(), nextTank();
+  if (!draft) return say("Tap one of your tanks first.");
+  const id = draft.id,
+    on = actState();
+  // Tapping the order that's already on clears it: the tank goes back to fighting on its own.
+  if (on && ((action === "hq" && on.hq) || (action === "follow" && on.follow) || (action === "route" && on.route)))
+    action = "clear";
+  armed = false;
   if (action === "hq") {
     draft.stops = [state.board.bases[1 - side]!];
     if (!draftCells()) draft.stops = [];
@@ -433,6 +584,9 @@ function plan(action: string) {
     command(state, { type: "order", order: "follow", ids: [id] });
     draft.stops = [];
     say(`Tank ${tankNo(id)} falling in on you.`);
+  } else if (action === "route") {
+    armed = true;
+    say(`${tankName(id)}: tap the map to plant the flag.`);
   } else if (action === "clear") {
     command(state, { type: "clear", id });
     draft.stops = [];
@@ -451,38 +605,64 @@ function moveHq(id: number) {
 }
 function startBattle() {
   if (!planning) return;
-  if (loadoutCost(roles) > 12) return say("Over budget: downgrade a tank in Strategy first.");
+  if (loadoutCost(roles) > 12) return say("Over budget: downgrade a tank in Loadout first.");
   commitDraft();
   hqPick = false;
   planning = false;
-  strategy(false);
+  panel = "home";
+  showCards();
   // Squad orders go to the whole squad again once the battle starts.
   selected = -1;
   draft = null;
   $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
   setCommand(false);
-  setAim({ mode: coarse.matches ? "auto" : "pointer" });
+  setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
+  syncUi();
+  fit();
+  view.center();
   audio.play("start");
   say("Battle started. Tap Command any time to redirect your squad.");
+  if (tipsPending) (tipsPending = false), requestAnimationFrame(() => coach(true));
 }
-/** The command panel: what mode you're in, which tank, and what its route is doing. */
+/** Planning cards: which one shows, and where. Settings cards sit on the side away from your
+ *  team (so they don't cover your platoon); the plan card takes the top corner away from it. */
+function showCards() {
+  const plan = planning,
+    away = side === 0 ? "right" : "left";
+  $("#bf-plan-home").hidden = !plan || panel !== "home";
+  $("#bf-card-platoon").hidden = !plan || panel !== "platoon";
+  $("#bf-card-loadout").hidden = !plan || panel !== "loadout";
+  for (const c of document.querySelectorAll<HTMLElement>(".bf-pcard, #bf-cmd")) c.dataset.away = away;
+  syncUi();
+}
+function showPanel(next: Panel, pick = true) {
+  if (!planning) return;
+  if (panel === "plan" && next !== "plan") commitDraft();
+  panel = next;
+  hqPick = false;
+  showCards();
+  if (next === "plan") setCommand(true, pick);
+  else {
+    commanding = false;
+    selected = -1;
+    draft = null;
+    armed = false;
+    aimButtons();
+    cmdPanel();
+    view.render(selected, paused, reduced.matches);
+  }
+}
+/** The plan card (info, Move HQ / Move Tanks) and the buttons that ride beside the tank. */
 function cmdPanel() {
-  const root = $("#battlefield");
   if (root.dataset.plan !== String(planning)) root.dataset.plan = String(planning);
-  const panel = $("#bf-cmd");
-  panel.hidden = !commanding || (planning && cmdHidden);
-  if (panel.hidden) return;
+  const panelEl = $("#bf-cmd");
+  // Touch battle: the field is the card (no info box); orders sit beside the tank.
+  panelEl.hidden = !commanding || (planning && cmdHidden) || (!planning && railLayout.matches);
+  rideAlong();
+  if (panelEl.hidden) return;
   const u = draft ? state.units[draft.id] : undefined,
     alive = u && u.hp > 0;
-  text("#bf-cmd-mode span", planning ? "PLAN · TIME FROZEN" : "COMMAND · HALF SPEED · GUN OFF");
-  // Close: in battle it is Auto (command off, aim back on); while planning it just tucks the card away.
-  const close = $("#bf-cmd-close");
-  if (close.dataset.plan !== String(planning)) {
-    close.dataset.plan = String(planning);
-    close.querySelector("span")!.textContent = planning ? "Hide" : "Auto";
-    close.setAttribute("aria-label", planning ? "Hide the command card (tap a tank to bring it back)" : "Close command: back to auto-aim (Q)");
-    close.title = planning ? "Hide · tap a tank or Command to reopen" : "Q · Back to auto-aim";
-  }
+  text("#bf-cmd-mode span", planning ? "PLAN · TIME FROZEN" : "COMMAND · HALF SPEED");
   // Badge: the same platoon key as the list (colour = health, pips = size, number).
   const badge = $("#bf-cmd-badge"),
     key = alive ? `${u!.role}|${tankNo(u!.id)}` : "";
@@ -494,22 +674,26 @@ function cmdPanel() {
   text("#bf-cmd-hp", alive ? `${Math.ceil(u!.hp)} HP` : "");
   $("#bf-cmd-hp").dataset.hp = badge.dataset.hp;
   const cells = draftCells(),
-    hq = !!draft && draft.stops.at(-1) === state.board.bases[1 - side];
+    on = actState();
   text(
     "#bf-cmd-hint",
-    !alive
-      ? planning
-        ? "Tap one of your numbered tanks, or drag your HQ to move it."
-        : "Tap one of your numbered tanks."
-      : !draft!.stops.length
-        ? "Tap a square to send it there, or Attack HQ."
-        : dirty()
-          ? cells
-            ? "Drag the line to bend it · drag the flag to move it · then Lock."
-            : "A stop is blocked. Drag it to open ground."
-          : planning
-            ? "Locked. Next tank, drag your HQ, or Start battle."
-            : "Locked. Switch back to Auto to fight.",
+    hqPick
+      ? "Tap behind the dashed line: your HQ and platoon move there."
+      : !alive
+        ? "Tap one of your tanks, or its number."
+        : armed
+          ? "Tap the map to plant the flag."
+          : dirty()
+            ? cells
+              ? "Drag the line or the flag, then tap the check."
+              : "A stop is blocked. Drag it to open ground."
+            : on?.hq
+              ? "Attacking the enemy HQ. Tap it again to clear."
+              : on?.follow
+                ? "Following you. Tap it again to clear."
+                : on?.route
+                  ? "Route locked. The arrow moves to the next tank."
+                  : "Pick an order beside the tank: Attack HQ, Follow, or Command.",
   );
   text("#bf-cmd-tank", alive ? `${tankName(u!.id).toUpperCase()} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
   text(
@@ -518,28 +702,66 @@ function cmdPanel() {
       ? ""
       : dirty()
         ? "DRAFT"
-        : u!.order === "hold" && u!.route.length
-          ? hq
-            ? "ATTACKING HQ"
-            : `EN ROUTE · ${u!.route.length} STOP${u!.route.length > 1 ? "S" : ""}`
-          : u!.order === "hold"
-            ? "HOLDING"
-            : u!.order === "follow"
-              ? "FOLLOWING YOU"
-              : u!.order === "attack"
-                ? "ATTACKING"
-                : u!.order === "retreat"
-                  ? "REPAIRING"
-                  : "ADVANCING",
+        : on?.hq
+          ? "ATTACKING HQ"
+          : u!.order === "hold" && u!.route.length
+            ? `EN ROUTE · ${u!.route.length} STOP${u!.route.length > 1 ? "S" : ""}`
+            : u!.order === "hold"
+              ? "HOLDING"
+              : u!.order === "follow"
+                ? "FOLLOWING YOU"
+                : u!.order === "attack"
+                  ? "ATTACKING"
+                  : u!.order === "retreat"
+                    ? "REPAIRING"
+                    : "ON ITS OWN",
   );
-  $<HTMLButtonElement>("#bf-lock").disabled = !alive || !dirty() || !cells || !draft!.stops.length;
-  for (const n of document.querySelectorAll<HTMLButtonElement>("[data-plan]"))
-    n.disabled = n.dataset.plan !== "next" && !alive;
+  for (const [id, onMode] of [["#bf-mode-hq", hqPick], ["#bf-mode-tanks", !hqPick]] as const)
+    $(id).setAttribute("aria-checked", String(onMode));
+  $(".bf-mode").dataset.on = hqPick ? "hq" : "tanks";
   if (planning) $("#bf-start").hidden = false;
-  $("#bf-move-hq").setAttribute("aria-pressed", String(hqPick));
   hqGuide();
 }
-
+/** The orders bubble rides above the selected tank; the check rides beside its flag. Positions
+ *  come from the cached view geometry, so this costs no layout reads. */
+let actsWidth = 0;
+function rideAlong() {
+  const acts = $("#bf-acts"),
+    check = $("#bf-check"),
+    u = commanding && draft && !hqPick ? state.units[draft.id] : undefined,
+    alive = !!u && u.hp > 0,
+    on = alive ? actState() : null;
+  acts.hidden = !alive;
+  const cells = alive ? draftCells() : null,
+    canLock = alive && dirty() && !!cells && draft!.stops.length > 0,
+    // After the lock the check stays by the flag, lit, until you move on.
+    locked = alive && !dirty() && !!on?.route && !on.hq && u!.route.length > 0,
+    stops = canLock ? draft!.stops : locked ? u!.route : null;
+  check.hidden = !stops;
+  check.dataset.state = canLock ? "draft" : "locked";
+  if (!alive) return;
+  const own = u!.id === commander(state).id;
+  for (const b of acts.querySelectorAll<HTMLButtonElement>("[data-act]")) {
+    const k = b.dataset.act as "hq" | "follow" | "route";
+    b.setAttribute("aria-pressed", String(!!on?.[k]));
+    b.disabled = k === "follow" && own;
+  }
+  // Next shows once this tank has an order (or a drawn route it will lock).
+  $("#bf-next").hidden = !(on && (on.hq || on.follow || on.route || dirty()));
+  const p = view.toStage(u!),
+    W = view.vw,
+    H = view.vh,
+    bw = (actsWidth ||= acts.offsetWidth) || 100;
+  // Above the tank and above its yellow hint label, kept on screen.
+  const x = Math.max(bw / 2 + 6, Math.min(W - bw / 2 - 6, p.x)),
+    y = Math.max(44, Math.min(H - 8, p.y - view.tile * 0.5 - 26));
+  acts.style.transform = `translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;
+  if (stops) {
+    const end = point(state.board, stops.at(-1)!),
+      q = view.toStage(end);
+    check.style.transform = `translate(${Math.min(W - 28, q.x + view.tile * 1.4).toFixed(0)}px,${Math.max(28, q.y - view.tile * 0.6).toFixed(0)}px)`;
+  }
+}
 /** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
 function routeLines(): RouteLine[] {
   const out: RouteLine[] = [];
@@ -600,6 +822,7 @@ function setPause(value: boolean) {
     frame = requestAnimationFrame(loop);
   }
   lease.setActive(!paused);
+  if (!paused) root.classList.remove("menu-open");
   pauseButton();
   status.textContent = paused ? "PAUSED" : planning ? "PLAN" : "LIVE";
   say(paused ? "Battle paused." : planning ? "Back to planning." : "Battle resumed.");
@@ -614,6 +837,7 @@ function pauseButton() {
     card.hidden = !show;
     if (show) $<HTMLButtonElement>("#bf-giveup-no").focus({ preventScroll: true });
   }
+  $("#bf-dim").hidden = !show;
 }
 function fullscreen() {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -643,8 +867,10 @@ function canFullscreen() {
 }
 /** Home-screen apps are already full screen; iOS Safari tabs cannot be, so only rotation is required there. */
 function gateReason(): "rotate" | "fullscreen" | null {
-  if (!coarse.matches || !playing || state.winner !== null) return null;
-  if (portrait.matches) return "rotate";
+  if (!coarse.matches) return null;
+  // Every stage is landscape-only on a phone; full screen is only asked for once you play.
+  if (portrait.matches && railLayout.matches) return "rotate";
+  if (!playing || state.winner !== null) return null;
   if (canFullscreen() && !document.fullscreenElement && !installed.matches) return "fullscreen";
   return null;
 }
@@ -663,9 +889,10 @@ function checkGate() {
           : "Battlefield is a widescreen game. Turn your phone sideways."
         : "The battle waits until it has the whole screen. Tap to go full screen.";
     $("#bf-gate-go").hidden = reason === "rotate";
+    $("#bf-gate-exit").hidden = !playing;
     gate.dataset.reason = reason;
     gate.hidden = false;
-    setDrawer(false);
+    setMenu(false);
     if (!paused) {
       setPause(true);
       gatePaused = true;
@@ -679,13 +906,19 @@ function checkGate() {
     gatePaused = false;
     setPause(false);
   }
+  // Paused before the gate came up: the surrender card comes back with the field.
+  pauseButton();
   ready();
 }
 /** First time the cockpit is ready: show the button tips (if enabled). */
+let tipsPending = false,
+  tipsSeen = false;
 function ready() {
   if (readyOnce || !playing) return;
   readyOnce = true;
-  if (coarse.matches && !tipsOff()) coach(true);
+  // Touch tips label the battle controls, so they wait for the battle itself.
+  // Once a visit (and never after "Don't show again"); the ? key brings them back any time.
+  if (coarse.matches && !tipsOff() && !tipsSeen) (tipsSeen = true), planning ? (tipsPending = true) : coach(true);
 }
 /* ---------- Install for true full screen (Battlefield only) ----------
    iPhone Safari tabs can never hide the browser UI; a Home Screen web app can.
@@ -694,33 +927,37 @@ type InstallPrompt = Event & { prompt(): Promise<void>; userChoice: Promise<{ ou
 const ios =
   /iP(hone|ad|od)/.test(navigator.userAgent) ||
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-let installPrompt: InstallPrompt | null = null,
-  installLater = false;
-try {
-  installLater = sessionStorage.getItem("dom-battlefield:install") === "later";
-} catch {}
+let installPrompt: InstallPrompt | null = null;
+/** The intro card shows once on a phone or tablet; Fullscreen brings it back where the browser can't. */
+const INTRO = "dom-battlefield:intro";
 function isInstalled() {
   return installed.matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
-function installMode(): "ios" | "app" | null {
+function installMode(): "ios" | "app" | "menu" | null {
   if (isInstalled() || !coarse.matches) return null;
   if (installPrompt) return "app";
-  return ios ? "ios" : null;
+  return ios ? "ios" : "menu";
 }
-function installCard(floating = false) {
+function installCard(show: boolean) {
   const card = $("#bf-install"),
-    mode = installMode();
+    mode = show ? installMode() : null;
   $("#bf-install-ios").hidden = mode !== "ios";
   $("#bf-install-app").hidden = mode !== "app";
+  $("#bf-install-menu").hidden = mode !== "menu";
   $("#bf-install-go").hidden = mode !== "app";
-  $("#bf-install-help").hidden = !mode;
-  // The gear only holds Install for now: no install path, no gear.
-  $(".bf-settings").hidden = !mode;
-  card.classList.toggle("floating", floating);
-  // Floating (from the in-game panel) the card leaves the hidden setup panel; it returns on close.
-  if (floating) $("#battlefield").append(card);
-  else if (card.parentElement !== $(".bf-setup-scroll")) $("#bf-missions").before(card);
-  card.hidden = !mode || (!floating && installLater);
+  card.hidden = !mode;
+  if (mode && playing && !paused) {
+    setPause(true);
+    installPaused = true;
+  }
+}
+let installPaused = false;
+function installDone() {
+  installCard(false);
+  try {
+    localStorage.setItem(INTRO, "seen");
+  } catch {}
+  if (installPaused) (installPaused = false), setPause(false);
 }
 async function install() {
   if (!installPrompt) return;
@@ -729,36 +966,19 @@ async function install() {
   await p.prompt().catch(() => {});
   const choice = await p.userChoice.catch(() => ({ outcome: "dismissed" }));
   say(choice.outcome === "accepted" ? "Installed. Open Battlefield from your Home Screen for full screen." : "Install skipped.");
-  installCard();
+  installDone();
 }
 listen(window, "beforeinstallprompt", (e) => {
   e.preventDefault();
   installPrompt = e as InstallPrompt;
-  installCard();
+  if (!$("#bf-install").hidden) installCard(true);
 });
 listen(window, "appinstalled", () => {
   installPrompt = null;
-  installCard();
+  installDone();
 });
 listen($("#bf-install-go"), "click", () => void install());
-listen($("#bf-install-later"), "click", () => {
-  const floating = $("#bf-install").classList.contains("floating");
-  if (!floating) {
-    installLater = true;
-    try {
-      sessionStorage.setItem("dom-battlefield:install", "later");
-    } catch {}
-  }
-  installCard();
-  if (floating && playing && paused && !gatePaused) setPause(false);
-});
-listen($("#bf-install-help"), "click", () => {
-  settings(false);
-  setDrawer(false);
-  if (installPrompt) return void install();
-  if (playing && !paused) setPause(true);
-  installCard(true);
-});
+listen($("#bf-install-later"), "click", installDone);
 /* Keep the screen awake during a battle; browsers release it on tab hide, so re-request. */
 let wake: { release(): Promise<void> } | null = null;
 function keepAwake(on: boolean) {
@@ -777,28 +997,40 @@ function deploy(quick = false) {
   const entering = coarse.matches ? enterFullscreen() : Promise.resolve();
   playing = true;
   readyOnce = false;
+  tipsPending = false;
   document.documentElement.classList.add("bf-playing");
   $("#battlefield").dataset.active = "true";
   paused = false;
   selected = -1;
   setPan(false);
   follow = true;
-  setAim({ mode: coarse.matches ? "auto" : "pointer" });
+  setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
   $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
-  // Plan strategy opens a frozen planning step in command mode; Quick battle skips it.
+  // Plan battle opens the frozen planning step on its home cards; Quick start skips it.
   planning = !quick;
+  panel = "home";
   draft = null;
-  setCommand(!quick);
+  setCommand(false);
+  showCards();
   setup.hidden = true;
+  $("#bf-go").hidden = true;
   $("#bf-result").hidden = true;
   $("#bf-controls").hidden = false;
   pauseButton();
   lease.setActive(true);
   last = 0;
   accumulator = 0;
+  root.toggleAttribute("data-blank", false);
+  undrag();
+  syncUi();
   view.resize();
   view.center();
-  say(quick ? "Battle started. Tap one of your tanks any time to direct it." : "Plan your attack: tap a tank, then a square. Lock each route, then Start battle.");
+  if (planning) $("#bf-start").hidden = false;
+  say(
+    quick
+      ? "Battle started. Tap Command any time to direct your squad."
+      : "Plan your battle: set your Platoon and Loadout, then Plan each tank. Start battle when ready.",
+  );
   frame = requestAnimationFrame(loop);
   keepAwake(true);
   // Check the gate once the fullscreen/orientation request settles.
@@ -807,11 +1039,9 @@ function deploy(quick = false) {
 }
 function reset() {
   cmdHidden = false;
-  dockCard();
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   $("#bf-giveup").hidden = true;
   keysPanel(false);
-  settings(false);
   cancelAnimationFrame(frame);
   audio.close();
   playing = false;
@@ -820,7 +1050,7 @@ function reset() {
   keepAwake(false);
   document.documentElement.classList.remove("bf-playing");
   $("#battlefield").dataset.active = "false";
-  setDrawer(false);
+  setMenu(false);
   coachPaused = false;
   coach(false);
   paused = false;
@@ -828,13 +1058,18 @@ function reset() {
   planning = commanding = false;
   draft = null;
   hqPick = false;
+  armed = false;
+  panel = "home";
   $("#bf-start").hidden = true;
-  strategy(false);
+  showCards();
+  setMenu(false);
   aimButtons();
   cmdPanel();
   clearInput();
   lease.setActive(false);
   setup.hidden = false;
+  undrag();
+  $("#bf-go").hidden = !picked;
   $("#bf-result").hidden = true;
   $("#bf-controls").hidden = true;
   preview();
@@ -959,7 +1194,7 @@ function loop(now: number) {
     );
     const lead = commander(state),
       auto = state.units.find((u) => u.id === lead.target && u.hp > 0);
-    view.aim(aim.mode, aim.mode === "auto" ? (auto ?? null) : aim.mode === "pointer" ? null : input.aim);
+    view.aim(aim.mode, aim.mode === "auto" ? (auto ?? null) : aim.mode === "pointer" || aim.mode === "free" ? null : input.aim);
     if (now - uiAt > 160) {
       updateHUD();
       cmdPanel();
@@ -998,18 +1233,42 @@ function setPan(value: boolean) {
       : "Command mode: select a teammate, then an open square.",
   );
 }
+/* Step 1, location: each row carries a 5x5 thumbnail drawn with the real tile styles (the
+   middle 3x3 is that ground's signature shapes). Picking one shows its terrain and opens the
+   density panel right under it. */
+const THUMBS = [
+  ["hedge", "hedge", "hedge", "ground", "house", "ground", "hedge", "ground", "hedge"],
+  ["rock", "ground", "fence", "ground", "car", "ground", "hedge", "ground", "rock"],
+  ["house", "road", "rock", "road", "road", "road", "rock", "road", "house"],
+  ["house", "water", "house", "road", "water", "car", "house", "water", "hedge"],
+];
+function thumb(i: number) {
+  const tiles = Array.from({ length: 25 }, (_, k) => {
+    const x = k % 5,
+      y = Math.floor(k / 5),
+      inner = x > 0 && x < 4 && y > 0 && y < 4;
+    return `<i class="bf-tile" data-kind="${inner ? THUMBS[i]![(y - 1) * 3 + x - 1] : "ground"}" data-v="${k % 4}"></i>`;
+  });
+  return `<span class="bf-world bf-thumb" data-terrain="${MISSIONS[i]!.terrain}" aria-hidden="true">${tiles.join("")}</span>`;
+}
+function pickMission(i: number) {
+  mission = i;
+  picked = true;
+  for (const [j, el] of document.querySelectorAll(".bf-mission").entries())
+    el.setAttribute("aria-pressed", String(j === i));
+  const terrain = $("#bf-terrain");
+  document.querySelectorAll(".bf-mission")[i]!.after(terrain);
+  terrain.hidden = false;
+  $("#bf-go").hidden = false;
+  preview();
+  say(MISSIONS[i]!.brief);
+}
 for (const [i, m] of MISSIONS.entries()) {
   const n = document.createElement("button");
   n.className = "bf-mission";
-  n.innerHTML = `<span>0${i + 1} / ${m.region}</span><strong>${m.name}</strong><small>${m.objective === "capture" ? "Capture headquarters" : m.objective === "hold" ? "Hold the objective" : "Platoon battle"}</small>`;
-  n.setAttribute("aria-pressed", String(i === mission));
-  n.onclick = () => {
-    mission = i;
-    document
-      .querySelectorAll(".bf-mission")
-      .forEach((el, j) => el.setAttribute("aria-pressed", String(j === i)));
-    preview();
-  };
+  n.innerHTML = `${thumb(i)}<span class="bf-mission-text"><span>0${i + 1} / ${m.region}</span><strong>${m.name}</strong><small>${m.objective === "capture" ? "Capture headquarters" : m.objective === "hold" ? "Hold the objective" : "Platoon battle"}</small></span>`;
+  n.setAttribute("aria-pressed", "false");
+  n.onclick = () => pickMission(i);
   $("#bf-missions").append(n);
 }
 for (let i = 0; i < 4; i++) {
@@ -1049,53 +1308,110 @@ listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
   preview();
 }) as EventListener);
 listen($("#bf-deploy"), "click", () => deploy());
-listen($("#bf-quick"), "click", () => deploy(true));
+// Quick start: everything this page didn't set (platoon, loadout) is rolled at random.
+listen($("#bf-quick"), "click", () => {
+  randomPlatoon();
+  randomLoadout();
+  preview();
+  deploy(true);
+});
 picker("#bf-density", "density", (v) => (density = Number(v)));
-// Random terrain: a new layout at a random density (light, normal or heavy).
+// Dice: a new layout at the chosen density (the density stays put).
 listen($("#bf-reroll"), "click", () => {
   seed = 1 + Math.floor(Math.random() * 1e6);
-  density = [0.6, 1, 1.45][Math.floor(Math.random() * 3)]!;
-  pressed("#bf-density", "density", String(density));
+  hqMove = null;
   preview();
+  say("New layout. Same density.");
 });
 function pressed(sel: string, attr: string, value: string) {
   for (const n of document.querySelectorAll<HTMLElement>(`${sel} [data-${attr}]`))
     n.setAttribute("aria-pressed", String(n.dataset[attr] === value));
 }
-function strategy(open: boolean) {
-  $("#bf-strategy").hidden = !open;
-  $("#bf-strat-toggle").setAttribute("aria-expanded", String(open));
-}
-listen($("#bf-strat-toggle"), "click", () => strategy($("#bf-strategy").hidden === true));
-listen($("#bf-strat-close"), "click", () => strategy(false));
-// Randomize: side, formation, squad size and a loadout that fits the 12-point budget.
-listen($("#bf-randomize"), "click", () => {
-  const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)]!;
+const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)]!;
+/** Randomize (Platoon): side, formation and squad size. */
+function randomPlatoon() {
   side = pick([0, 1]);
   formation = pick(["wedge", "line", "column"]);
   per = pick([4, 8, 12]);
-  do roles = [0, 1, 2, 3].map(() => pick(["scout", "medium", "heavy"] as Role[]));
-  while (loadoutCost(roles) > 12);
   pressed("#bf-side", "side", String(side));
   pressed("#bf-formation", "formation", formation);
   pressed("#bf-size", "size", String(per));
-  preview();
-  say(`Strategy: ${side ? "B" : "A"} side, ${formation}, ${per} tanks a side.`);
-});
+}
+/** Randomize (Loadout): four tanks that fit the 12-point budget. */
+function randomLoadout() {
+  do roles = [0, 1, 2, 3].map(() => pick(["scout", "medium", "heavy"] as Role[]));
+  while (loadoutCost(roles) > 12);
+}
+for (const n of document.querySelectorAll<HTMLElement>("[data-rand]"))
+  listen(n, "click", () => {
+    if (n.dataset.rand === "bf-card-platoon") {
+      randomPlatoon();
+      preview();
+      showCards();
+      say(`Platoon: ${side ? "B" : "A"} side, ${formation}, ${per} tanks a side.`);
+    } else {
+      randomLoadout();
+      preview();
+      say(`Loadout: ${roles.join(", ")}.`);
+    }
+  });
+for (const n of document.querySelectorAll<HTMLElement>("[data-open]"))
+  listen(n, "click", () => showPanel(n.dataset.open as Panel));
+for (const n of document.querySelectorAll<HTMLElement>(".bf-pcard [data-close]"))
+  listen(n, "click", () => showPanel("home"));
 listen($("#bf-rematch"), "click", () => {
   reset();
   deploy();
 });
-listen($("#bf-cmd-close"), "click", () => {
-  if (planning) {
-    cmdHidden = true;
-    cmdPanel();
-  } else setAim({ mode: "auto" }, "Command off. Auto-aim: nearest visible enemy.");
-});
+/* Comms toast: tap or swipe it away. */
+listen($(".bf-footer"), "pointerup", () => $(".bf-footer").classList.remove("show"));
+/* Planning cards float over the field: drag any of them by its grip or an empty part. They stay
+   where you drop them until the stage changes. */
+function dragCard(card: HTMLElement) {
+  let from: { x: number; y: number; left: number; top: number; moved: boolean } | null = null;
+  listen(card, "pointerdown", ((e: PointerEvent) => {
+    const t = e.target as Element;
+    if (e.button > 0 || (t.closest("button, [role=group]") && !t.closest(".bf-card-grip"))) return;
+    const r = card.getBoundingClientRect(),
+      host = (card.offsetParent as HTMLElement | null)?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    from = { x: e.clientX, y: e.clientY, left: r.left - host.left, top: r.top - host.top, moved: false };
+    try {
+      card.setPointerCapture(e.pointerId);
+    } catch {}
+    e.stopPropagation();
+  }) as EventListener);
+  listen(card, "pointermove", ((e: PointerEvent) => {
+    if (!from) return;
+    const dx = e.clientX - from.x,
+      dy = e.clientY - from.y;
+    if (!from.moved && Math.hypot(dx, dy) < 5) return;
+    from.moved = true;
+    const host = card.offsetParent as HTMLElement | null,
+      W = host?.clientWidth ?? innerWidth,
+      H = host?.clientHeight ?? innerHeight;
+    card.dataset.moved = "";
+    card.style.left = `${Math.max(4, Math.min(W - card.offsetWidth - 4, from.left + dx)).toFixed(0)}px`;
+    card.style.top = `${Math.max(4, Math.min(H - card.offsetHeight - 4, from.top + dy)).toFixed(0)}px`;
+    card.style.right = card.style.bottom = "auto";
+  }) as EventListener);
+  for (const t of ["pointerup", "pointercancel"])
+    listen(card, t, ((e: Event) => {
+      // A drag never doubles as a tap on the card.
+      if (from?.moved) card.addEventListener("click", (c) => c.stopPropagation(), { capture: true, once: true });
+      from = null;
+      void e;
+    }) as EventListener);
+}
+function undrag() {
+  for (const c of document.querySelectorAll<HTMLElement>("[data-moved]")) {
+    delete c.dataset.moved;
+    c.style.left = c.style.top = c.style.right = c.style.bottom = "";
+  }
+}
+for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
 /* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
    on the right rail inside the stage (its rail CSS is positioned against the stage). */
-const railLayout = matchMedia("(pointer: coarse) and (max-width: 1400px), (max-width: 759px)"),
-  aimHome = $(".bf-aim").parentElement!,
+const aimHome = $(".bf-aim").parentElement!,
   aimNext = $(".bf-aim").nextElementSibling;
 function dockAim() {
   const aim = $(".bf-aim");
@@ -1111,66 +1427,6 @@ new ResizeObserver(() => {
   vpSize = k;
   if (view && !railLayout.matches) requestAnimationFrame(fit);
 }).observe(viewport);
-/* The command card floats over the field; drag it anywhere by its grip or any empty part.
-   Double-click the grip (or Enter on it) puts it back at the top of the field. */
-function floatCmd(x: number, y: number) {
-  const c = $("#bf-cmd"),
-    w = c.offsetWidth,
-    h = c.offsetHeight;
-  c.style.left = `${Math.max(8, Math.min(innerWidth - w - 8, x))}px`;
-  c.style.top = `${Math.max(8, Math.min(innerHeight - h - 8, y))}px`;
-}
-function dockCard() {
-  const c = $("#bf-cmd");
-  c.classList.remove("floating");
-  c.style.left = c.style.top = "";
-}
-{
-  const grip = $("#bf-cmd-grip"),
-    card = $("#bf-cmd");
-  let from: { x: number; y: number; left: number; top: number } | null = null;
-  // Drag by the grip or any empty part of the card (not its buttons). It lifts off after 4px.
-  listen(card, "pointerdown", ((e: PointerEvent) => {
-    const t = e.target as Element;
-    if (t.closest("button") && !t.closest("#bf-cmd-grip")) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const r = card.getBoundingClientRect();
-    from = { x: e.clientX, y: e.clientY, left: r.left, top: r.top };
-    try {
-      card.setPointerCapture(e.pointerId);
-    } catch {}
-  }) as EventListener);
-  listen(card, "pointermove", ((e: PointerEvent) => {
-    if (!from) return;
-    const dx = e.clientX - from.x,
-      dy = e.clientY - from.y;
-    if (!card.classList.contains("floating")) {
-      if (Math.hypot(dx, dy) < 4) return;
-      card.classList.add("floating");
-    }
-    floatCmd(from.left + dx, from.top + dy);
-  }) as EventListener);
-  for (const t of ["pointerup", "pointercancel"]) listen(card, t, () => (from = null));
-  // Pointer capture retargets the double-click to the card: dock unless it landed on a button.
-  listen(card, "dblclick", ((e: MouseEvent) => {
-    const t = document.elementFromPoint(e.clientX, e.clientY);
-    if (!t?.closest("button") || t.closest("#bf-cmd-grip")) dockCard();
-  }) as EventListener);
-  listen(grip, "keydown", ((e: KeyboardEvent) => {
-    const step = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] }[e.key];
-    if (e.key === "Enter" || e.key === " ") return e.preventDefault(), dockCard();
-    if (!step) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const r = card.getBoundingClientRect();
-    card.classList.add("floating");
-    floatCmd(r.left + step[0]!, r.top + step[1]!);
-  }) as EventListener);
-  listen(window, "resize", () => {
-    if (card.classList.contains("floating")) floatCmd(card.offsetLeft, card.offsetTop);
-  });
-}
 /* Keyboard controls and button tips are game-play help: on desktop they sit with the battlefield
    title, not in the header; the phone drawer keeps tips with its header keys. */
 function dockHelp() {
@@ -1196,7 +1452,15 @@ function dockComms() {
 dockAim();
 dockHelp();
 dockComms();
-listen(railLayout, "change", () => (dockAim(), dockHelp(), dockComms()));
+listen(railLayout, "change", () => {
+  dockAim();
+  dockHelp();
+  dockComms();
+  syncUi();
+  aimButtons();
+  if (playing && !planning) fit();
+  else preview(true);
+});
 /* Surrender lives on the PAUSED sticker and asks first: the battle stays held while it is up. */
 listen($("#bf-giveup-no"), "click", () => setPause(false));
 listen($("#bf-giveup-yes"), "click", () => {
@@ -1220,21 +1484,15 @@ if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
   listen($(".bf-keys"), "mouseenter", () => keysPanel(true));
   listen($(".bf-keys"), "mouseleave", () => keysPanel(false));
 }
-/* Header ⚙: the less-used options (install as an app, surrender). Closes on pick or outside tap. */
-function settings(open: boolean) {
-  $("#bf-settings-menu").hidden = !open;
-  $("#bf-settings").setAttribute("aria-expanded", String(open));
-}
-listen($("#bf-settings"), "click", ((e: MouseEvent) => {
-  e.stopPropagation();
-  settings($("#bf-settings-menu").hidden === true);
-}) as EventListener);
 listen(document, "click", ((e: MouseEvent) => {
-  if (!(e.target as Element).closest(".bf-settings")) settings(false);
   if (!(e.target as Element).closest(".bf-keys")) keysPanel(false);
 }) as EventListener);
 listen($("#bf-new-operation"), "click", reset);
-listen($("#bf-fullscreen"), "click", fullscreen);
+// Phones that can't go full screen (iPhone Safari) get the add-to-home-screen card instead.
+listen($("#bf-fullscreen"), "click", () => {
+  if (coarse.matches && !canFullscreen() && !isInstalled()) return installCard(true);
+  fullscreen();
+});
 listen(document, "fullscreenchange", () => {
   const full = !!document.fullscreenElement;
   $("#bf-fullscreen").setAttribute("aria-pressed", String(full));
@@ -1263,16 +1521,17 @@ document.addEventListener(
 listen(document, "contextmenu", (e) => {
   if (playing) e.preventDefault();
 });
-listen($("#bf-squad"), "click", () =>
-  setDrawer(!$("#battlefield").classList.contains("squad-open")),
-);
-// The compact scoreboard expands into the drawer on touch.
-listen($(".bf-metrics"), "click", () => {
-  if (playing && coarse.matches)
-    setDrawer(!$("#battlefield").classList.contains("squad-open"));
+// Touch: the menu pauses and drops the header in; tap it again (or resume) to play on.
+listen($("#bf-squad"), "click", () => {
+  const open = !root.classList.contains("menu-open");
+  if (open) setPause(true);
+  setMenu(open);
+  if (!open) setPause(false);
 });
 listen($("#bf-tips"), "click", () => {
-  setDrawer(false);
+  root.classList.remove("menu-open");
+  $("#bf-squad").setAttribute("aria-expanded", "false");
+  if (paused && $("#bf-gate").hidden) setPause(false);
   coach(true);
 });
 listen($("#bf-coach"), "click", ((e: MouseEvent) => {
@@ -1281,6 +1540,7 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
     const open = label.getAttribute("aria-expanded") !== "true";
     for (const n of document.querySelectorAll(".bf-tip-label")) n.setAttribute("aria-expanded", "false");
     label.setAttribute("aria-expanded", String(open));
+    keepOnScreen($("#bf-coach"));
     return;
   }
   if ((e.target as Element).closest(".bf-tip-label + p")) return;
@@ -1296,7 +1556,13 @@ listen($("#bf-command"), "click", () => {
   if (planning) return (cmdHidden = false), cmdPanel();
   setCommand(!commanding);
 });
-listen($("#bf-lock"), "click", lockRoute);
+listen($("#bf-check"), "click", () => {
+  lockRoute();
+  cmdPanel();
+});
+listen($("#bf-next"), "click", () => plan("next"));
+for (const n of document.querySelectorAll<HTMLElement>("[data-act]"))
+  listen(n, "click", () => plan(n.dataset.act!));
 // START BATTLE: the sticker flashes red as the battle begins, then peels away.
 listen($("#bf-start"), "click", () => {
   const b = $("#bf-start");
@@ -1310,13 +1576,21 @@ listen($("#bf-start"), "click", () => {
   }, reduced.matches ? 0 : 450);
 });
 // Move HQ (planning): the next tap on the map moves your HQ, and your platoon with it.
-listen($("#bf-move-hq"), "click", () => {
-  hqPick = !hqPick;
-  say(hqPick ? "Tap where your HQ should go. Your platoon moves with it." : "HQ stays put.");
-  cmdPanel();
-});
-for (const n of document.querySelectorAll<HTMLElement>("[data-plan]"))
-  listen(n, "click", () => plan(n.dataset.plan!));
+// Move HQ / Move Tanks: a two-way switch, one side always on. Tapping either flips it.
+for (const n of document.querySelectorAll<HTMLElement>("[data-mode]"))
+  listen(n, "click", () => {
+    if (!planning || panel !== "plan") return;
+    hqPick = !hqPick;
+    if (hqPick) {
+      commitDraft();
+      selected = -1;
+      draft = null;
+      armed = false;
+      view.render(selected, paused, reduced.matches);
+    } else nextTank();
+    say(hqPick ? "Move HQ: tap behind the dashed line, or drag your HQ. Your platoon moves with it." : "Move Tanks: tap a tank, then pick an order.");
+    cmdPanel();
+  });
 listen($("#bf-pan"), "click", () => setPan(!pan));
 listen($("#bf-center"), "click", () => {
   follow = true;
@@ -1617,7 +1891,6 @@ for (const type of ["pointerup", "pointercancel"])
     } else if (type === "pointerup" && (g.kind === "tap" || g.kind === "hq")) {
       const c = cellAt(e);
       if (c >= 0 && hqPick) {
-        hqPick = false;
         moveHq(c);
       } else if (c >= 0) setDest(c);
     }
@@ -1675,8 +1948,18 @@ function soundButton() {
   b.setAttribute("aria-label", audio.enabled ? "Mute game sound" : "Enable game sound");
 }
 soundButton();
-listen(document, "pointerdown", (e) => audio.unlock(e));
-listen(document, "keydown", (e) => audio.unlock(e));
+// No Web Audio, no sound key. iPhone: play through the ring/silent switch (the key is the off switch).
+$("#bf-sound").hidden = !("AudioContext" in window);
+function unlockSound(e: Event) {
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (session && session.type !== "playback")
+    try {
+      session.type = "playback";
+    } catch {}
+  audio.unlock(e);
+}
+listen(document, "pointerdown", unlockSound);
+listen(document, "keydown", unlockSound);
 listen($("#bf-sound"), "click", () => {
   audio.toggle();
   soundButton();
@@ -1704,7 +1987,10 @@ pressed("#bf-formation", "formation", formation);
 pressed("#bf-size", "size", String(per));
 pressed("#bf-density", "density", String(density));
 preview();
-installCard();
+try {
+  if (!localStorage.getItem(INTRO)) installCard(true);
+} catch {}
+checkGate();
 // Small read-only diagnostic contract for lifecycle and command tests.
 Object.defineProperty(window, "battlefield", {
   value: {

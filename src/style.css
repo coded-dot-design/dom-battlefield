@@ -834,87 +834,11 @@ h1 {
 }
 
 /* ---------- Setup + result panels ---------- */
-.bf-panel {
-  position: absolute;
-  z-index: 10;
-  left: 20px;
-  top: 18px;
-  bottom: 18px;
-  width: 490px;
-  max-width: calc(100% - 40px);
-  overflow: auto;
-  background: var(--surface);
-  border: 2px solid var(--line);
-  border-radius: 8px;
-  padding: 22px;
-  box-shadow: 6px 6px 0 var(--line);
-}
-#bf-setup {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-}
-.bf-setup-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 22px 22px 8px;
-  scrollbar-width: thin;
-}
-.bf-panel-heading h2 {
-  font: 800 30px/1.05 system-ui;
-  letter-spacing: -1px;
-  margin: 8px 0;
-}
-.bf-panel-heading p {
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-.bf-missions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 16px 0;
-}
-.bf-mission {
-  text-align: left;
-  padding: 11px;
-  min-height: 76px;
-}
-.bf-mission span {
-  display: block;
-  font-size: 7px;
-  color: var(--muted);
-  letter-spacing: 0.5px;
-  line-height: 1.4;
-}
-.bf-mission strong {
-  display: block;
-  font: 700 14px/1.2 system-ui;
-  margin: 6px 0 4px;
-}
-.bf-mission small {
-  font-size: 8px;
-  color: var(--muted);
-}
-.bf-mission[aria-pressed="true"] {
-  --edge: var(--cyan);
-  border-color: var(--cyan);
-  background: color-mix(in srgb, var(--cyan) 12%, var(--surface));
-}
-.bf-config {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
 .bf-field {
   display: grid;
   gap: 6px;
 }
-.bf-label,
-.bf-loadout-heading {
+.bf-label {
   font-size: 8px;
   color: var(--muted);
   letter-spacing: 1px;
@@ -961,20 +885,6 @@ h1 {
 .bf-swatch.b {
   background: var(--team-b);
 }
-.bf-loadout-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 16px 0 8px;
-}
-.bf-loadout-heading small {
-  text-transform: none;
-  letter-spacing: 0;
-}
-.bf-loadout-heading strong {
-  color: var(--green);
-  white-space: nowrap;
-}
 .bf-loadout {
   display: grid;
   gap: 6px;
@@ -995,31 +905,11 @@ h1 {
   opacity: 0.75;
   font-weight: 400;
 }
-.bf-over .bf-loadout-heading strong,
 #bf-cost-error {
   color: var(--pink);
 }
 #bf-cost-error {
   font-size: 11px;
-}
-.bf-brief {
-  font: 500 13px/1.5 system-ui;
-  margin: 14px 0 8px;
-}
-.bf-tip {
-  font-size: 10px;
-  line-height: 1.6;
-  color: var(--muted);
-}
-.bf-setup-actions {
-  flex-shrink: 0;
-  display: flex;
-  gap: 10px;
-  padding: 14px 22px;
-  border-top: 2px solid var(--line);
-}
-.bf-setup-actions .bf-primary {
-  flex: 1;
 }
 .bf-primary svg {
   width: 18px;
@@ -1028,14 +918,6 @@ h1 {
   stroke: currentColor;
   stroke-width: 2.4;
   stroke-linecap: round;
-}
-.bf-disclaimer {
-  flex-shrink: 0;
-  padding: 0 22px 14px;
-  margin: 0;
-  font-size: 8px;
-  line-height: 1.6;
-  color: var(--muted);
 }
 
 /* ---------- Desktop command deck ---------- */
@@ -1222,557 +1104,10 @@ h1 {
     height: calc(100dvh - 380px);
   }
 }
-@media (max-width: 759px) {
-  .bf-header {
-    height: 56px;
-    padding: 0 16px;
-    gap: 10px;
-  }
-  .bf-brand b {
-    font-size: 12px;
-  }
-  .bf-brand svg {
-    width: 24px;
-  }
-  .bf-edition,
-  #bf-theme span,
-  #bf-eject span {
-    display: none;
-  }
-  .bf-main {
-    padding: 0 14px 14px;
-  }
-  .bf-topline {
-    height: auto;
-    padding: 14px 0;
-    align-items: start;
-  }
-  h1 {
-    font-size: 20px;
-  }
-  .bf-metrics {
-    gap: 10px;
-  }
-  .bf-metrics span {
-    font-size: 6px;
-    letter-spacing: 0.4px;
-  }
-  .bf-metrics b {
-    font-size: 14px;
-  }
-  .bf-metrics span:nth-child(4) {
-    display: none;
-  }
-  .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
-    height: calc(100dvh - 160px);
-    min-height: 420px;
-  }
-  .bf-panel {
-    inset: 0;
-    width: 100%;
-    max-width: none;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .bf-setup-scroll {
-    padding: 18px 16px 8px;
-  }
-  .bf-setup-actions {
-    padding: 12px 16px;
-  }
-  .bf-disclaimer {
-    padding: 0 16px 12px;
-    font-size: 7px;
-  }
-  .bf-config {
-    grid-template-columns: 1fr;
-  }
-  .bf-main:has(#bf-setup:not([hidden])) :is(.bf-mini, .bf-map-tools) {
-    display: none;
-  }
-}
 /* Touch setup in landscape: no page chrome, two columns, Deploy always visible. */
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
-  .bf-main:has(#bf-setup:not([hidden])) .bf-topline {
-    display: none;
-  }
-  .bf-header {
-    height: 46px;
-  }
-  .bf-main {
-    padding: 0 max(12px, env(safe-area-inset-right)) 8px
-      max(12px, env(safe-area-inset-left));
-  }
-  .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
-    height: calc(100dvh - 56px);
-    min-height: 0;
-    margin-top: 6px;
-  }
-  #bf-setup {
-    inset: 0;
-    width: 100%;
-    max-width: none;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .bf-setup-scroll {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 18px;
-    align-content: start;
-    padding: 12px 16px 6px;
-  }
-  .bf-panel-heading,
-  .bf-disclaimer,
-  .bf-tip {
-    display: none;
-  }
-  .bf-locations {
-    grid-row: 1 / span 4;
-    margin: 10px 0 0;
-    align-content: start;
-  }
-  .bf-mission {
-    min-height: 0;
-    padding: 8px 10px;
-  }
-  .bf-mission span {
-    display: none;
-  }
-  .bf-mission strong {
-    font-size: 13px;
-    margin: 0 0 3px;
-  }
-  .bf-brief {
-    grid-column: 1;
-    font-size: 11px;
-    margin: 8px 0 0;
-  }
-  .bf-loadout-heading {
-    margin: 10px 0 6px;
-  }
-  .bf-loadout-heading small {
-    display: none;
-  }
-  .bf-loadout {
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 8px;
-  }
-  .bf-slot {
-    grid-template-columns: 1fr;
-    gap: 3px;
-    font-size: 7px;
-  }
-  .bf-slot .bf-seg button {
-    min-height: 34px;
-    font-size: 8px;
-    padding: 2px;
-  }
-  .bf-seg button {
-    min-height: 36px;
-  }
-  .bf-config {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 10px;
-  }
-  .bf-setup-actions {
-    padding: 8px 16px;
-  }
-  .bf-main:has(#bf-setup:not([hidden])) :is(.bf-mini, .bf-map-tools) {
-    display: none;
-  }
-}
 
 /* ---------- Touch cockpit: map in the middle, thumb rails on each edge (<=20% each) ---------- */
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  #battlefield[data-active="true"] {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-  /* Rail backplates. */
-  [data-active="true"]::before,
-  [data-active="true"]::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: var(--rl);
-    background: var(--surface);
-    z-index: 1;
-  }
-  [data-active="true"]::after {
-    width: var(--rr);
-  }
-  [data-active="true"]::before {
-    left: 0;
-    border-right: 2px solid var(--cyan);
-  }
-  [data-active="true"]::after {
-    right: 0;
-    border-left: 2px solid var(--pink);
-  }
-  [data-active="true"] .bf-main {
-    padding: 0;
-  }
-  [data-active="true"] .bf-stage {
-    position: absolute;
-    inset: 0 var(--rr) 0 var(--rl);
-    height: auto;
-    min-height: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    overflow: visible;
-    z-index: 2;
-  }
-  [data-active="true"] #bf-viewport {
-    position: relative;
-    z-index: 0;
-  }
-  [data-active="true"] .bf-world {
-    margin-inline: 0;
-  }
-  /* Header lives inside the drawer when it is open. */
-  [data-active="true"] .bf-header {
-    display: none;
-  }
-  [data-active="true"].squad-open .bf-header {
-    display: flex;
-    position: absolute;
-    z-index: 21;
-    left: calc(var(--rl) + 12px);
-    bottom: max(12px, env(safe-area-inset-bottom));
-    width: calc(min(300px, 52vw) - 24px);
-    height: auto;
-    padding: 0;
-    border: 0;
-    gap: 6px;
-  }
-  [data-active="true"] .bf-header :is(.bf-brand, .bf-edition) {
-    display: none;
-  }
-  [data-active="true"] .bf-header > * {
-    flex: 1;
-    justify-content: center;
-    min-height: 40px;
-    padding: 6px;
-  }
-  [data-active="true"] :is(#bf-theme, #bf-eject) span {
-    display: none;
-  }
-  /* Left rail: minimal scoreboard. Tap to expand the drawer. */
-  [data-active="true"] .bf-topline {
-    position: absolute;
-    z-index: 12;
-    left: calc(var(--sl) + 8px);
-    top: 58px;
-    width: calc(var(--rail) - 16px);
-    height: auto;
-    padding: 0;
-  }
-  [data-active="true"] .bf-topline > div:first-child {
-    display: none;
-  }
-  [data-active="true"] .bf-metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 6px;
-    width: 100%;
-    padding: 6px 7px;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  [data-active="true"] .bf-metrics span {
-    font-size: 6px;
-    letter-spacing: 0.5px;
-  }
-  [data-active="true"] .bf-metrics b {
-    font-size: 12px;
-    margin-top: 1px;
-  }
-  [data-active="true"] .bf-metrics span:nth-child(4) {
-    display: block;
-  }
-  [data-active="true"] .bf-controls {
-    display: block;
-    padding: 0;
-  }
-  [data-active="true"] :is(.bf-command-top > span, kbd) {
-    display: none;
-  }
-  [data-active="true"] .bf-quick {
-    position: absolute;
-    z-index: 12;
-    left: calc(var(--sl) + 8px);
-    top: max(8px, env(safe-area-inset-top));
-    width: calc(var(--rail) - 16px);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  [data-active="true"] #bf-squad {
-    display: inline-grid;
-  }
-  [data-active="true"] :is(.bf-quick, .bf-orders, .bf-map-tools) button {
-    min-height: 42px;
-    padding: 4px;
-  }
-  [data-active="true"] :is(.bf-quick, .bf-orders, .bf-map-tools) span {
-    display: none;
-  }
-  [data-active="true"] :is(.bf-quick, .bf-orders, .bf-map-tools) svg {
-    width: 22px;
-    height: 22px;
-  }
-  /* Left rail bottom: D-pad. */
-  [data-active="true"] .bf-touch {
-    display: contents;
-  }
-  [data-active="true"] .bf-dpad {
-    position: absolute;
-    z-index: 12;
-    left: calc(var(--sl) + 8px);
-    bottom: max(10px, env(safe-area-inset-bottom));
-    width: calc(var(--rail) - 16px);
-    max-width: 150px;
-    aspect-ratio: 1;
-    display: grid;
-    grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-    gap: 4px;
-    touch-action: none;
-  }
-  [data-active="true"] .bf-dpad button {
-    min-height: 0;
-    padding: 0;
-    border-radius: 9px;
-    touch-action: none;
-  }
-  [data-active="true"] .bf-dpad svg {
-    width: 24px;
-    height: 24px;
-    stroke-width: 3;
-  }
-  [data-active="true"] .bf-dpad [data-key="ArrowUp"] {
-    grid-area: 1/2;
-  }
-  [data-active="true"] .bf-dpad [data-key="ArrowLeft"] {
-    grid-area: 2/1;
-  }
-  [data-active="true"] .bf-dpad [data-key="ArrowRight"] {
-    grid-area: 2/3;
-  }
-  [data-active="true"] .bf-dpad [data-key="ArrowDown"] {
-    grid-area: 3/2;
-  }
-  /* Right rail: minimap, camera tools, squad orders, Fire. */
-  [data-active="true"] .bf-mini {
-    left: calc(100% + 8px);
-    right: auto;
-    top: max(8px, env(safe-area-inset-top));
-    width: calc(var(--rail) - 16px);
-    padding: 5px;
-    box-shadow: none;
-  }
-  [data-active="true"] .bf-mini svg {
-    height: auto;
-    aspect-ratio: 16 / 9;
-    margin-top: 3px;
-  }
-  [data-active="true"] .bf-mini > div,
-  [data-active="true"] .bf-mini p {
-    font-size: 6px;
-  }
-  [data-active="true"] .bf-map-tools {
-    left: calc(100% + 8px);
-    right: auto;
-    top: calc(max(8px, env(safe-area-inset-top)) + (var(--rail) - 26px) * 0.5625 + 46px);
-    bottom: auto;
-    width: calc(var(--rail) - 16px);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  [data-active="true"] .bf-orders {
-    position: absolute;
-    z-index: 12;
-    right: calc(var(--sr) + 8px);
-    top: calc(max(8px, env(safe-area-inset-top)) + (var(--rail) - 26px) * 0.5625 + 96px);
-    width: calc(var(--rail) - 16px);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-  }
-  [data-active="true"] .bf-fire-area {
-    position: absolute;
-    z-index: 12;
-    right: calc(var(--sr) + 8px);
-    bottom: max(10px, env(safe-area-inset-bottom));
-    width: calc(var(--rail) - 16px);
-    display: grid;
-    place-items: center;
-  }
-  [data-active="true"] .bf-fire {
-    width: min(96px, calc(var(--rail) - 26px));
-    aspect-ratio: 1;
-    min-height: 0;
-    padding: 0;
-    border-radius: 50%;
-    border-width: 3px;
-    touch-action: none;
-  }
-  [data-active="true"] .bf-fire svg {
-    width: 44%;
-    height: 44%;
-    stroke-width: 2.6;
-  }
-  /* Slide-out drawer: full scoreboard, roster, secondary actions. */
-  [data-active="true"] .bf-command-row {
-    position: absolute;
-    z-index: 20;
-    top: 0;
-    bottom: 0;
-    left: var(--rl);
-    width: min(300px, 52vw);
-    padding: max(10px, env(safe-area-inset-top)) 12px 70px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 10px;
-    overflow: auto;
-    background: var(--surface);
-    border-right: 2px solid var(--cyan);
-    transform: translateX(-105%);
-    visibility: hidden;
-    transition:
-      transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1.1),
-      visibility 0s 240ms;
-  }
-  [data-active="true"].squad-open .bf-command-row {
-    transform: none;
-    visibility: visible;
-    transition: transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
-  }
-  [data-active="true"] .bf-drawer-objective {
-    display: block;
-    margin: 0;
-    font-size: 9px;
-    line-height: 1.6;
-    color: var(--cyan);
-  }
-  [data-active="true"] .bf-footer {
-    position: absolute;
-    z-index: 8;
-    bottom: max(8px, env(safe-area-inset-bottom));
-    left: calc(var(--rl) + 10px);
-    right: calc(var(--rr) + 10px);
-    padding: 0;
-    text-align: center;
-    pointer-events: none;
-    font-size: 8px;
-    text-shadow: 0 1px 2px var(--bg);
-  }
-  [data-active="true"] #bf-objective-label {
-    display: none;
-  }
-  [data-active="true"] .bf-result {
-    max-height: 86dvh;
-    overflow: auto;
-    z-index: 25;
-  }
-}
 /* Portrait fallback: map on top, thumb deck below. */
-@media (pointer: coarse) and (max-width: 1400px) and (orientation: portrait),
-  (max-width: 759px) and (orientation: portrait) {
-  #battlefield[data-active="true"] {
-    --deck: min(210px, 32dvh);
-    --rail: 50vw;
-  }
-  [data-active="true"]::before,
-  [data-active="true"]::after {
-    top: auto;
-    height: var(--deck);
-    border: 0;
-    border-top: 2px solid var(--cyan);
-  }
-  [data-active="true"]::after {
-    border-top-color: var(--pink);
-  }
-  [data-active="true"] .bf-stage {
-    inset: 0 0 var(--deck);
-  }
-  [data-active="true"] .bf-dpad {
-    width: min(150px, calc(var(--deck) - 20px));
-  }
-  [data-active="true"] .bf-mini {
-    left: auto;
-    right: 8px;
-    width: 104px;
-  }
-  [data-active="true"] .bf-map-tools {
-    left: auto;
-    right: 8px;
-    top: auto;
-    bottom: 34px;
-    width: 104px;
-  }
-  [data-active="true"] .bf-quick,
-  [data-active="true"] .bf-topline {
-    left: 8px;
-    width: 120px;
-  }
-  [data-active="true"] .bf-orders {
-    top: auto;
-    bottom: calc(var(--deck) - 52px);
-    right: calc(min(96px, var(--deck) - 60px) + 24px);
-    width: 150px;
-  }
-  [data-active="true"] .bf-fire-area {
-    width: auto;
-  }
-  [data-active="true"] .bf-fire {
-    width: min(96px, calc(var(--deck) - 60px));
-  }
-  [data-active="true"] .bf-command-row {
-    left: 0;
-    bottom: var(--deck);
-    width: min(300px, 80vw);
-  }
-  [data-active="true"].squad-open .bf-header {
-    left: 12px;
-    bottom: calc(var(--deck) + 12px);
-    width: calc(min(300px, 80vw) - 24px);
-  }
-  [data-active="true"] .bf-footer {
-    left: 10px;
-    right: 10px;
-    bottom: calc(var(--deck) + 8px);
-  }
-  [data-active="true"] .bf-rotate {
-    display: block;
-    position: absolute;
-    z-index: 9;
-    top: 8px;
-    left: 140px;
-    right: 120px;
-    margin: 0;
-    text-align: center;
-    font-size: 9px;
-    pointer-events: none;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px dashed var(--cyan);
-    padding: 6px;
-    border-radius: 4px;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
@@ -1904,65 +1239,6 @@ h1 {
 [data-order="attack"] {
   --c: var(--pink);
 }
-.bf-main:has(#bf-setup:not([hidden])) .bf-aim {
-  display: none;
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  /* Left rail gains the camera tools; right rail gets aim + a 2x2 order pad. */
-  [data-active="true"] .bf-map-tools {
-    left: calc(-1 * var(--rail) + 8px);
-    right: auto;
-    top: 128px;
-  }
-  [data-active="true"] .bf-aim {
-    left: calc(100% + 8px);
-    right: auto;
-    top: calc(max(8px, env(safe-area-inset-top)) + (var(--rail) - 26px) * 0.5625 + 46px);
-    bottom: auto;
-    width: calc(var(--rail) - 16px);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  [data-active="true"] .bf-aim button {
-    min-height: 42px;
-    padding: 4px;
-  }
-  [data-active="true"] :is(.bf-aim span, .bf-aim kbd) {
-    display: none;
-  }
-  [data-active="true"] .bf-aim svg {
-    width: 22px;
-    height: 22px;
-  }
-  [data-active="true"] .bf-orders {
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-  }
-  [data-active="true"] .bf-orders button {
-    min-height: 36px;
-  }
-}
-@media (pointer: coarse) and (max-width: 1400px) and (orientation: portrait),
-  (max-width: 759px) and (orientation: portrait) {
-  [data-active="true"] .bf-aim {
-    left: auto;
-    right: 8px;
-    top: auto;
-    bottom: 84px;
-    width: 104px;
-  }
-  [data-active="true"] .bf-map-tools {
-    left: 8px;
-    top: 128px;
-    bottom: auto;
-    width: 104px;
-  }
-  [data-active="true"] .bf-orders {
-    grid-template-columns: repeat(4, 1fr);
-    width: 190px;
-  }
-}
 
 /* ---------- Mobile game shell: no page scroll, bounce, zoom, callouts or selection while playing ---------- */
 html.bf-playing,
@@ -2054,82 +1330,6 @@ html.bf-playing body {
 
 /* ---------- Height-adaptive rails: every control is sized from the visible height ----------
    Safari's bars can leave ~300px in landscape; nothing may overlap at any height. */
-@media (pointer: coarse) and (max-width: 1400px) and (orientation: landscape),
-  (max-width: 759px) and (orientation: landscape) {
-  #battlefield[data-active="true"] {
-    --b: clamp(28px, 9.5dvh, 42px);
-    --g: clamp(4px, 1.4dvh, 8px);
-    --top: max(var(--g), env(safe-area-inset-top, 0px));
-    --bot: max(var(--g), env(safe-area-inset-bottom, 0px));
-    --score: calc(var(--b) * 1.45);
-    /* Left: quick row, scoreboard, camera row, then the D-pad fills what remains. */
-    --left-used: calc(var(--top) + var(--b) * 2 + var(--score) + var(--g) * 4);
-    --pad: min(calc(var(--rail) - 16px), 150px, calc(100dvh - var(--left-used) - var(--bot)));
-    /* Right: minimap, aim row, two order rows, then Fire. */
-    --mini: calc(var(--b) * 1.9);
-    --right-used: calc(var(--top) + var(--mini) + var(--b) * 3 + var(--g) * 5);
-    --fire: max(44px, min(96px, calc(var(--rail) - 26px), calc(100dvh - var(--right-used) - var(--bot))));
-  }
-  [data-active="true"] .bf-quick {
-    top: var(--top);
-    gap: var(--g);
-  }
-  [data-active="true"] :is(.bf-quick, .bf-map-tools, .bf-aim, .bf-orders) button {
-    min-height: 0;
-    height: var(--b);
-  }
-  [data-active="true"] .bf-topline {
-    top: calc(var(--top) + var(--b) + var(--g));
-  }
-  [data-active="true"] .bf-metrics {
-    height: var(--score);
-    overflow: hidden;
-    padding: 3px 7px;
-    gap: 0 6px;
-    align-content: center;
-  }
-  [data-active="true"] .bf-metrics b {
-    font-size: clamp(10px, 3.2dvh, 12px);
-  }
-  [data-active="true"] .bf-map-tools {
-    top: calc(var(--top) + var(--b) + var(--score) + var(--g) * 2);
-    gap: var(--g);
-  }
-  [data-active="true"] .bf-dpad {
-    width: var(--pad);
-    bottom: var(--bot);
-    gap: 3px;
-  }
-  [data-active="true"] .bf-mini {
-    top: var(--top);
-    height: var(--mini);
-    display: flex;
-    flex-direction: column;
-  }
-  [data-active="true"] .bf-mini svg {
-    flex: 1;
-    min-height: 0;
-    height: auto;
-    aspect-ratio: auto;
-  }
-  [data-active="true"] .bf-mini p {
-    display: none;
-  }
-  [data-active="true"] .bf-aim {
-    top: calc(var(--top) + var(--mini) + var(--g));
-    gap: var(--g);
-  }
-  [data-active="true"] .bf-orders {
-    top: calc(var(--top) + var(--mini) + var(--b) + var(--g) * 2);
-    gap: var(--g);
-  }
-  [data-active="true"] .bf-fire-area {
-    bottom: var(--bot);
-  }
-  [data-active="true"] .bf-fire {
-    width: var(--fire);
-  }
-}
 
 /* ---------- Install card: the only route to a browser-free screen on iPhone ---------- */
 .bf-install {
@@ -2189,31 +1389,6 @@ html.bf-playing body {
 }
 .bf-install-actions .bf-primary {
   flex: 1;
-}
-.bf-install.floating {
-  position: fixed;
-  z-index: 45;
-  left: 50%;
-  top: 50%;
-  width: min(380px, calc(100vw - 32px));
-  margin: 0;
-  transform: translate(-50%, -50%);
-}
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
-  .bf-setup-scroll > .bf-install {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    margin: 6px 0 2px;
-    padding: 8px 10px;
-  }
-  .bf-setup-scroll > .bf-install .bf-install-actions {
-    grid-column: auto;
-  }
-  .bf-setup-scroll:has(> .bf-install:not([hidden])) .bf-locations {
-    grid-row: 2 / span 4;
-  }
 }
 
 /* ---------- Analog thumbstick (replaces the 4-button D-pad on touch) ---------- */
@@ -2281,22 +1456,6 @@ html.bf-playing body {
   --c: #fff36b;
   --glow-press: 0 0 22px #ffe14daa;
 }
-.bf-cmd {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  z-index: 12;
-  width: min(580px, calc(100% - 20px));
-  transform: translateX(-50%);
-  display: grid;
-  gap: 6px;
-  padding: 9px 11px 10px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  border: 2px solid var(--yellow);
-  border-radius: 10px;
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
-  font-size: 11px;
-}
 .bf-cmd-tank b {
   letter-spacing: 1px;
 }
@@ -2308,36 +1467,6 @@ html.bf-playing body {
   font-weight: 700;
   font-size: 9px;
   letter-spacing: 1px;
-}
-.bf-cmd-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.bf-cmd-actions button {
-  grid-auto-flow: column;
-  gap: 5px;
-  min-height: 34px;
-  padding: 4px 10px;
-  font-size: 11px;
-}
-.bf-cmd-actions button:disabled {
-  opacity: 0.4;
-}
-#bf-lock {
-  --c: var(--green);
-}
-[data-plan="hq"] {
-  --c: var(--pink);
-}
-[data-plan="follow"] {
-  --c: var(--violet);
-}
-[data-plan="clear"] {
-  --c: #9b97c4;
-}
-[data-plan="next"] {
-  --c: var(--cyan);
 }
 #bf-start {
   margin-left: auto;
@@ -2449,161 +1578,19 @@ circle.bf-grab[data-stop] {
     animation: none;
   }
 }
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-aim {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  [data-active="true"] .bf-cmd {
-    top: 6px;
-    gap: 4px;
-    padding: 6px 8px 7px;
-    font-size: 10px;
-  }
-  [data-active="true"] #bf-cmd-hint {
-    display: none;
-  }
-  [data-active="true"] .bf-cmd-actions {
-    gap: 5px;
-  }
-  [data-active="true"] .bf-cmd-actions button {
-    min-height: 32px;
-    padding: 3px 8px;
-    font-size: 10px;
-  }
-  [data-active="true"] .bf-cmd-actions svg {
-    width: 15px;
-    height: 15px;
-  }
-}
 /* Full screen / Home Screen app on phones: the setup header (Theme, Eject) sits below the status
    bar and clear of the notch, so it can always be tapped. The battle header lives in the drawer. */
-#battlefield:not([data-active="true"]) .bf-header {
+#battlefield[data-ui="desk"]:not([data-active="true"]) .bf-header {
   height: calc(var(--hh, 64px) + env(safe-area-inset-top, 0px));
   padding-top: env(safe-area-inset-top, 0px);
   padding-left: max(var(--hp, 28px), env(safe-area-inset-left, 0px));
   padding-right: max(var(--hp, 28px), env(safe-area-inset-right, 0px));
 }
-@media (max-width: 759px) {
-  #battlefield {
-    --hh: 56px;
-    --hp: 16px;
-  }
-}
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
-  #battlefield {
-    --hh: 46px;
-  }
-  .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
-    height: calc(100dvh - 56px - env(safe-area-inset-top, 0px));
-  }
-}
 
-/* ---------- Setup: two short steps ---------- */
-.bf-step {
-  display: block;
-  margin: 4px 0 8px;
-}
-.bf-step b {
-  color: var(--cyan);
-  margin-right: 4px;
-}
-.bf-terrain-field {
-  margin-top: 16px;
-}
-#bf-reroll {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  --c: var(--yellow);
-}
-#bf-quick {
-  flex: 0 0 auto;
-}
-.bf-strat-summary {
-  margin: 0;
-  padding: 0 22px 12px;
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--muted);
-}
-/* ---------- Strategy: slides out over the controls during the plan step ---------- */
-.bf-strategy {
-  position: fixed;
-  z-index: 30;
-  left: max(16px, env(safe-area-inset-left));
-  top: 96px;
-  bottom: 16px;
-  width: min(420px, calc(100% - 20px));
-  overflow: auto;
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  padding: 12px 14px 16px;
-  background: var(--surface);
-  border: 2px solid var(--yellow);
-  border-radius: 10px;
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
-  animation: bf-slide 180ms ease-out;
-}
-.bf-strategy[hidden] {
-  display: none;
-}
 @keyframes bf-slide {
   from {
     translate: -16px 0;
     opacity: 0;
-  }
-}
-.bf-strategy-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-}
-.bf-strategy-head b {
-  margin-right: auto;
-  color: var(--yellow);
-  letter-spacing: 2px;
-  font-size: 11px;
-}
-.bf-strategy-head span {
-  order: 3;
-  flex: 1 1 100%;
-  font-size: 10px;
-  color: var(--muted);
-}
-.bf-strategy-head button {
-  min-height: 34px;
-  padding: 4px 10px;
-  font-size: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-#bf-strat-close {
-  padding: 4px 8px;
-}
-.bf-strategy .bf-config {
-  grid-template-columns: 1fr;
-}
-#bf-strat-toggle {
-  --c: var(--yellow);
-}
-#bf-strat-toggle span {
-  font-size: 10px;
-  letter-spacing: 0.5px;
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-strategy {
-    position: fixed;
-    z-index: 30;
-    left: max(0px, env(safe-area-inset-left));
-    top: 0;
-    bottom: 0;
-    width: min(400px, 62vw);
-    border-radius: 0 10px 10px 0;
-    padding: max(10px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
   }
 }
 /* ---------- Command: a hint above the selected tank, and a Lock that asks to be pressed ---------- */
@@ -2622,11 +1609,6 @@ circle.bf-grab[data-stop] {
   border-radius: 4px;
   box-shadow: 2px 2px 0 #07060f;
   pointer-events: none;
-}
-#bf-lock:not(:disabled) {
-  outline: 2px solid transparent;
-  outline-offset: 3px;
-  animation: bf-ask 1s steps(2) infinite;
 }
 @keyframes bf-ask {
   50% {
@@ -2735,20 +1717,11 @@ circle.bf-grab[data-stop] {
 }
 @media (prefers-reduced-motion: reduce) {
   .bf-sticker,
-  .bf-sticker span,
-  #bf-lock:not(:disabled),
-  .bf-strategy {
+.bf-sticker span {
     animation: none;
   }
 }
-.bf-panel-heading h2 {
-  font-size: clamp(20px, 2.4vw, 26px);
-}
-.bf-panel-heading p {
-  margin-bottom: 4px;
-}
-#bf-reroll svg,
-#bf-randomize svg {
+#bf-reroll svg {
   fill: none;
   stroke: currentColor;
 }
@@ -2797,34 +1770,6 @@ circle.bf-grab[data-stop] {
   min-height: 40px;
   padding: 0;
 }
-.bf-settings {
-  position: relative;
-}
-.bf-settings-menu {
-  position: absolute;
-  z-index: 45;
-  right: 0;
-  top: calc(100% + 8px);
-  display: grid;
-  gap: 6px;
-  min-width: 230px;
-  padding: 8px;
-  background: var(--surface);
-  border: 2px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 4px 4px 0 var(--line);
-}
-.bf-settings-menu[hidden] {
-  display: none;
-}
-.bf-settings-menu button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-start;
-  font-size: 11px;
-  text-align: left;
-}
 [data-active="false"] #bf-tips {
   display: none;
 }
@@ -2850,31 +1795,6 @@ circle.bf-grab[data-stop] {
 }
 .bf-paused .bf-primary {
   flex: 1 1 140px;
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-settings-menu {
-    top: auto;
-    bottom: calc(100% + 8px);
-    left: 0;
-    right: auto;
-  }
-  [data-active="true"] .bf-header .bf-hbtn,
-  [data-active="true"] .bf-header .bf-settings {
-    flex: 1;
-  }
-  [data-active="true"] .bf-header .bf-settings {
-    position: static;
-    padding: 0;
-  }
-  [data-active="true"] .bf-header .bf-settings > .bf-hbtn {
-    width: 100%;
-  }
-  /* In the drawer the menu spans the header row, just above it. */
-  [data-active="true"] .bf-header .bf-settings-menu {
-    left: 0;
-    right: 0;
-    min-width: 0;
-  }
 }
 .map-fits .bf-map-tools {
   display: none;
@@ -2960,48 +1880,9 @@ circle.bf-grab[data-stop] {
   border: 2px dashed var(--line);
   box-shadow: none;
 }
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-platoon-tag {
-    writing-mode: horizontal-tb;
-    rotate: none;
-  }
-  [data-active="true"] .bf-platoon {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  [data-active="true"] #bf-cmd-badge.bf-unit {
-    width: 34px;
-    height: 34px;
-  }
-  [data-active="true"] #bf-cmd-badge b {
-    font-size: 13px;
-  }
-}
 /* Command panel groups: ROUTE (clear, next, lock), ORDERS (attack HQ, follow), PLAN (planning). */
-.bf-cmd-actions {
-  gap: 8px 14px;
-}
-.bf-cmd-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.bf-cmd-group > span {
-  font: 700 8px/1 ui-monospace, monospace;
-  letter-spacing: 1.5px;
-  color: var(--muted);
-  writing-mode: vertical-rl;
-  rotate: 180deg;
-}
 [data-plan="false"] .bf-plan-only {
   display: none;
-}
-#bf-move-hq {
-  --c: var(--green);
-}
-#bf-move-hq[aria-pressed="true"] {
-  --c: var(--yellow);
 }
 /* START BATTLE: a sticker of the Battlefield cartridge icon. It flashes red as the fight begins. */
 .bf-start {
@@ -3054,19 +1935,6 @@ circle.bf-grab[data-stop] {
   transform: translate(var(--px), var(--py));
   box-shadow: 0 0 0 var(--edge);
   transition: none;
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-start {
-    bottom: max(10px, env(safe-area-inset-bottom));
-    padding: 7px 10px 6px;
-  }
-  [data-active="true"] .bf-start-icon svg {
-    width: 42px;
-    height: 42px;
-  }
-  [data-active="true"] .bf-cmd-group > span {
-    display: none;
-  }
 }
 
 /* ---------- City blocks: three flat neon shapes, plus street trees ---------- */
@@ -3292,14 +2160,6 @@ circle.bf-grab[data-stop] {
   grid-area: 2 / 3;
 }
 /* Keyboard controls only matter with a keyboard. */
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  .bf-keys {
-    display: none;
-  }
-}
-.bf-settings[hidden] {
-  display: none;
-}
 /* ---------- Surrender confirm (from the PAUSED sticker) ---------- */
 .bf-giveup {
   --tone: #f6f3ff;
@@ -3443,11 +2303,6 @@ circle.bf-grab[data-stop] {
 }
 
 /* ---------- Command card: badge + text on the left, actions, close on the right ---------- */
-.bf-cmd {
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  column-gap: 14px;
-}
 .bf-cmd-info {
   display: flex;
   align-items: center;
@@ -3503,53 +2358,13 @@ circle.bf-grab[data-stop] {
   line-height: 1.35;
   color: var(--muted);
 }
-.bf-cmd-actions {
-  justify-content: center;
-}
-#bf-cmd-close {
-  --c: var(--cyan);
-  grid-row: 1;
-  grid-column: -2;
-  align-self: start;
-}
-#bf-cmd-close[data-plan="true"] {
-  --c: #6d6894;
-}
 /* Touch overlay: badge and text stack tighter; close stays top right. */
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-stage .bf-cmd {
-    grid-template-columns: 1fr auto;
-    row-gap: 5px;
-  }
-  [data-active="true"] .bf-stage .bf-cmd .bf-cmd-actions {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: flex-start;
-  }
-  [data-active="true"] #bf-cmd-close {
-    min-height: 32px;
-    padding: 3px 8px;
-  }
-}
 /* Header keys are switches, not toggles you hold: they never rest pressed. State shows in the icon. */
 .bf-header .bf-hbtn[aria-pressed="true"] {
   transform: none;
   box-shadow: var(--px) var(--py) 0 var(--edge), var(--glow);
 }
 /* Phones: every key in the drawer header is the same size. */
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-header > :is(button, .bf-settings, .bf-keys) {
-    flex: 1 1 0;
-    min-width: 0;
-    padding: 6px;
-  }
-  [data-active="true"] .bf-header .bf-settings > .bf-hbtn,
-  [data-active="true"] .bf-header #bf-eject {
-    width: 100%;
-    min-height: 40px;
-    justify-content: center;
-  }
-}
 /* Theme key shows the theme you're in (moon = dark, sun = light); sound shows waves or a cross. */
 #bf-theme .bf-sun,
 [data-theme="light"] #bf-theme .bf-moon,
@@ -3578,59 +2393,7 @@ circle.bf-grab[data-stop] {
   right: auto;
 }
 /* Grip: a tab on the card's top edge. */
-.bf-cmd-grip {
-  position: absolute;
-  top: -11px;
-  left: 50%;
-  translate: -50% 0;
-  width: 54px;
-  height: 20px;
-  min-height: 0;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  color: #07060f;
-  background: var(--yellow);
-  border: 2px solid #07060f;
-  border-radius: 6px;
-  box-shadow: none;
-  cursor: grab;
-  touch-action: none;
-}
-.bf-cmd-grip i {
-  width: 24px;
-  height: 6px;
-  background: radial-gradient(circle, #07060f 1.3px, transparent 1.6px) 0 0 / 6px 3px;
-}
-.bf-cmd-grip:active {
-  cursor: grabbing;
-}
 /* Floating: lifted off the layout, wherever you dropped it. */
-#bf-cmd.floating {
-  position: fixed;
-  z-index: 40;
-  margin: 0;
-  transform: none;
-  width: min(720px, calc(100vw - 16px));
-  grid-template-columns: 1fr auto;
-  row-gap: 8px;
-  box-shadow: 6px 6px 0 color-mix(in srgb, var(--yellow) 40%, #07060f);
-}
-#bf-cmd.floating .bf-cmd-actions {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  justify-content: flex-start;
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  #bf-cmd.floating {
-    width: min(540px, calc(100vw - 16px));
-  }
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  [data-active="true"] .bf-stage .bf-cmd:not(.floating) {
-    top: 14px;
-  }
-}
 /* ---------- Comms panel (desktop): mission objective + one radio line, above the map ---------- */
 .bf-comms {
   flex: 0 1 520px;
@@ -3699,11 +2462,6 @@ circle.bf-grab[data-stop] {
 }
 .bf-footer[hidden] {
   display: none;
-}
-@media (pointer: coarse) and (max-width: 1400px), (max-width: 759px) {
-  .bf-comms {
-    display: none;
-  }
 }
 @media (max-width: 1100px) {
   .bf-comms #bf-comms-progress {
@@ -3883,24 +2641,6 @@ circle.bf-grab[data-stop] {
   translate: none;
 }
 /* Command card over the field: compact, two rows (who + close, then the actions). */
-.bf-stage .bf-cmd:not(.floating) {
-  width: min(700px, calc(100% - 20px));
-  top: 16px;
-  grid-template-columns: 1fr auto;
-  row-gap: 8px;
-}
-.bf-stage .bf-cmd .bf-cmd-actions {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  justify-content: flex-start;
-}
-.bf-cmd {
-  cursor: move;
-  touch-action: none;
-}
-.bf-cmd button {
-  cursor: pointer;
-}
 /* Comms text stays on its line: long messages end in an ellipsis. */
 .bf-comms-slot {
   min-width: 0;
@@ -3982,4 +2722,1276 @@ circle.bf-grab[data-stop] {
   [data-theme="light"] .bf-giveup {
     box-shadow: 5px 5px 0 #07060f;
   }
+}
+/* =====================================================================================
+   0.14 UI: one flow on every screen. Setup (location, terrain), Plan (cards over a frozen
+   field) and Battle. Sizes are in --u: one unit is one pixel of the 844 x 390 phone design,
+   scaled with the screen height on touch and fixed on desktop. CSS keys off
+   [data-ui=touch|desk] and [data-stage=setup|plan|battle], set by the client.
+   ===================================================================================== */
+#battlefield {
+  --u: 1.3px;
+  --card: #120f26;
+  --rim: #07060f;
+  --orange: #ff9a1a;
+  --sky: #5fd4ff;
+}
+#battlefield[data-ui="touch"] {
+  --u: clamp(0.7px, calc(100dvh / 390), 1.3px);
+  /* Left rail content starts after the notch; the right column centre sits this far in. */
+  --lx: calc(var(--sl) + calc(20 * var(--u)));
+  --rc: calc(var(--sr) + calc(83 * var(--u)));
+}
+#battlefield[data-theme="light"] {
+  --card: #ffffff;
+}
+
+/* ---------- Cards: yellow rim, a thick yellow base, a grab pill, a little see-through ---------- */
+.bf-card {
+  --px: 0px;
+  --py: calc(5 * var(--u));
+  --hx: 0px;
+  --hy: calc(1 * var(--u));
+  --edge: var(--yellow);
+  --edge-hover: var(--yellow);
+  --border-hover: var(--yellow);
+  position: absolute;
+  z-index: 14;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--card) 93%, transparent);
+  border: calc(2 * var(--u)) solid var(--yellow);
+  border-radius: calc(8 * var(--u));
+  box-shadow: var(--px) var(--py) 0 var(--edge);
+  touch-action: none;
+  cursor: grab;
+}
+.bf-card button {
+  cursor: pointer;
+}
+.bf-card[data-moved] {
+  translate: none !important;
+  transition: none !important;
+}
+.bf-card-grip,
+.bf-card .bf-card-grip {
+  position: absolute;
+  z-index: 2;
+  top: calc(-7 * var(--u));
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: calc(30 * var(--u));
+  height: calc(10 * var(--u));
+  min-height: 0;
+  padding: 0;
+  background: var(--yellow);
+  border: 0;
+  border-radius: calc(3 * var(--u));
+  box-shadow: none;
+  transform: none !important;
+  cursor: grab;
+}
+.bf-card-grip > i {
+  display: block;
+  width: calc(13 * var(--u));
+  height: calc(4 * var(--u));
+  background: radial-gradient(circle, var(--rim) 0 45%, transparent 55%) 0 0 / calc(3.25 * var(--u)) calc(2 * var(--u));
+}
+.bf-row-grip {
+  display: none !important;
+}
+.bf-badge {
+  position: absolute;
+  top: calc(-7 * var(--u));
+  right: calc(-7 * var(--u));
+  min-width: calc(21 * var(--u));
+  height: calc(21 * var(--u));
+  padding: 0 calc(5 * var(--u));
+  border-radius: calc(11 * var(--u));
+  background: var(--green);
+  color: var(--rim);
+  font: 800 calc(11 * var(--u)) / calc(21 * var(--u)) system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 0 0 calc(2 * var(--u)) var(--card);
+}
+.bf-badge[data-badge="per"] {
+  background: var(--team);
+}
+.bf-ico {
+  color: var(--cyan);
+}
+
+/* Card buttons (segmented choices, Randomize, close) share one compact key. */
+.bf-card .bf-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: calc(5 * var(--u));
+}
+.bf-card .bf-seg button,
+.bf-rand,
+.bf-x {
+  --px: calc(2 * var(--u));
+  --py: calc(2 * var(--u));
+  --edge: var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  min-height: calc(26 * var(--u));
+  padding: 0 calc(4 * var(--u));
+  font: 700 calc(6.5 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(0.4 * var(--u));
+  color: var(--ink);
+  background: color-mix(in srgb, var(--raised) 60%, var(--card));
+  border: calc(1.5 * var(--u)) solid var(--line);
+  border-radius: calc(4 * var(--u));
+  white-space: nowrap;
+}
+.bf-card .bf-seg button[aria-pressed="true"] {
+  --edge: var(--cyan);
+  color: var(--rim);
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--cyan) 55%, transparent);
+}
+.bf-card .bf-seg button small {
+  font-size: calc(5.5 * var(--u));
+  opacity: 0.75;
+}
+.bf-card .bf-seg svg {
+  width: calc(13 * var(--u));
+  height: calc(9 * var(--u));
+  fill: currentColor;
+  stroke: none;
+}
+.bf-card .bf-swatch {
+  width: calc(6 * var(--u));
+  height: calc(6 * var(--u));
+}
+.bf-card .bf-label {
+  display: block;
+  margin: 0 0 calc(4 * var(--u));
+  font-size: calc(5.5 * var(--u));
+  letter-spacing: calc(0.9 * var(--u));
+  color: var(--muted);
+}
+.bf-rand svg,
+.bf-x svg {
+  width: calc(10 * var(--u));
+  height: calc(10 * var(--u));
+}
+
+/* ---------- Step 1: location + terrain ---------- */
+.bf-loc {
+  left: 50%;
+  top: calc(15 * var(--u));
+  translate: -50% 0;
+  width: calc(204 * var(--u));
+  max-height: calc(100% - calc(26 * var(--u)));
+  display: flex;
+  flex-direction: column;
+  padding: calc(13 * var(--u)) calc(8 * var(--u)) calc(9 * var(--u));
+  transition: left 280ms ease, translate 280ms ease;
+}
+#battlefield:not([data-blank]) .bf-loc {
+  left: calc(var(--sl) + calc(12 * var(--u)));
+  translate: 0 0;
+}
+.bf-loc .bf-eyebrow {
+  padding-left: calc(2 * var(--u));
+  font-size: calc(5 * var(--u));
+  letter-spacing: calc(1 * var(--u));
+}
+.bf-loc h2 {
+  margin: calc(4 * var(--u)) 0 calc(9 * var(--u));
+  padding-left: calc(2 * var(--u));
+  font: 800 calc(12.5 * var(--u)) / 1.15 system-ui, sans-serif;
+  letter-spacing: calc(-0.3 * var(--u));
+}
+.bf-loc .bf-missions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: calc(12 * var(--u));
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: calc(2 * var(--u)) calc(5 * var(--u)) calc(6 * var(--u)) calc(2 * var(--u));
+  touch-action: pan-y;
+}
+.bf-loc .bf-missions::-webkit-scrollbar {
+  display: none;
+}
+.bf-loc .bf-mission {
+  --px: calc(3 * var(--u));
+  --py: calc(3 * var(--u));
+  --edge: var(--line);
+  display: grid;
+  grid-template-columns: calc(46 * var(--u)) 1fr;
+  height: calc(47 * var(--u));
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  background: color-mix(in srgb, var(--raised) 45%, var(--card));
+  border: calc(1.5 * var(--u)) solid var(--line);
+  border-radius: calc(4 * var(--u));
+  overflow: hidden;
+}
+.bf-loc .bf-mission[aria-pressed="true"] {
+  border-color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 10%, var(--card));
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--cyan) 55%, transparent);
+}
+.bf-thumb.bf-world {
+  --tile: calc(44 * var(--u) / 5);
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
+  margin: 0;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  border-right: calc(1.5 * var(--u)) solid var(--line);
+  background-image: none;
+  pointer-events: none;
+}
+.bf-mission-text {
+  display: grid;
+  align-content: center;
+  gap: calc(3 * var(--u));
+  min-width: 0;
+  padding: 0 calc(7 * var(--u)) 0 calc(8 * var(--u));
+}
+.bf-loc .bf-mission-text span {
+  font-size: calc(4.8 * var(--u));
+  letter-spacing: calc(0.5 * var(--u));
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bf-loc .bf-mission-text strong {
+  font: 800 calc(8.5 * var(--u)) / 1.1 system-ui, sans-serif;
+  color: var(--ink);
+}
+.bf-loc .bf-mission-text small {
+  font-size: calc(4.8 * var(--u));
+  color: var(--muted);
+}
+.bf-terrain {
+  display: grid;
+  gap: calc(7 * var(--u));
+  margin: calc(-9 * var(--u)) calc(-1 * var(--u)) 0;
+  padding: calc(12 * var(--u)) calc(7 * var(--u)) calc(8 * var(--u));
+  border: calc(1.5 * var(--u)) dashed var(--cyan);
+  border-top: 0;
+  border-radius: 0 0 calc(6 * var(--u)) calc(6 * var(--u));
+}
+.bf-terrain-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bf-terrain .bf-label {
+  margin: 0;
+}
+.bf-dice {
+  --py: 0px;
+  display: grid;
+  place-items: center;
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+  min-height: 0;
+  padding: 0;
+  color: var(--ink);
+  background: none;
+  border: calc(1.5 * var(--u)) solid var(--ink);
+  border-radius: calc(3 * var(--u));
+  box-shadow: none;
+}
+.bf-dice svg {
+  width: calc(10 * var(--u));
+  height: calc(10 * var(--u));
+}
+.bf-dice:active {
+  rotate: 90deg;
+  transition: rotate 120ms ease-out;
+}
+.bf-terrain .bf-seg button {
+  min-height: calc(22 * var(--u));
+  font-size: calc(6 * var(--u));
+}
+
+/* Quick start (navy) + Plan battle (yellow): the big sticker keys. */
+.bf-go {
+  position: absolute;
+  z-index: 15;
+  right: calc(var(--sr) + calc(12 * var(--u)));
+  bottom: calc(23 * var(--u));
+  display: flex;
+  gap: calc(11 * var(--u));
+}
+.bf-go .bf-start,
+#bf-start.bf-start {
+  --py: calc(4 * var(--u));
+  position: static;
+  translate: none;
+  width: calc(100 * var(--u));
+  height: calc(64 * var(--u));
+  align-content: center;
+  gap: calc(5 * var(--u));
+  padding: calc(5 * var(--u)) 0 calc(4 * var(--u));
+  border-width: calc(2.5 * var(--u));
+  border-radius: calc(9 * var(--u));
+}
+.bf-go .bf-start-icon svg,
+#bf-start .bf-start-icon svg {
+  width: calc(32 * var(--u));
+  height: calc(32 * var(--u));
+}
+.bf-go .bf-start b,
+#bf-start.bf-start b {
+  font-size: calc(7.5 * var(--u));
+  letter-spacing: calc(1.6 * var(--u));
+}
+#battlefield .bf-plan-sticker {
+  color: #f6f3ff;
+  background: #ffd83d;
+}
+.bf-plan-sticker .bf-start-icon svg {
+  background: #b0179a;
+}
+.bf-plan-sticker .bf-start-icon svg [stroke] {
+  stroke: #f6f3ff;
+}
+#battlefield .bf-plan-sticker b {
+  color: #2a1f45;
+}
+/* START BATTLE: the same sticker, a little smaller, bottom right on every planning card. */
+#bf-start.bf-start {
+  position: absolute;
+  left: auto;
+  right: calc(var(--sr) + calc(12 * var(--u)));
+  bottom: calc(23 * var(--u));
+  width: calc(90 * var(--u));
+  height: calc(56 * var(--u));
+  gap: calc(4 * var(--u));
+}
+#bf-start .bf-start-icon svg {
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+}
+#bf-start.bf-start b {
+  font-size: calc(6.5 * var(--u));
+}
+
+/* ---------- Step 2: plan home (Platoon / Loadout / Plan) ---------- */
+.bf-card-row {
+  position: absolute;
+  z-index: 14;
+  left: 50%;
+  top: 50%;
+  translate: -50% -62%;
+  display: flex;
+  gap: calc(7 * var(--u));
+  touch-action: none;
+}
+.bf-home-card.bf-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: calc(8 * var(--u));
+  width: calc(130 * var(--u));
+  height: calc(104 * var(--u));
+  min-height: 0;
+  padding: calc(8 * var(--u)) 0 calc(4 * var(--u));
+  border-radius: calc(11 * var(--u));
+  cursor: pointer;
+}
+.bf-home-card .bf-ico {
+  width: calc(58 * var(--u));
+  height: calc(46 * var(--u));
+}
+.bf-home-card > span {
+  font: 800 calc(9.5 * var(--u)) / 1 system-ui, sans-serif;
+  letter-spacing: calc(0.3 * var(--u));
+}
+.bf-home-card .bf-card-grip {
+  pointer-events: auto;
+}
+
+/* Platoon + Loadout cards: the corner away from your team; the other cards orbit beside. */
+.bf-pcard {
+  top: calc(31 * var(--u));
+  width: calc(282 * var(--u));
+  display: grid;
+  gap: calc(8 * var(--u));
+  padding: calc(13 * var(--u)) calc(13 * var(--u)) calc(12 * var(--u));
+  transition: none;
+}
+.bf-pcard[data-away="left"] {
+  left: calc(var(--sl) + calc(12 * var(--u)));
+}
+.bf-pcard[data-away="right"] {
+  right: calc(var(--sr) + calc(56 * var(--u)));
+}
+.bf-card-head {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  margin-bottom: calc(2 * var(--u));
+}
+.bf-card-icon {
+  display: grid;
+  place-items: center;
+  width: calc(34 * var(--u));
+  height: calc(34 * var(--u));
+  border-radius: calc(6 * var(--u));
+  background: var(--raised);
+}
+.bf-card-icon .bf-ico {
+  width: calc(24 * var(--u));
+  height: calc(20 * var(--u));
+}
+.bf-card-head > b,
+.bf-card-head > h3 {
+  margin: 0 auto 0 0;
+  font: 800 calc(10 * var(--u)) / 1 system-ui, sans-serif;
+  letter-spacing: calc(0.3 * var(--u));
+}
+.bf-rand {
+  min-height: calc(22 * var(--u));
+  padding: 0 calc(9 * var(--u));
+  font-size: calc(6 * var(--u));
+}
+.bf-x {
+  width: calc(25 * var(--u));
+  min-height: calc(22 * var(--u));
+  padding: 0;
+}
+.bf-pcard .bf-field {
+  display: grid;
+  gap: 0;
+}
+.bf-budget {
+  margin: 0 0 calc(-3 * var(--u));
+  text-align: right;
+  font-size: calc(5.5 * var(--u));
+  letter-spacing: calc(0.9 * var(--u));
+  color: var(--muted);
+}
+.bf-budget strong {
+  color: var(--cyan);
+}
+.bf-over .bf-budget strong {
+  color: var(--alert);
+}
+.bf-pcard .bf-loadout {
+  display: grid;
+  gap: calc(5 * var(--u));
+}
+.bf-pcard .bf-slot {
+  display: grid;
+  grid-template-columns: calc(52 * var(--u)) 1fr;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.bf-pcard .bf-slot > span {
+  font-size: calc(5.5 * var(--u));
+  letter-spacing: calc(0.9 * var(--u));
+  color: var(--muted);
+}
+.bf-pcard .bf-slot .bf-seg button {
+  min-height: calc(24 * var(--u));
+}
+.bf-pcard #bf-cost-error {
+  margin: 0;
+  font-size: calc(6 * var(--u));
+  color: var(--alert);
+}
+.bf-pcard #bf-cost-error:empty {
+  display: none;
+}
+/* Orbit: round shortcuts to the other cards, pinned beside the open one. */
+.bf-orbit {
+  position: absolute;
+  top: calc(-4 * var(--u));
+  left: calc(100% + calc(13 * var(--u)));
+  display: grid;
+  gap: calc(9 * var(--u));
+}
+[data-away="right"] > .bf-orbit {
+  left: auto;
+  right: calc(100% + calc(13 * var(--u)));
+}
+.bf-orb {
+  --px: 0px;
+  --py: calc(4 * var(--u));
+  --hx: 0px;
+  --hy: calc(1 * var(--u));
+  --edge: color-mix(in srgb, var(--yellow) 75%, #07060f);
+  --edge-hover: var(--edge);
+  --border-hover: var(--yellow);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(45 * var(--u));
+  height: calc(45 * var(--u));
+  min-height: 0;
+  padding: 0;
+  color: var(--cyan);
+  background: var(--card);
+  border: calc(2.5 * var(--u)) solid var(--yellow);
+  border-radius: 50%;
+}
+.bf-orb .bf-ico {
+  width: calc(26 * var(--u));
+  height: calc(22 * var(--u));
+}
+.bf-orb .bf-badge {
+  top: calc(-9 * var(--u));
+  right: calc(-9 * var(--u));
+  min-width: calc(20 * var(--u));
+  height: calc(20 * var(--u));
+  font-size: calc(10 * var(--u));
+  line-height: calc(20 * var(--u));
+}
+
+/* ---------- Step 3: plan each tank ---------- */
+#battlefield #bf-cmd {
+  top: calc(16 * var(--u));
+  left: auto;
+  right: auto;
+  width: calc(256 * var(--u));
+  min-height: calc(61 * var(--u));
+  transform: none;
+  display: block;
+  padding: calc(10 * var(--u)) calc(11 * var(--u)) calc(9 * var(--u));
+  border-radius: calc(7 * var(--u));
+}
+#battlefield #bf-cmd[data-away="left"] {
+  left: calc(var(--sl) + calc(12 * var(--u)));
+}
+#battlefield #bf-cmd[data-away="right"] {
+  right: calc(var(--sr) + calc(12 * var(--u)));
+}
+#battlefield[data-stage="battle"] #bf-cmd {
+  left: 50%;
+  right: auto;
+  translate: -50% 0;
+}
+#bf-cmd .bf-cmd-info {
+  display: flex;
+  align-items: center;
+  gap: calc(9 * var(--u));
+}
+#bf-cmd .bf-cmd-badge {
+  flex: none;
+  width: calc(29 * var(--u));
+  height: calc(29 * var(--u));
+  min-height: 0;
+  border-radius: calc(5 * var(--u));
+}
+#bf-cmd .bf-cmd-text {
+  display: grid;
+  gap: calc(3 * var(--u));
+  min-width: 0;
+}
+#bf-cmd .bf-cmd-mode {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  font-size: calc(5.5 * var(--u));
+  letter-spacing: calc(1 * var(--u));
+  color: var(--yellow);
+}
+#bf-cmd .bf-cmd-mode svg {
+  width: calc(8 * var(--u));
+  height: calc(8 * var(--u));
+}
+#bf-cmd .bf-cmd-tank {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  flex-wrap: wrap;
+}
+#bf-cmd .bf-cmd-tank b {
+  font: 800 calc(8.5 * var(--u)) / 1 system-ui, sans-serif;
+  letter-spacing: calc(0.4 * var(--u));
+}
+#bf-cmd .bf-cmd-tank span {
+  padding: calc(1.5 * var(--u)) calc(4 * var(--u));
+  border-radius: calc(2 * var(--u));
+  font: 700 calc(5.5 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(0.5 * var(--u));
+  color: var(--rim);
+  background: var(--team);
+}
+#bf-cmd .bf-cmd-tank span:empty {
+  display: none;
+}
+#bf-cmd #bf-cmd-state {
+  background: var(--cyan);
+}
+#bf-cmd #bf-cmd-hint {
+  margin: 0;
+  font-size: calc(6.5 * var(--u));
+  line-height: 1.3;
+  color: var(--muted);
+}
+/* Move HQ / Move Tanks: a tab under the card. One side is always on (yellow, pressed). */
+#bf-cmd .bf-mode {
+  position: absolute;
+  top: calc(100% + calc(2 * var(--u)));
+  display: flex;
+  gap: calc(10 * var(--u));
+  padding: calc(6 * var(--u)) calc(9 * var(--u)) calc(9 * var(--u));
+  background: color-mix(in srgb, var(--card) 93%, transparent);
+  border-radius: 0 0 calc(7 * var(--u)) calc(7 * var(--u));
+}
+#bf-cmd[data-away="left"] .bf-mode {
+  right: calc(8 * var(--u));
+}
+#bf-cmd[data-away="right"] .bf-mode {
+  left: calc(8 * var(--u));
+}
+.bf-mode-thumb {
+  display: none;
+}
+.bf-mode button {
+  --c: var(--team);
+  --px: 0px;
+  --py: calc(3 * var(--u));
+  --edge: color-mix(in srgb, var(--c) 45%, #07060f);
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  min-height: calc(22 * var(--u));
+  padding: 0 calc(8 * var(--u));
+  font: 700 calc(6.5 * var(--u)) / 1 ui-monospace, monospace;
+  color: var(--rim);
+  background: var(--c);
+  border: calc(1.5 * var(--u)) solid var(--rim);
+  border-radius: calc(5 * var(--u));
+}
+.bf-mode button svg {
+  width: calc(11 * var(--u));
+  height: calc(11 * var(--u));
+}
+.bf-mode button[aria-checked="true"] {
+  --c: var(--yellow);
+  transform: translate(var(--px), var(--py));
+  box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--yellow) 55%, transparent);
+}
+#bf-cmd .bf-orbit {
+  top: calc(6 * var(--u));
+  display: flex;
+  gap: calc(10 * var(--u));
+}
+/* The three orders ride above the selected tank; Next floats above them once it has one. */
+.bf-acts {
+  position: absolute;
+  z-index: 16;
+  left: 0;
+  top: 0;
+  translate: -50% -100%;
+  display: flex;
+  gap: calc(7 * var(--u));
+  pointer-events: none;
+}
+.bf-act,
+.bf-check {
+  --c: var(--yellow);
+  --px: 0px;
+  --py: calc(3 * var(--u));
+  --hx: 0px;
+  --hy: calc(1 * var(--u));
+  --edge: color-mix(in srgb, var(--c) 45%, #07060f);
+  --edge-hover: var(--edge);
+  --border-hover: var(--rim);
+  --glow-press: 0 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--c) 30%, transparent), 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--c) 70%, transparent);
+  display: grid;
+  place-items: center;
+  width: calc(25 * var(--u));
+  height: calc(25 * var(--u));
+  min-height: 0;
+  padding: 0;
+  color: var(--rim);
+  background: var(--c);
+  border: calc(1.5 * var(--u)) solid var(--rim);
+  border-radius: 50%;
+  pointer-events: auto;
+}
+.bf-act svg,
+.bf-check svg {
+  width: calc(13 * var(--u));
+  height: calc(13 * var(--u));
+  stroke-width: 2.4;
+}
+.bf-act[data-act="hq"] {
+  --c: var(--alert);
+}
+.bf-act[data-act="follow"] {
+  --c: var(--violet);
+}
+.bf-act-next {
+  --c: var(--cyan);
+  position: absolute;
+  right: calc(-24 * var(--u));
+  bottom: calc(100% + calc(12 * var(--u)));
+  box-shadow: 0 var(--py) 0 var(--edge), 0 0 0 calc(5 * var(--u)) color-mix(in srgb, var(--c) 22%, transparent), 0 0 0 calc(9 * var(--u)) color-mix(in srgb, var(--c) 10%, transparent);
+}
+.bf-check {
+  --c: var(--team);
+  position: absolute;
+  z-index: 16;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  box-shadow: 0 var(--py) 0 var(--edge), 0 0 0 calc(5 * var(--u)) color-mix(in srgb, var(--c) 22%, transparent), 0 0 0 calc(9 * var(--u)) color-mix(in srgb, var(--c) 10%, transparent);
+}
+.bf-act:disabled {
+  opacity: 0.35;
+}
+
+/* ---------- Pause: gunmetal dim behind the card ---------- */
+.bf-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: color-mix(in srgb, #3a404c 74%, transparent);
+}
+#battlefield #bf-giveup {
+  position: fixed;
+  z-index: 31;
+}
+.bf-install {
+  position: fixed;
+  z-index: 52;
+  left: 50%;
+  top: 50%;
+  width: min(calc(300 * var(--u)), calc(100vw - 32px));
+  margin: 0;
+  transform: translate(-50%, -50%);
+  font-size: calc(8 * var(--u));
+}
+
+/* =====================================================================================
+   Touch: phone and tablet, landscape. Header 48 high in setup and plan, gone in battle (the
+   menu brings it back over the paused field).
+   ===================================================================================== */
+#battlefield[data-ui="touch"] {
+  position: fixed;
+  inset: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+[data-ui="touch"] .bf-header {
+  position: fixed;
+  z-index: 32;
+  inset: 0 0 auto 0;
+  height: calc(48 * var(--u));
+  padding: 0 calc(var(--sr) + calc(14 * var(--u))) 0 calc(var(--sl) + calc(14 * var(--u)));
+  gap: calc(10 * var(--u));
+  background: var(--bg);
+  border-bottom: calc(2 * var(--u)) solid var(--line);
+}
+[data-ui="touch"][data-stage="battle"]:not(.menu-open) .bf-header {
+  display: none;
+}
+[data-ui="touch"] .bf-header .bf-brand {
+  gap: calc(9 * var(--u));
+  margin: 0;
+  font-size: calc(10.5 * var(--u));
+  letter-spacing: calc(1 * var(--u));
+  line-height: 1.15;
+}
+[data-ui="touch"] .bf-brand svg {
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+}
+[data-ui="touch"] .bf-brand b {
+  font-size: calc(15 * var(--u));
+  letter-spacing: calc(1.5 * var(--u));
+}
+.bf-ver {
+  margin-left: 0.6em;
+  font-style: normal;
+  font-size: 0.55em;
+  letter-spacing: 0.1em;
+  color: var(--cyan);
+}
+[data-ui="touch"] .bf-edition {
+  flex: 1;
+  text-align: center;
+  font-size: calc(8.5 * var(--u));
+  letter-spacing: calc(1.6 * var(--u));
+}
+[data-ui="touch"] .bf-help-keys,
+[data-ui="touch"] .bf-keys {
+  display: none;
+}
+[data-ui="touch"] .bf-hbtn {
+  --px: calc(3 * var(--u));
+  --py: calc(3 * var(--u));
+  width: calc(29 * var(--u));
+  min-height: calc(29 * var(--u));
+  height: calc(29 * var(--u));
+  border-width: calc(1.5 * var(--u));
+  border-radius: calc(5 * var(--u));
+}
+[data-ui="touch"] .bf-header svg {
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+}
+[data-ui="touch"] .bf-header .bf-brand svg {
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+}
+[data-ui="touch"] #bf-eject {
+  --px: calc(3 * var(--u));
+  --py: calc(3 * var(--u));
+  height: calc(29 * var(--u));
+  min-height: calc(29 * var(--u));
+  padding: 0 calc(12 * var(--u));
+  gap: calc(6 * var(--u));
+  font-size: calc(8.5 * var(--u));
+  border-width: calc(1.5 * var(--u));
+  border-radius: calc(5 * var(--u));
+}
+[data-ui="touch"] #bf-tips {
+  display: inline-grid;
+}
+[data-ui="touch"] .bf-main {
+  padding: 0;
+}
+[data-ui="touch"] .bf-topline {
+  display: block;
+  height: 0;
+  padding: 0;
+}
+[data-ui="touch"] .bf-topline > div:first-child,
+[data-ui="touch"] .bf-comms,
+[data-ui="touch"] .bf-rotate {
+  display: none;
+}
+[data-ui="touch"]:not([data-stage="battle"]) .bf-metrics {
+  display: none;
+}
+#battlefield[data-ui="touch"] .bf-stage {
+  position: fixed;
+  inset: calc(48 * var(--u)) 0 0 0;
+  height: auto !important;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  isolation: auto;
+  overflow: visible;
+}
+/* Battle: the stage steps aside (no stacking context) so the rails can sit between the field
+   and their own buttons; the field itself is the full screen, with a margin the width of each
+   rail so the camera can bring an edge of the map out from under it. */
+#battlefield[data-ui="touch"][data-stage="battle"] .bf-stage {
+  position: static;
+}
+#battlefield[data-ui="touch"][data-stage="battle"] #bf-viewport {
+  position: fixed;
+  inset: 0;
+}
+[data-ui="touch"][data-stage="battle"] .bf-world {
+  margin: 0 calc(var(--sr) + calc(154 * var(--u))) 0 calc(var(--lx) + calc(135 * var(--u)));
+}
+[data-ui="touch"] #bf-viewport {
+  position: absolute;
+  inset: 0;
+}
+[data-ui="touch"][data-stage="setup"] #bf-controls,
+[data-ui="touch"]:not([data-stage="battle"]) :is(.bf-aim, .bf-map-tools, .bf-mini) {
+  display: none !important;
+}
+/* Planning on touch: only the white flag (back out to setup), bottom left, opposite Start. */
+[data-ui="touch"][data-stage="plan"] #bf-controls {
+  position: fixed;
+  inset: auto auto 0 0;
+  z-index: 20;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+[data-ui="touch"][data-stage="plan"] #bf-controls > :not(.bf-command-top),
+[data-ui="touch"][data-stage="plan"] .bf-command-top > :not(.bf-quick),
+[data-ui="touch"][data-stage="plan"] .bf-quick > :not(#bf-pause) {
+  display: none;
+}
+[data-ui="touch"][data-stage="plan"] #bf-pause {
+  --px: 0px;
+  --py: calc(4 * var(--u));
+  position: fixed;
+  left: calc(var(--sl) + calc(12 * var(--u)));
+  bottom: calc(23 * var(--u));
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
+  min-height: 0;
+  padding: 0;
+  border-width: calc(2 * var(--u));
+  border-radius: 50%;
+}
+[data-ui="touch"][data-stage="plan"] #bf-pause :is(span, kbd) {
+  display: none;
+}
+[data-ui="touch"][data-stage="plan"] #bf-pause svg {
+  width: calc(18 * var(--u));
+  height: calc(18 * var(--u));
+}
+/* Comms: a radio toast that shows briefly. Tap it to clear it. */
+[data-ui="touch"] .bf-footer {
+  position: fixed;
+  z-index: 22;
+  left: 50%;
+  bottom: calc(12 * var(--u));
+  translate: -50% calc(8 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(7 * var(--u));
+  max-width: calc(300 * var(--u));
+  padding: calc(6 * var(--u)) calc(11 * var(--u)) calc(6 * var(--u)) calc(9 * var(--u));
+  font-size: calc(7.5 * var(--u));
+  line-height: 1.35;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: calc(1.5 * var(--u)) solid var(--line);
+  border-radius: calc(14 * var(--u));
+  box-shadow: calc(2 * var(--u)) calc(2 * var(--u)) 0 var(--line);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease, translate 200ms ease;
+}
+[data-ui="touch"] .bf-footer::before {
+  content: "";
+  flex: none;
+  width: calc(6 * var(--u));
+  height: calc(6 * var(--u));
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 calc(6 * var(--u)) var(--green);
+}
+[data-ui="touch"] .bf-footer.show {
+  opacity: 1;
+  translate: -50% 0;
+  pointer-events: auto;
+}
+[data-ui="touch"][data-stage="battle"] .bf-footer {
+  top: calc(8 * var(--u));
+  bottom: auto;
+  max-width: calc(400 * var(--u));
+  translate: -50% calc(-8 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-footer.show {
+  translate: -50% 0;
+}
+[data-ui="touch"] .bf-footer #bf-objective-label {
+  display: none;
+}
+
+/* ---------- Touch battle: two see-through rails over a full-screen field ---------- */
+[data-ui="touch"][data-stage="battle"] #bf-controls {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: none;
+}
+[data-ui="touch"][data-stage="battle"] #bf-controls::before,
+[data-ui="touch"][data-stage="battle"] #bf-controls::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  pointer-events: auto;
+}
+[data-ui="touch"][data-stage="battle"] #bf-controls::before {
+  left: 0;
+  width: calc(var(--lx) + calc(135 * var(--u)));
+  border-right: calc(1 * var(--u)) solid var(--line);
+}
+[data-ui="touch"][data-stage="battle"] #bf-controls::after {
+  right: 0;
+  width: calc(var(--sr) + calc(154 * var(--u)));
+  border-left: calc(1 * var(--u)) solid var(--line);
+  transition: translate 240ms ease;
+}
+[data-ui="touch"][data-stage="battle"] :is(.bf-command-top, .bf-quick, .bf-touch, .bf-dpad, .bf-fire-area, .bf-aim, .bf-map-tools, .bf-orders) {
+  display: contents;
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-order-label, #bf-tactics) {
+  display: none;
+}
+/* Every rail control is placed on its own, in design units from the screen edges. */
+[data-ui="touch"][data-stage="battle"] :is(#bf-squad, #bf-pause, #bf-command, #bf-center, #bf-pan, #bf-stick, [data-order], #bf-auto, #bf-target, .bf-fire, .bf-metrics, .bf-mini) {
+  position: fixed;
+  z-index: 21;
+  margin: 0;
+  pointer-events: auto;
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-command, #bf-center, #bf-pan, [data-order], #bf-auto, #bf-target, .bf-fire) {
+  --px: 0px;
+  --py: calc(4 * var(--u));
+  min-height: 0;
+  padding: 0;
+  border-width: calc(2 * var(--u));
+  border-radius: 50%;
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-command, #bf-center, #bf-pan, [data-order], #bf-auto, #bf-target, .bf-fire, #bf-squad, #bf-pause) :is(span, kbd) {
+  display: none;
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-squad, #bf-pause) {
+  --px: 0px;
+  --py: calc(4 * var(--u));
+  top: calc(6 * var(--u));
+  width: calc(60 * var(--u));
+  height: calc(33 * var(--u));
+  min-height: 0;
+  padding: 0;
+  border-width: calc(2 * var(--u));
+  border-radius: calc(8 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] #bf-squad {
+  display: inline-grid;
+  left: var(--lx);
+}
+[data-ui="touch"][data-stage="battle"] #bf-pause {
+  left: calc(var(--lx) + calc(67 * var(--u)));
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-squad, #bf-pause) svg {
+  width: calc(17 * var(--u));
+  height: calc(17 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-metrics {
+  left: var(--lx);
+  top: calc(54 * var(--u));
+  width: calc(127 * var(--u));
+  height: calc(52 * var(--u));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: center;
+  gap: calc(3 * var(--u)) calc(8 * var(--u));
+  padding: calc(5 * var(--u)) calc(9 * var(--u));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: calc(1.5 * var(--u)) solid var(--line);
+  border-radius: calc(5 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-metrics span {
+  font-size: calc(5 * var(--u));
+  letter-spacing: calc(0.8 * var(--u));
+  line-height: 1;
+}
+[data-ui="touch"][data-stage="battle"] .bf-metrics b {
+  margin-top: calc(1.5 * var(--u));
+  font-size: calc(11.5 * var(--u));
+  line-height: 1;
+  font-weight: 700;
+}
+[data-ui="touch"][data-stage="battle"] #bf-command {
+  left: calc(var(--lx) + calc(41 * var(--u)));
+  top: calc(127 * var(--u));
+  width: calc(46 * var(--u));
+  height: calc(46 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] #bf-command svg {
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-center, #bf-pan) {
+  top: calc(193 * var(--u));
+  width: calc(39 * var(--u));
+  height: calc(39 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] #bf-center {
+  left: calc(var(--lx) + calc(5 * var(--u)));
+}
+[data-ui="touch"][data-stage="battle"] #bf-pan {
+  left: calc(var(--lx) + calc(85 * var(--u)));
+}
+[data-ui="touch"][data-stage="battle"] :is(#bf-center, #bf-pan, [data-order], #bf-auto, #bf-target) svg {
+  width: calc(19 * var(--u));
+  height: calc(19 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] #bf-stick {
+  left: var(--lx);
+  top: calc(243 * var(--u));
+  width: calc(128 * var(--u));
+  height: calc(128 * var(--u));
+  border-width: calc(2.5 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-knob {
+  left: 31%;
+  top: 31%;
+  width: 38%;
+  height: 38%;
+}
+[data-ui="touch"][data-stage="battle"] .bf-mini {
+  right: calc(var(--sr) + calc(12 * var(--u)));
+  top: 0;
+  left: auto;
+  bottom: auto;
+  width: calc(142 * var(--u));
+  height: calc(112 * var(--u));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: calc(4 * var(--u));
+  padding: calc(5 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u));
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 0;
+  border-radius: 0 0 calc(6 * var(--u)) calc(6 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-mini > div {
+  font-size: calc(5.5 * var(--u));
+  letter-spacing: calc(1 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-mini svg {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+[data-ui="touch"][data-stage="battle"] #bf-progress {
+  display: none;
+}
+/* The order diamond: Attack top, Retreat left, Advance right, Fall in in the middle below. */
+[data-ui="touch"][data-stage="battle"] :is([data-order], #bf-auto, #bf-target) {
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] [data-order="attack"] {
+  right: calc(var(--rc) - calc(20 * var(--u)));
+  top: calc(127 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] [data-order="retreat"] {
+  --c: var(--orange);
+  right: calc(var(--rc) + calc(19 * var(--u)));
+  top: calc(157 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] [data-order="advance"] {
+  right: calc(var(--rc) - calc(59 * var(--u)));
+  top: calc(157 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] [data-order="follow"] {
+  right: calc(var(--rc) - calc(20 * var(--u)));
+  top: calc(187 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] #bf-auto {
+  right: calc(var(--rc) + calc(19 * var(--u)));
+  top: calc(236 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] #bf-target {
+  right: calc(var(--rc) - calc(59 * var(--u)));
+  top: calc(236 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-fire {
+  right: calc(var(--rc) - calc(47 * var(--u)));
+  top: calc(277 * var(--u));
+  width: calc(94 * var(--u));
+  height: calc(94 * var(--u));
+  border-width: calc(2.5 * var(--u));
+  --py: calc(6 * var(--u));
+}
+[data-ui="touch"][data-stage="battle"] .bf-fire svg {
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+}
+/* Command mode: the right rail slides off; press Command again to bring it back. */
+[data-ui="touch"][data-stage="battle"] :is([data-order], #bf-auto, #bf-target, .bf-fire, .bf-mini) {
+  transition: translate 240ms ease, transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+[data-ui="touch"][data-stage="battle"].commanding :is([data-order], #bf-auto, #bf-target, .bf-fire, .bf-mini) {
+  translate: calc(var(--sr) + calc(170 * var(--u))) 0;
+}
+[data-ui="touch"][data-stage="battle"].commanding #bf-controls::after {
+  translate: 100% 0;
+}
+/* Pause from the menu: the header drops in over the dim. */
+[data-ui="touch"].menu-open .bf-header {
+  display: flex;
+}
+/* Step 1 shows the ground and the two HQs only: the platoons arrive when you plan. */
+[data-stage="setup"] :is(.bf-tank, .bf-kit) {
+  display: none;
+}
+.bf-check[data-state="locked"] {
+  --c: var(--yellow);
+  box-shadow: 0 0 0 var(--edge), 0 0 calc(14 * var(--u)) color-mix(in srgb, var(--yellow) 75%, transparent);
+  transform: translate(var(--px), var(--py));
+}
+/* The sector map is a battle instrument: setup and planning show the whole field anyway. */
+#battlefield:not([data-stage="battle"]) .bf-mini {
+  display: none;
+}
+[data-ui="touch"][data-stage="battle"] .bf-mini {
+  box-shadow: none;
+}
+/* Touch pause card: the mock's compact sticker card. */
+[data-ui="touch"] #bf-giveup {
+  width: calc(256 * var(--u));
+  gap: calc(9 * var(--u));
+  padding: calc(14 * var(--u)) calc(14 * var(--u)) calc(13 * var(--u));
+  border-width: calc(2 * var(--u));
+  box-shadow: calc(5 * var(--u)) calc(5 * var(--u)) 0 var(--tone);
+}
+[data-ui="touch"] #bf-giveup .bf-sticker b {
+  font-size: calc(26 * var(--u));
+}
+[data-ui="touch"] #bf-giveup .bf-sticker span {
+  font-size: calc(6 * var(--u));
+}
+[data-ui="touch"] #bf-giveup .bf-giveup-copy {
+  font-size: calc(7.5 * var(--u));
+  line-height: 1.35;
+}
+[data-ui="touch"] #bf-giveup .bf-start {
+  width: calc(100 * var(--u));
+  height: calc(66 * var(--u));
+  padding: calc(5 * var(--u)) 0;
+  gap: calc(5 * var(--u));
+  border-width: calc(2.5 * var(--u));
+}
+[data-ui="touch"] #bf-giveup .bf-start-icon svg {
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+}
+[data-ui="touch"] #bf-giveup .bf-start b {
+  font-size: calc(7 * var(--u));
+  letter-spacing: calc(1.2 * var(--u));
+}
+/* Desktop: the header stays usable over the pause dim (keys, theme, sound). */
+[data-ui="desk"] .bf-header {
+  position: relative;
+  z-index: 32;
+}
+/* While the pause card is up, the stage lets it rise above the dim. */
+[data-ui="desk"] .bf-stage:has(#bf-giveup:not([hidden])) {
+  isolation: auto;
+}
+/* Planning on touch: the stage is its own layer, so the pause card rises with it and draws the
+   dim itself (a wide spread round the card). */
+[data-ui="touch"][data-stage="plan"] .bf-stage:has(#bf-giveup:not([hidden])) {
+  z-index: 31;
+}
+[data-ui="touch"][data-stage="plan"] #bf-giveup {
+  box-shadow: calc(5 * var(--u)) calc(5 * var(--u)) 0 var(--tone), 0 0 0 200vmax color-mix(in srgb, #3a404c 74%, transparent);
+}
+[data-ui="touch"] .bf-coach-card {
+  top: calc(8 * var(--u));
+  bottom: auto;
+  max-width: calc(380 * var(--u));
 }

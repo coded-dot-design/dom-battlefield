@@ -16,5 +16,7 @@ console.log(`Total: ${total} gzip bytes`);
 // strategy drawer, after-action sticker); 44 KB in 0.9.0 (header icons + settings menu, pause and
 // start stickers, squad chips, per-terrain roads, city shapes, full-screen expand prompt); 46 KB in
 // 0.11.0 (keyboard keycap panel, docked command card, platoon keys, surrender confirm); 48 KB in
-// 0.13.0 (commanding your own tank, movable command card, comms panel, team colours).
-if (total > 48000) throw Error("48KB compressed app budget exceeded");
+// 0.13.0 (commanding your own tank, movable command card, comms panel, team colours); 52 KB in
+// 0.14.0 (the redesigned flow: location card with terrain thumbnails, plan cards with orbits,
+// per-tank order bubble, the touch cockpit rails, intro card, touch tips).
+if (total > 52000) throw Error("52KB compressed app budget exceeded");

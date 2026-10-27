@@ -11,9 +11,11 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 
 Four seeded arcade operations: Hedgerow breach, Desert spearhead, Winter crossroads and Twin bridges. Choose either fictional side, one of three deployment formations, and four scout/medium/heavy tanks within a 12-point budget. Capture an opposing HQ, hold a contested crossroads, or eliminate a platoon. Your command tank must survive.
 
-**Command your squad.** Every battle opens with a frozen plan step in command mode: tap a numbered tank, tap where it should go (or Attack HQ), drag the route line to bend it or the flag to move it, and Lock. Locked tanks drive their route and hold that square when they arrive (on the enemy HQ that is a capture). Start battle when you're ready. During the battle, Command is the third aim mode beside Auto and Lock: time runs at half speed and your gun is off, so redirect quickly and switch back. Fall in follows your command tank; Retreat returns to headquarters, where tanks repair. Advance returns the squad to the objective. Every map has alternate connected routes. Houses, hedges and parked cars can be destroyed into pixel debris and rubble. Rocks and water remain permanent; fences stop tanks but allow shells through.
+**Three stages.** *Setup:* an empty field with the two HQs and a location card; pick a place (each has a terrain thumbnail) and its ground appears, with Terrain (Light / Normal / Heavy, and a dice for a new layout at the same density) right under it. Then **Quick start** (anything not picked is rolled at random) or **Plan battle**. *Plan:* time is frozen and three cards float over the whole field: **Platoon** (side, formation, squad size), **Loadout** (four tanks, 12 points) and **Plan**. Cards open on the side away from your team, carry round shortcuts to the other cards, and can be dragged anywhere. *Battle:* on phones, a see-through rail on each side of a full-screen field.
 
-Desktop maps fit the available viewport. Mobile uses a larger grid with deliberate Pan mode, minimap camera positioning and a Center button. Resizing an active battle adjusts presentation without resetting terrain, damage or positions.
+**Command your squad.** In Plan, tap a tank (or its number) and pick one of the three orders beside it: Attack HQ, Follow me, or Command (tap the map to plant a flag, drag the line or the flag, then the check). Tap a lit order again to clear it. The arrow above the orders locks any draft and moves to the next tank. Move HQ / Move Tanks is a switch on the plan card. Locked tanks drive their route and hold that square when they arrive (on the enemy HQ that is a capture). Start battle when you're ready. During the battle, Command is the third aim mode beside Auto and Lock: time runs at half speed and your gun is off, so redirect quickly and switch back. Fall in follows your command tank; Retreat returns to headquarters, where tanks repair. Advance returns the squad to the objective. Every map has alternate connected routes. Houses, hedges and parked cars can be destroyed into pixel debris and rubble. Rocks and water remain permanent; fences stop tanks but allow shells through.
+
+Setup and planning always show the whole field (fit to width or height). Desktop battles keep that view; phone battles zoom in with a camera (Pan, Center, minimap), and Command slides the right rail off so you can see and direct the squad. Auto-aim on phones is a switch: it stays on through Command and locks until you turn it off. The first time a phone loads the game, one card explains how to get true full screen (iPhone: Add to Home Screen; Android: Install); Full screen brings it back where the browser can't go full screen. On iPhone, sound plays through the silent switch (the mute key is the off switch). Resizing an active battle adjusts presentation without resetting terrain, damage or positions.
 
 ## Controls
 
@@ -27,11 +29,11 @@ Desktop maps fit the available viewport. Mobile uses a larger grid with delibera
 | Command mode | O | Command (chevrons) beside Auto / Lock |
 | Send a tank | Command: click tank, then a square | Command: tap tank, then a square |
 | Bend / move a route | Drag the line / the flag | Drag the line / the flag |
-| Lock · clear · next · attack HQ | Enter · Backspace · N · H | Panel buttons |
-| Button tips | ? in the header | First run; ? in the drawer; tap a label for details |
+| Lock · clear · next · attack HQ | Enter · Backspace · N · H | Check · tap the lit order · arrow · flag |
+| Button tips | ? in the header | First battle of a visit; Menu → ?; tap a label for details |
 | Keyboard controls | Keyboard icon beside the battlefield title (hover or click) | — |
-| Move the command card | Drag its grip · double-click to dock | Drag its grip |
-| Pause · surrender | White flag (P): Keep fighting or Surrender | White flag on the rail |
+| Move a card | Drag its grip or any empty part | Same |
+| Pause · surrender | White flag (P): Keep fighting or Surrender | White flag (Menu also pauses, with the header) |
 | Route your own tank | ★ platoon key, then a square, Lock · steer to override | Same |
 | Move HQ (plan only) | Drag your HQ, or Move HQ then a square | Same |
 | Pan / recenter | M + drag / C | Pan + drag / Center |
@@ -52,7 +54,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 48KB gzip budget, checked by `npm run size` (0.13.0: ~46.3KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10, 46KB in 0.11–0.12).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 52KB gzip budget, checked by `npm run size` (0.14.0: ~49.5KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10, 46KB in 0.11–0.12, 48KB in 0.13).
 
 ## Boundaries
 
@@ -70,6 +72,16 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.14.0 — The redesigned flow: setup, plan, battle
+
+- **Setup:** an empty field with the two HQs until you pick a place. A location card with a terrain thumbnail per place; picking one shows its ground and opens Terrain under it (Light by default; the dice rolls a new layout without changing the density). Two sticker keys: Quick start (rolls anything not picked) and Plan battle.
+- **Plan:** the whole field, frozen, with three cards (Platoon, Loadout, Plan) and Start battle bottom right on every one. Platoon and Loadout open on the side away from your team with round shortcuts to the other cards; every card has a yellow rim and grab pill and can be dragged anywhere.
+- **Per-tank orders:** tap a tank and three round orders ride beside it (Attack HQ, Follow me, Command). One at a time; tap a lit one to clear it. Command plants a flag with a tap; a check by the flag locks the route and the arrow moves to the next tank. Move HQ / Move Tanks is a switch on the plan card.
+- **Phone battle cockpit:** see-through rails over a full-screen field. Left: menu and white flag, stats, Command, Center and Pan, the stick. Right: a bigger sector map, the order diamond (Attack, Retreat, Advance, Fall in), Auto and Lock over a big Fire key. Command slides the right rail away; Auto stays on until you switch it off. No header in battle: Menu pauses and brings it in over a gunmetal dim; the flag pauses with the card only. Comms is a short radio toast (tap to clear). The numbered platoon list stays on desktop.
+- **Phone header** like desktop (brand with version, SHERMAN OPERATIONS, ?, full screen, sound, theme, Eject). The settings gear is gone: a one-time intro card explains installing for full screen (and comes back from Full screen where the browser can't). Sound hides without Web Audio; on iPhone it plays through the silent switch.
+- **Tips** on phones label each rail control separately, line up beside the rails without overlapping, and always stay on screen. They show once a visit, at the first battle.
+- Setup is landscape-only on phones; the white flag in planning (bottom left on phones) backs out to setup. Removed "Defaults are fine. Change anything; it sticks."
 
 ### 0.13.6 — Theme and sound are remembered
 

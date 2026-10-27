@@ -205,15 +205,16 @@ export class View {
     this.hqLineEl.hidden = x === null;
     if (x !== null) this.hqLineEl.style.left = `${x * this.tile}px`;
   }
+  /** Fit the whole field in view (setup, planning and desktop), or touch battle's fixed 32px
+   *  squares with a camera. A future "zoom out" in battle only needs to flip this and resize. */
+  fitAll = true;
+  sw = 0;
+  sh = 0;
   resize() {
     const { cols, rows } = this.s.board;
-    this.tile =
-      matchMedia("(pointer: coarse)").matches || innerWidth < 760
-        ? 32
-        : Math.min(
-            this.viewport.clientWidth / cols,
-            this.viewport.clientHeight / rows,
-          );
+    this.tile = this.fitAll
+      ? Math.min(this.viewport.clientWidth / cols, this.viewport.clientHeight / rows)
+      : 32;
     this.world.style.width = `${cols * this.tile}px`;
     this.world.style.height = `${rows * this.tile}px`;
     this.world.style.setProperty("--tile", `${this.tile}px`);
@@ -231,6 +232,8 @@ export class View {
       w = this.world.getBoundingClientRect();
     this.vw = this.viewport.clientWidth;
     this.vh = this.viewport.clientHeight;
+    this.sw = this.viewport.scrollWidth;
+    this.sh = this.viewport.scrollHeight;
     this.scrolled();
     this.vx = v.left;
     this.vy = v.top;
@@ -240,6 +243,10 @@ export class View {
   scrolled() {
     this.sl = this.viewport.scrollLeft;
     this.st = this.viewport.scrollTop;
+  }
+  /** A map point in the stage's own pixels (for buttons that ride beside a tank or a flag). */
+  toStage(p: { x: number; y: number }) {
+    return { x: this.ox + p.x * this.tile - this.sl, y: this.oy + p.y * this.tile - this.st };
   }
   location(e: { clientX: number; clientY: number }) {
     return {
@@ -399,7 +406,7 @@ export class View {
         this.kits.set(k.id, n);
       }
     const t = this.tile,
-      cam = `${(this.sl / t).toFixed(2)} ${(this.st / t).toFixed(2)} ${Math.min(b.cols, this.vw / t).toFixed(2)} ${Math.min(b.rows, this.vh / t).toFixed(2)}`;
+      cam = `${((this.sl - this.ox) / t).toFixed(2)} ${((this.st - this.oy) / t).toFixed(2)} ${Math.min(b.cols, this.vw / t).toFixed(2)} ${Math.min(b.rows, this.vh / t).toFixed(2)}`;
     if (cam !== this.camKey) {
       this.camKey = cam;
       const [x, y, w, h] = cam.split(" ");
@@ -473,8 +480,8 @@ export class View {
     const t = this.tile,
       zx = this.vw * 0.18,
       zy = this.vh * 0.18,
-      px = p.x * t - this.sl,
-      py = p.y * t - this.st;
+      px = this.ox + p.x * t - this.sl,
+      py = this.oy + p.y * t - this.st;
     let dx = 0,
       dy = 0;
     if (px < this.vw / 2 - zx) dx = px - (this.vw / 2 - zx);
@@ -482,8 +489,9 @@ export class View {
     if (py < this.vh / 2 - zy) dy = py - (this.vh / 2 - zy);
     else if (py > this.vh / 2 + zy) dy = py - (this.vh / 2 + zy);
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-    const maxX = Math.max(0, this.s.board.cols * t - this.vw),
-      maxY = Math.max(0, this.s.board.rows * t - this.vh),
+    // The scroll range includes any margin round the field (touch rails sit over it).
+    const maxX = Math.max(0, this.sw - this.vw),
+      maxY = Math.max(0, this.sh - this.vh),
       left = Math.max(0, Math.min(maxX, this.sl + dx * 0.2)),
       top = Math.max(0, Math.min(maxY, this.st + dy * 0.2));
     if (Math.abs(left - this.sl) < 0.5 && Math.abs(top - this.st) < 0.5) return;
@@ -493,8 +501,8 @@ export class View {
   center() {
     const p = this.s.units[this.s.side * this.s.per]!;
     this.viewport.scrollTo({
-      left: p.x * this.tile - this.vw / 2,
-      top: p.y * this.tile - this.vh / 2,
+      left: this.ox + p.x * this.tile - this.vw / 2,
+      top: this.oy + p.y * this.tile - this.vh / 2,
       behavior: "instant",
     });
     this.scrolled();
