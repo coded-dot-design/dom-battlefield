@@ -252,7 +252,7 @@ test("repair kits, HQ repair and kill salvage restore armor", () => {
   for (let i = 0; i < 2000; i++) step(s, 0.02, idle);
   assert.ok(s.pickups.length <= 3 + s.per / 4 + 6);
 });
-test("attack order focuses a chosen enemy, then hunts when it dies", () => {
+test("attack order focuses a chosen enemy, then takes the next in sight or goes back to its plan", () => {
   const b = generate(26, 20, 1, 3);
   b.tiles.fill("ground");
   const s = createBattle(b, 1, 0, roles);
@@ -264,7 +264,9 @@ test("attack order focuses a chosen enemy, then hunts when it dies", () => {
   assert.ok(Math.hypot(s.units[1].x - enemy.x, s.units[1].y - enemy.y) < d0, "closes on target");
   enemy.hp = 0;
   step(s, 0.02, idle);
-  assert.ok(s.units.slice(1, 4).every((u) => u.focus === null && u.order === "attack"));
+  assert.ok(
+    s.units.slice(1, 4).every((u) => (u.order === "attack" && u.focus !== null && u.focus !== enemy.id) || (u.order === "advance" && !u.resume)),
+  );
   assert.equal(command(s, { type: "focus", ids: [0], target: 5 }), true);
   assert.equal(s.units[0].order, "advance", "command tank is never re-ordered");
 });
@@ -362,4 +364,37 @@ test("an HQ stays 7 squares behind the middle (at least 4 columns of room on sma
       assert.equal(moveBase(structuredClone(b), side, over), false, `beyond the line is refused (${cols}/${side})`);
     }
   }
+});
+test("a squad order sets the plan aside: release resumes it, and an attack ends when its target falls", () => {
+  const b = generate(26, 20, 0, 3);
+  b.tiles.fill("ground");
+  const s = createBattle(b, 0, 0, roles);
+  const u = s.units[1],
+    dest = cell(b, { x: u.x + 6, y: u.y });
+  assert.ok(command(s, { type: "route", id: 1, cells: [dest] }));
+  // Fall in: the route is set aside, not lost.
+  command(s, { type: "order", order: "follow", ids: [1] });
+  assert.equal(u.order, "follow");
+  assert.deepEqual(u.resume.route, [dest]);
+  // A second order keeps the original plan to come back to.
+  command(s, { type: "order", order: "retreat", ids: [1] });
+  assert.deepEqual(u.resume.route, [dest]);
+  command(s, { type: "release", ids: [1] });
+  assert.equal(u.order, "hold");
+  assert.deepEqual(u.route, [dest]);
+  assert.equal(u.resume, null);
+  // Attack names its prey; once it is destroyed with nothing else in sight, the plan resumes.
+  command(s, { type: "focus", ids: [1], target: null });
+  const prey = s.units.find((v) => v.id === u.focus);
+  assert.ok(prey && prey.side === 1, "a hunt picks the nearest enemy");
+  for (const v of s.units) if (v.side === 1) (v.hp = 0), (v.x = 25), (v.y = 19);
+  prey.hp = 0;
+  s.units.find((v) => v.side === 1 && v !== prey).hp = 1; // the battle goes on, far out of sight
+  b.tiles[cell(b, { x: 24, y: 19 })] = "rock";
+  step(s, 0.02, idle);
+  assert.equal(u.order, "hold", "back on the plan after the kill");
+  assert.deepEqual(u.route, [dest]);
+  // A planning order is the plan: nothing to resume.
+  command(s, { type: "order", order: "follow", ids: [1], plan: true });
+  assert.equal(u.resume, null);
 });

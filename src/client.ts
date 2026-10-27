@@ -98,6 +98,7 @@ function syncUi() {
   if (root.dataset.ui !== ui) root.dataset.ui = ui;
   if (root.dataset.stage !== stage) root.dataset.stage = stage;
   if (root.dataset.panel !== panel) root.dataset.panel = panel;
+  if (root.dataset.per !== String(per)) root.dataset.per = String(per);
   if (view) view.fitAll = ui === "desk" || stage !== "battle";
 }
 /** A platoon key's inside: the tank number over 1-3 size pips. */
@@ -602,11 +603,12 @@ function setCommand(on: boolean, pick = true) {
 function wingmen() {
   return state.units.filter((u) => u.side === side && u.id !== commander(state).id && u.hp > 0);
 }
-function nextTank() {
-  const list = wingmen();
+/** Page through the squad (you, then the wingmen) and back round. */
+function nextTank(by = 1) {
+  const list = [commander(state), ...wingmen()].filter((u) => u.hp > 0);
   if (!list.length) return;
-  const i = list.findIndex((u) => u.id === selected);
-  selectUnit(list[(i + 1) % list.length]!.id);
+  const i = Math.max(0, list.findIndex((u) => u.id === selected));
+  selectUnit(list[(i + by + list.length) % list.length]!.id);
 }
 /** The draft's square-by-square line (from the tank), or null if a stop is unreachable. */
 function draftCells() {
@@ -659,7 +661,9 @@ function actState() {
 }
 function plan(action: string) {
   if (!playing || paused) return;
-  if (action === "next") return commitDraft(), nextTank();
+  if (action === "next") return commitDraft(), nextTank(1);
+  if (action === "prev") return commitDraft(), nextTank(-1);
+  if (action === "you") return commitDraft(), selectUnit(commander(state).id);
   if (!draft) return say("Tap one of your tanks first.");
   const id = draft.id,
     on = actState();
@@ -673,7 +677,7 @@ function plan(action: string) {
     lockRoute();
   } else if (action === "follow") {
     if (id === commander(state).id) return say("Your tank leads; the others fall in on you.");
-    command(state, { type: "order", order: "follow", ids: [id] });
+    command(state, { type: "order", order: "follow", ids: [id], plan: planning });
     draft.stops = [];
     say(`Tank ${tankNo(id)} falling in on you.`);
   } else if (action === "route") {
@@ -821,6 +825,8 @@ function cmdPanel() {
  *  come from the cached view geometry, so this costs no layout reads. */
 let actsWidth = 0,
   actsHeight = 0;
+/** Where the orders card sits (its top left on the stage), pinned or dragged. */
+const actsAt = { x: 0, y: 0 };
 function rideAlong() {
   const acts = $("#bf-acts"),
     check = $("#bf-check"),
@@ -842,30 +848,34 @@ function rideAlong() {
     b.setAttribute("aria-pressed", String(!!on?.[k]));
     b.disabled = k === "follow" && own;
   }
-  // Next shows once this tank has an order (or a drawn route it will lock).
-  $("#bf-next").hidden = !(on && (on.hq || on.follow || on.route || dirty()));
+  // Forward calls once this tank has an order (or a drawn route it will lock); ★ is lit on you.
+  $("#bf-next").classList.toggle("bf-call", !!(on && (on.hq || on.follow || on.route || dirty())));
+  check.classList.toggle("bf-call", canLock);
+  $('[data-page="0"]').setAttribute("aria-pressed", String(own));
   const p = view.toStage(u!),
     W = view.vw,
     H = view.vh,
     bw = (actsWidth ||= acts.offsetWidth) || 100,
     bh = (actsHeight ||= acts.offsetHeight) || 30,
-    gap = 10,
     pad = 10;
-  // Above the tank and its yellow hint label; below the tank when that would leave the screen.
-  const above = p.y - view.tile * 0.5 - 26,
-    below = above - bh < pad;
-  const y = below ? Math.min(H - pad - bh, p.y + view.tile * 0.7) : Math.min(H - pad, above),
-    rowTop = below ? y : y - bh;
-  // Next sits right over the Command key; with no room above, beside the row (right, else
-  // left), lined up with it. The whole stack keeps clear of the notch and the screen edges.
-  let next: "up" | "right" | "left" = !below && rowTop - gap - bh >= pad ? "up" : "right";
-  if (next === "right" && Math.min(p.x, W) + bw / 2 + gap + bh > W - safe.r - pad) next = "left";
-  const lo = safe.l + pad + bw / 2 + (next === "left" ? gap + bh : 0),
-    hi = W - safe.r - pad - bw / 2 - (next === "right" ? gap + bh : 0),
-    x = Math.max(lo, Math.min(hi, p.x));
-  acts.dataset.next = next;
-  acts.classList.toggle("below", below);
-  acts.style.transform = `translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;
+  // Unpinned: the card stays where you dragged it.
+  if (acts.dataset.pin === "false") {
+    actsAt.x = Math.max(safe.l + pad, Math.min(W - safe.r - pad - bw, actsAt.x));
+    actsAt.y = Math.max(pad, Math.min(H - pad - bh, actsAt.y));
+    acts.style.transform = `translate(${actsAt.x.toFixed(0)}px,${actsAt.y.toFixed(0)}px)`;
+  } else {
+    // Pinned: a tooltip card above the tank (pointing at it), below it near the top edge.
+    const above = p.y - view.tile * 0.5 - 30,
+      below = above - bh < pad;
+    const top = below ? Math.min(H - pad - bh, p.y + view.tile * 0.8) : Math.min(H - pad, above) - bh,
+      left = Math.max(safe.l + pad, Math.min(W - safe.r - pad - bw, p.x - bw / 2));
+    acts.classList.toggle("below", below);
+    // The pointer stays on the tank even when the card is pushed off-centre by an edge.
+    acts.style.setProperty("--point", `${Math.max(14, Math.min(bw - 14, p.x - left)).toFixed(0)}px`);
+    actsAt.x = left;
+    actsAt.y = top;
+    acts.style.transform = `translate(${left.toFixed(0)}px,${top.toFixed(0)}px)`;
+  }
   if (stops) {
     const end = point(state.board, stops.at(-1)!),
       q = view.toStage(end);
@@ -895,6 +905,14 @@ function routeLines(): RouteLine[] {
   }
   return out;
 }
+/** The squad order these tanks are locked on (all alive ones share it), or "". In battle that is
+ *  an order set over the plan; while planning, the order that is the plan. */
+function litOrder(ids: number[]): Order | "" {
+  const crew = state.units.filter((u) => ids.includes(u.id) && u.hp > 0),
+    o = crew[0]?.order;
+  if (!o || o === "hold" || !crew.every((u) => u.order === o && (planning ? !u.route.length && o !== "advance" : !!u.resume))) return "";
+  return o;
+}
 function order(order: Order) {
   if (!playing || paused) return;
   const ids =
@@ -903,9 +921,12 @@ function order(order: Order) {
       : state.units
           .filter((u) => u.side === side && u.id !== commander(state).id)
           .map((u) => u.id);
-  if (order === "attack")
-    command(state, { type: "focus", ids, target: aim.mode === "unit" ? aim.id : null });
-  else command(state, { type: "order", order, ids });
+  // The lit order is locked: tap it again to release the squad back to its plan.
+  if (litOrder(ids) === order)
+    command(state, planning ? { type: "order", order: "advance", ids, plan: true } : { type: "release", ids });
+  else if (order === "attack")
+    command(state, { type: "focus", ids, target: aim.mode === "unit" ? aim.id : null, plan: planning });
+  else command(state, { type: "order", order, ids, plan: planning });
   if (draft) draft.stops = [];
   cmdPanel();
   say(state.events.at(-1) ?? "");
@@ -937,7 +958,13 @@ function setPause(value: boolean) {
   if (!paused) root.classList.remove("menu-open");
   pauseButton();
   status.textContent = paused ? "PAUSED" : planning ? "PLAN" : "LIVE";
-  say(paused ? "Battle paused." : planning ? "Back to planning." : "Battle resumed.");
+  say(
+    paused
+      ? "Battle on hold. Keep fighting, or wave the white flag and end the operation."
+      : planning
+        ? "Back to planning."
+        : "Battle resumed.",
+  );
 }
 function pauseButton() {
   $("#bf-pause").setAttribute("aria-pressed", String(paused));
@@ -1127,6 +1154,7 @@ function deploy(quick = false) {
   setup.hidden = true;
   $("#bf-go").hidden = true;
   $("#bf-result").hidden = true;
+  $("#bf-dim").hidden = true;
   $("#bf-controls").hidden = false;
   pauseButton();
   lease.setActive(true);
@@ -1190,14 +1218,14 @@ function reset() {
   undrag();
   $("#bf-go").hidden = !picked;
   $("#bf-result").hidden = true;
+  $("#bf-dim").hidden = true;
   $("#bf-controls").hidden = true;
   preview();
 }
 function updateHUD() {
   const p = commander(state);
-  // The order key the squad (or the selected tank) is on stays lit, so a tap visibly lands.
-  const crew = state.units.filter((u) => u.side === side && u.hp > 0 && u.id !== p.id && (selected < 0 || selected === p.id || u.id === selected)),
-    now = crew.length && crew.every((u) => u.order === crew[0]!.order) ? crew[0]!.order : "";
+  // The order key the squad (or the selected tank) is locked on stays lit.
+  const now = litOrder(state.units.filter((u) => u.side === side && u.id !== p.id && (selected < 0 || selected === p.id || u.id === selected)).map((u) => u.id));
   for (const n of document.querySelectorAll<HTMLElement>("[data-order]")) {
     const on = String(n.dataset.order === now);
     if (n.getAttribute("aria-pressed") !== on) n.setAttribute("aria-pressed", on);
@@ -1249,6 +1277,7 @@ function updateHUD() {
       press(n, () => selectUnit(u.id, true));
       roster.append(n);
     }
+  if (roster.dataset.n !== String(allies.length)) (roster.dataset.n = String(allies.length)), requestAnimationFrame(barIcons);
   allies.forEach((u, i) => {
     const n = roster.children[i] as HTMLButtonElement;
     const you = u.id === commander(state).id;
@@ -1335,15 +1364,18 @@ function loop(now: number) {
       const won = state.winner === side,
         result = $("#bf-result");
       result.hidden = false;
-      result.classList.toggle("won", won);
+      result.dataset.tone = won ? "won" : "lost";
+      $("#bf-dim").hidden = false;
       $("#bf-result-kicker").textContent = won ? "STAGE CLEAR" : "INSERT COIN";
       $("#bf-result-title").textContent = won ? "MISSION COMPLETE" : "GAME OVER";
-      $("#bf-result-copy").textContent = won
-        ? "Your platoon took the objective. Try the other side, heavier terrain or a new plan."
-        : "Your platoon is down. Regroup, rethink the routes, and go again.";
-      $("#bf-r-time").textContent = $("#bf-clock").textContent!;
-      $("#bf-r-kills").textContent = String(state.units.filter((u) => u.side !== side && u.hp <= 0).length);
-      $("#bf-r-lost").textContent = String(state.units.filter((u) => u.side === side && u.hp <= 0).length);
+      // The debrief goes out over comms; the overlay is just the sticker and two keys.
+      const kills = state.units.filter((u) => u.side !== side && u.hp <= 0).length,
+        lost = state.units.filter((u) => u.side === side && u.hp <= 0).length;
+      say(
+        `${won ? "Objective taken" : "Platoon down"} at ${$("#bf-clock").textContent} · ${kills} kill${kills === 1 ? "" : "s"} · ${lost} lost. ` +
+          (won ? "Try the other side, heavier terrain or a new plan." : "Regroup, rethink the routes, and go again."),
+      );
+      $<HTMLButtonElement>("#bf-rematch").focus({ preventScroll: true });
       updateHUD();
       return;
     }
@@ -1511,11 +1543,11 @@ listen($("#bf-rematch"), "click", () => {
 listen($(".bf-footer"), "pointerup", () => $(".bf-footer").classList.remove("show"));
 /* Planning cards float over the field: drag any of them by its grip or an empty part. They stay
    where you drop them until the stage changes. */
-function dragCard(card: HTMLElement) {
+function dragCard(card: HTMLElement, when: () => boolean = () => true) {
   let from: { x: number; y: number; left: number; top: number; moved: boolean } | null = null;
   listen(card, "pointerdown", ((e: PointerEvent) => {
     const t = e.target as Element;
-    if (e.button > 0 || (t.closest("button, [role=group]") && !t.closest(".bf-card-grip"))) return;
+    if (e.button > 0 || !when() || (t.closest("button, [role=group]") && !t.closest(".bf-card-grip"))) return;
     const r = card.getBoundingClientRect(),
       host = (card.offsetParent as HTMLElement | null)?.getBoundingClientRect() ?? { left: 0, top: 0 };
     from = { x: e.clientX, y: e.clientY, left: r.left - host.left, top: r.top - host.top, moved: false };
@@ -1611,6 +1643,8 @@ function undrag() {
   }
 }
 for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
+// Desktop full screen: the bar's cards on the map drag too.
+for (const c of document.querySelectorAll<HTMLElement>(".bf-dock")) dragCard(c, () => root.dataset.full === "true");
 // Grips and the resize grab are pointer gestures; cards keep working without them.
 for (const g of document.querySelectorAll<HTMLElement>(".bf-card-grip, .bf-card-size")) g.setAttribute("aria-hidden", "true");
 /* Desktop docks Auto / Lock / Command in the bottom bar beside Pause; the touch cockpit keeps them
@@ -1618,11 +1652,53 @@ for (const g of document.querySelectorAll<HTMLElement>(".bf-card-grip, .bf-card-
 const aimHome = $(".bf-aim").parentElement!,
   aimNext = $(".bf-aim").nextElementSibling;
 function dockAim() {
-  const aim = $(".bf-aim");
+  const aim = $(".bf-aim"),
+    cmd = $("#bf-command");
   if (railLayout.matches) {
     if (aim.parentElement !== aimHome) aimHome.insertBefore(aim, aimNext);
-  } else if (aim.parentElement !== $(".bf-quick")) $(".bf-quick").prepend(aim);
+    if (cmd.parentElement !== aim) aim.append(cmd);
+  } else {
+    if (aim.parentElement !== $(".bf-quick")) $(".bf-quick").prepend(aim);
+    // Command holds the far left of the bar, opposite Surrender: orders tank by tank.
+    if (cmd.parentElement !== $(".bf-task")) $(".bf-task").append(cmd);
+  }
+  dockFull();
 }
+/* Desktop full screen: the header goes, its full-screen key (pressed) sits by the armour readout,
+   and the platoon moves into the sector map card. Dragged cards start over on the way out. */
+const fullHome = $("#bf-fullscreen").parentElement!,
+  fullNext = $("#bf-fullscreen").nextElementSibling,
+  tactics = $("#bf-tactics"),
+  tacticsNext = tactics.nextElementSibling!;
+function dockFull() {
+  const full = !railLayout.matches && !!document.fullscreenElement,
+    key = $("#bf-fullscreen");
+  if (root.dataset.full !== String(full)) {
+    root.dataset.full = String(full);
+    for (const c of document.querySelectorAll<HTMLElement>(".bf-dock")) c.style.left = c.style.top = c.style.right = c.style.bottom = "";
+  }
+  if (full) {
+    if (key.parentElement !== $(".bf-metrics")) $(".bf-metrics").append(key);
+    if (tactics.parentElement !== $(".bf-mini")) $(".bf-mini").append(tactics);
+  } else {
+    if (key.parentElement !== fullHome) fullHome.insertBefore(key, fullNext);
+    if (tactics.parentElement !== $("#bf-controls")) $("#bf-controls").insertBefore(tactics, tacticsNext);
+  }
+  barIcons();
+}
+/** Desktop bar: labels on the keys give way to icons when a group would overflow its slot. */
+function barIcons() {
+  const bar = $("#bf-controls");
+  if (railLayout.matches || bar.hidden) return root.classList.remove("bar-icons");
+  // Full screen: the cards share the map's bottom edge; smaller screens get the icon keys.
+  if (root.dataset.full === "true") return root.classList.toggle("bar-icons", innerWidth < 1400);
+  root.classList.remove("bar-icons");
+  // The platoon is centred, so each side gets half of what it leaves: both must fit there.
+  const side = (bar.clientWidth - $("#bf-roster").scrollWidth) / 2 - 24,
+    tight = [...bar.querySelectorAll<HTMLElement>(".bf-dock")].some((g) => g.scrollWidth > side);
+  root.classList.toggle("bar-icons", tight);
+}
+new ResizeObserver(() => barIcons()).observe($("#bf-controls"));
 // Desktop tiles scale to the viewport: refit when the docked card (or anything else) resizes it.
 let vpSize = "";
 new ResizeObserver(() => {
@@ -1673,6 +1749,7 @@ listen($("#bf-giveup-yes"), "click", () => {
   setTimeout(() => {
     b.classList.remove("go");
     reset();
+    say("White flag raised. Pick your next operation.");
   }, reduced.matches ? 0 : 450);
 });
 /* Header keyboard key: hover (fine pointers) or click shows the controls as keycaps. */
@@ -1699,6 +1776,7 @@ listen($("#bf-fullscreen"), "click", () => {
 });
 listen(document, "fullscreenchange", () => {
   const full = !!document.fullscreenElement;
+  dockFull();
   $("#bf-fullscreen").setAttribute("aria-pressed", String(full));
   $("#bf-fullscreen").setAttribute("aria-label", full ? "Leave full screen" : "Enter full screen");
   fit();
@@ -1764,7 +1842,38 @@ listen($("#bf-check"), "click", () => {
   lockRoute();
   cmdPanel();
 });
-listen($("#bf-next"), "click", () => plan("next"));
+for (const b of document.querySelectorAll<HTMLElement>("[data-page]"))
+  listen(b, "click", () => plan(b.dataset.page === "1" ? "next" : b.dataset.page === "-1" ? "prev" : "you"));
+/* Pin: the orders card rides along with the tank as a tooltip. Unpinned it grows a grab bar and
+   stays wherever you drag it, to keep the tanks in view. */
+listen($("#bf-acts-pin"), "click", () => {
+  const acts = $("#bf-acts"),
+    pin = acts.dataset.pin !== "true";
+  acts.dataset.pin = String(pin);
+  $("#bf-acts-pin").setAttribute("aria-pressed", String(pin));
+  actsWidth = actsHeight = 0;
+  say(pin ? "Orders pinned to the tank." : "Orders unpinned: drag the bar to move them.");
+  rideAlong();
+});
+{
+  const acts = $("#bf-acts");
+  let from: { x: number; y: number; ax: number; ay: number } | null = null;
+  listen(acts, "pointerdown", ((e: PointerEvent) => {
+    if (acts.dataset.pin !== "false" || (e.target as Element).closest("button")) return;
+    e.preventDefault();
+    from = { x: e.clientX, y: e.clientY, ax: actsAt.x, ay: actsAt.y };
+    try {
+      acts.setPointerCapture(e.pointerId);
+    } catch {}
+  }) as EventListener);
+  listen(acts, "pointermove", ((e: PointerEvent) => {
+    if (!from) return;
+    actsAt.x = from.ax + e.clientX - from.x;
+    actsAt.y = from.ay + e.clientY - from.y;
+    rideAlong();
+  }) as EventListener);
+  for (const t of ["pointerup", "pointercancel"]) listen(acts, t, () => (from = null));
+}
 for (const n of document.querySelectorAll<HTMLElement>("[data-act]"))
   listen(n, "click", () => plan(n.dataset.act!));
 // START BATTLE: the sticker flashes red as the battle begins, then peels away.
@@ -1861,6 +1970,8 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
       if (e.code === "Enter") e.preventDefault(), lockRoute();
       if (e.code === "Backspace") plan("clear");
       if (e.code === "KeyN") plan("next");
+      if (e.code === "KeyB") plan("prev");
+      if (e.code === "KeyY") plan("you");
       if (e.code === "KeyH") plan("hq");
     }
     if (e.code === "KeyT") startPick();
@@ -2233,6 +2344,7 @@ listen($("#bf-sound"), "click", () => {
 });
 listen(window, "resize", () => {
   readSafe();
+  barIcons();
   actsWidth = actsHeight = 0;
   // Setup and planning use a bigger screen (full screen) for a bigger map; a live battle re-fits.
   if (playing && !planning) fit();

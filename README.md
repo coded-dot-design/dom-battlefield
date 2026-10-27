@@ -73,6 +73,17 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.16.0 — One control palette, locked orders, cleaner overlays
+
+- **One colour system for every control, the same on desktop and phone, dark and light.** Cyberpunk meets Tron: neon caps on an ink rim. Cyan = navigation, violet = command (Command, routes, the check, and every locked order), red = the gun with Auto and Lock as its lighter twin, magenta = Attack, orange = Advance, lime = Fall in / Follow me, your team colour = Retreat to HQ, yellow = tank identity only (your star, wingman numbers). Faces read on both themes; text uses a deeper twin on light. All palette tokens live in one block (ready to be passed in from config later); duplicate and overridden rules were removed.
+- **Locked vs. call.** A locked key rests pressed in its lock colour and breathes a soft glow; a key that wants a press keeps its top up and sends a ring out from the bottom of its base (the route check, the pager's forward key). All hard shadows now fall straight down.
+- **Squad orders lock and release.** A squad order sets the plan aside instead of erasing it. Tap the lit order again to release the squad back to its routes. Attack picks its prey, takes on the next enemy in sight, and when none is left it ends by itself and the tanks drive on to their flags.
+- **Orders card per tank.** A pager on top (back · ★ jump to your tank · forward; each move locks the current tank's orders) over Attack HQ / Follow me / Command. Pinned, it's a tooltip pointing at the tank; unpin it to get a grab bar and park it where it doesn't hide the field. Keys: B / N / Y.
+- **Overlays are a sticker and two keys.** Give up?, Mission complete and Game over slap a sticker onto the dimmed field above two sticker keys (Keep fighting / Surrender, Rematch / New campaign). What it means — and the debrief: time, kills, losses — goes out over comms.
+- **Desktop bar:** Command (TASKING) holds the far left opposite Surrender, then ORDERS · WHOLE SQUAD, the platoon in the middle, AIM on the right. Labels give way to icons when the platoon needs the room.
+- **Desktop full screen:** the header leaves (a pressed full-screen key by the armour readout brings it back); the bar becomes see-through cards on the map — commands bottom left, aim and Surrender bottom right (both draggable) — and the platoon moves into the sector map card as a 2×2 / 3×3 / 4×4 grid.
+- Size budget 56 KB (from 54.5 KB).
+
 ### 0.15.9 — Phone controls fix
 
 - **Fix: on iPhone (above all from the Home Screen) the stick could stop driving your tank, and orders tapped while driving seemed dead.** Battle controls now listen to native touch events, which iOS delivers to every finger, and cancel them so a second finger is never read as a pinch or scroll. A new finger on the stick always takes it, and lifting every finger releases a stick or Fire key whose release iOS dropped, so a stuck stick can no longer survive a new battle.

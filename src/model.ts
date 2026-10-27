@@ -39,6 +39,14 @@ export interface Unit extends Point {
   /** Cached nearest visible enemy; rescanned every `scan` seconds. */
   target: number | null;
   scan: number;
+  /** The plan a squad order set aside (order, remaining route, held square). While it is set the
+   *  squad order is "locked"; releasing it, or an attack running out of enemies, restores it. */
+  resume?: Resume | null;
+}
+export interface Resume {
+  order: Order;
+  route: number[];
+  hold: number | null;
 }
 export interface Shot extends Point {
   id: number;
@@ -126,10 +134,12 @@ export interface Board {
   revision: number;
 }
 export type Command =
-  | { type: "order"; order: Order; ids: number[] }
+  /** A squad order overrides the plan (kept to resume); `plan: true` makes it the plan itself. */
+  | { type: "order"; order: Order; ids: number[]; plan?: boolean }
+  | { type: "release"; ids: number[] }
   | { type: "move"; id: number; cell: number }
   | { type: "route"; id: number; cells: number[] }
-  | { type: "focus"; ids: number[]; target: number | null }
+  | { type: "focus"; ids: number[]; target: number | null; plan?: boolean }
   | { type: "clear"; id: number };
 export const SQUAD_SIZES = [4, 8, 12] as const;
 export const REPAIR = { kit: 45, kill: 15, hq: 8, hqRadius: 2.2, every: 7 };
@@ -541,30 +551,30 @@ function clearAround(b: Board, p: Point) {
 export function command(s: Battle, c: Command) {
   if (s.winner !== null) return false;
   const lead = s.side * s.per;
+  if (c.type === "release") {
+    let routes = 0;
+    for (const u of s.units)
+      if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead && u.resume) {
+        routes += u.resume.route.length ? 1 : 0;
+        release(u);
+      }
+    s.events.push(routes ? "Back on the plan: routes resumed." : "Back on their own: advancing.");
+    return true;
+  }
   if (c.type === "focus") {
     const t = s.units.find((u) => u.id === c.target && u.side !== s.side && u.hp > 0);
     for (const u of s.units)
       if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead && u.hp > 0) {
-        u.order = "attack";
-        u.focus = t ? t.id : null;
-        u.waypoint = u.hold = null;
-        u.route = [];
-        u.path = [];
-        u.plan = 0;
+        override(u, "attack", c.plan);
+        // A hunt still names its prey (the nearest enemy), so the attack ends when it falls.
+        u.focus = t ? t.id : c.plan ? null : (nearestEnemy(s, u)?.id ?? null);
       }
     s.events.push(t ? "Squad attacking your target." : "Squad hunting the nearest enemy.");
     return true;
   }
   if (c.type === "order") {
     for (const u of s.units)
-      if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead) {
-        u.order = c.order;
-        u.focus = null;
-        u.waypoint = u.hold = null;
-        u.route = [];
-        u.path = [];
-        u.plan = 0;
-      }
+      if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead) override(u, c.order, c.plan);
     s.events.push(
       c.order === "follow"
         ? "Squad falling in."
@@ -581,6 +591,7 @@ export function command(s: Battle, c: Command) {
     // Drop the route. Your own tank just stops being driven; a wingman goes back to advancing.
     if (!u) return false;
     u.route = [];
+    u.resume = null;
     u.waypoint = u.hold = null;
     u.path = [];
     if (u.id !== lead) (u.order = "advance"), (u.focus = null);
@@ -592,6 +603,7 @@ export function command(s: Battle, c: Command) {
   // A route: drive through each stop in order, then hold the last square (on the enemy HQ that
   // is a capture). Orders and attack commands replace it.
   u.route = cells.slice();
+  u.resume = null;
   u.waypoint = u.route[0]!;
   u.hold = u.route.at(-1)!;
   // Your own tank drives the route only while you're not steering; it keeps its order.
@@ -607,6 +619,31 @@ export function command(s: Battle, c: Command) {
       : `Route locked: ${cells.length > 1 ? `${cells.length - 1} turn${cells.length > 2 ? "s" : ""}, then ` : ""}hold position.`,
   );
   return true;
+}
+/** Apply an order. A squad order sets the plan aside to resume later (only the first one does: a
+ *  second order keeps the original plan); a planning order replaces the plan. */
+function override(u: Unit, order: Order, plan = false) {
+  if (plan) u.resume = null;
+  else u.resume ??= { order: u.order, route: u.route.slice(), hold: u.hold };
+  u.order = order;
+  u.focus = null;
+  u.waypoint = u.hold = null;
+  u.route = [];
+  u.path = [];
+  u.plan = 0;
+}
+/** Back to the plan the squad order set aside. */
+function release(u: Unit) {
+  const r = u.resume;
+  if (!r) return;
+  u.resume = null;
+  u.order = r.order;
+  u.route = r.route.slice();
+  u.hold = r.hold;
+  u.waypoint = u.route[0] ?? null;
+  u.focus = null;
+  u.path = [];
+  u.plan = 0;
 }
 /** The full square-by-square path from start through every stop, or null if a leg is blocked. */
 export function plot(b: Board, start: number, stops: number[]) {
@@ -839,7 +876,18 @@ export function step(s: Battle, dt: number, input: Input) {
       if (input.fire) fire(s, u, u.turret);
     } else {
       let focus = u.focus === null ? undefined : s.units.find((v) => v.id === u.focus && v.hp > 0);
-      if (u.focus !== null && !focus) u.focus = null;
+      if (u.focus !== null && !focus) {
+        u.focus = null;
+        // A squad attack whose target fell takes on the next enemy in sight, or ends: back to plan.
+        if (u.order === "attack" && u.resume) {
+          const next = nearestVisible(s, u);
+          if (next) (u.focus = next.id), (focus = next);
+          else {
+            release(u);
+            if (u.side === s.side) s.events.push(`Tank ${u.id % s.per}: target down, back on the plan.`);
+          }
+        }
+      }
       // Attack with no assigned target hunts the nearest living enemy anywhere.
       if (u.order === "attack" && !focus) focus = nearestEnemy(s, u);
       const kit = u.hp < u.maxHp * 0.35 && u.waypoint === null ? nearestKit(s, u, 9) : undefined;

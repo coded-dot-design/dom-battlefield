@@ -240,7 +240,7 @@ try {
       assert.equal(await page.locator("#bf-cmd").getAttribute("data-away"), "right");
       assert.equal(await page.locator("#bf-cmd-close").count(), 0, "the plan card has no close key");
       assert.equal(await page.locator("#bf-acts").isVisible(), true);
-      assert.equal(await page.locator("#bf-next").isVisible(), false, "Next waits for an order");
+      assert.equal(await page.locator("#bf-next").evaluate((n) => n.classList.contains("bf-call")), false, "Next calls only once there is an order");
       assert.equal(await page.locator("#bf-cmd-badge b").textContent(), "1");
       // Move HQ / Move Tanks: a switch, one side always on.
       assert.equal(await page.locator("#bf-mode-tanks").getAttribute("aria-checked"), "true");
@@ -258,7 +258,7 @@ try {
       assert.equal(await page.locator('#bf-acts [data-act="hq"]').getAttribute("aria-pressed"), "true");
       let u1 = await page.evaluate(() => window.battlefield.snapshot().units[1]);
       assert.equal(u1.route.at(-1), await page.evaluate(() => window.battlefield.snapshot().board.bases[1]), "routed at the enemy HQ");
-      assert.equal(await page.locator("#bf-next").isVisible(), true, "an order shows Next");
+      assert.equal(await page.locator("#bf-next").evaluate((n) => n.classList.contains("bf-call")), true, "an order makes Next call");
       await page.locator('#bf-acts [data-act="hq"]').click();
       assert.equal(await page.locator('#bf-acts [data-act="hq"]').getAttribute("aria-pressed"), "false");
       u1 = await page.evaluate(() => window.battlefield.snapshot().units[1]);
@@ -802,8 +802,10 @@ try {
     const ui = await page.locator("#battlefield").getAttribute("data-ui");
     const cdp = await ctx.newCDPSession(page);
     const v = await box(page, "#bf-viewport"),
-      hold = { x: v.x + 40, y: v.y + v.height - 40, id: 1 };
+      // Open ground at the top middle: a finger held on a tank would select it (orders go to it).
+      hold = { x: v.x + v.width / 2, y: v.y + 12, id: 1 };
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [hold] });
+    assert.equal(await page.locator("#bf-order-label").textContent(), "ORDERS · WHOLE SQUAD", "the held finger selected nothing");
     for (const o of ["follow", "retreat"]) {
       const b = await box(page, `[data-order=${o}]`),
         t = { x: b.x + b.width / 2, y: b.y + b.height / 2, id: 2 };
