@@ -349,10 +349,10 @@ try {
       {
         const before = await page.evaluate(() => { const s = window.battlefield.snapshot(); return { route: s.units[1].route.join(), cols: s.board.cols, seed: s.board.seed }; });
         const vs = page.viewportSize();
-        await page.setViewportSize({ width: vs.width, height: vs.height - 30 });
+        await resize(page, { width: vs.width, height: vs.height - 30 });
         await page.waitForTimeout(250);
         const after = await page.evaluate(() => { const s = window.battlefield.snapshot(); return { route: s.units[1].route.join(), cols: s.board.cols, seed: s.board.seed }; });
-        await page.setViewportSize(vs);
+        await resize(page, vs);
         await page.waitForTimeout(250);
         assert.deepEqual(after, before, "planning survives a resize");
       }
