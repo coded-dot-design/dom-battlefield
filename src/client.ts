@@ -191,7 +191,7 @@ function press(el: HTMLElement, fn: () => void) {
     fn();
   }) as EventListener);
   listen(el, "click", () => {
-    if (performance.now() - touched > 800) fn();
+    if (!touched || performance.now() - touched > 800) fn();
     touched = 0;
   });
 }
