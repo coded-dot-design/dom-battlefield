@@ -87,6 +87,16 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.17.1 — Boot screen, back-button guard
+
+- **A boot screen when you open the game directly.** The hub's pink cartridge doors fold open, the grid fades in and lights up square by square, the two HQs draw in, and the BATTLEFIELD sticker (with the DOM VIRUS cartridge skull) slams down and presses in. LOADING gives way to **PRESS START** (click, tap, Enter or Space). Pressing it blasts the key, the sticker breaks up, the header and readouts drop in from the top, the map frame draws in from the top and down the sides, and the location card opens in the middle. Coming from the hub skips the doors (the cartridge already opened them); reduced motion skips the screen.
+- **Back / forward guard.** Leaving the page shuts the game down, so a page the browser brings back with its back / forward buttons can't play. The game notices (on return, or on the first tap, key or focus) and locks itself behind a greyed field with a SOMETHING WENT WRONG · REFRESH sticker and a REFRESH BROWSER key that reloads to the start screen.
+- **Command mode is easy to leave.** It turns your gun off, so firing now hands the gun back. On desktop, Space, right-click or the red GUN OFF · FIGHT key on the map all leave command mode (holding Space keeps firing), and the map gets a violet frame. On phones the Fire key stays when the right rail slides away: about a third smaller, slid right clear of the safe area, its crosshair turned 45° into an x. Tap it to close command mode and shoot.
+- **Launch keys explode like the hub hero's bad guys.** Quick start, Plan battle, Start battle and PRESS START press in and flip to their inverse (light for dark, same hues), then shatter into spinning chunks with a flash, a round shock ring and square debris that falls away. This fixes the red flash, the square outline, and the burst landing off to one side when the layout changed.
+- **Phone toast matches the desktop comms bar** (cyan signal edge, hard base, glow), sits above every key and card, and keeps clear of the header when it shows (setup, planning, menu, after a game over). Overlay stickers replay their slam and press on every entry, and again when you return to a backgrounded tab.
+- The tank on the Move HQ / Move Tanks switch has an ink outline (it no longer melts into its team-colour key), and the plan card's tank badge keeps a base in its own colour, not violet.
+- Size budget 66 KB (64.3 KB used).
+
 ### 0.17.0 — Clear planning, a dramatic launch and steady controls
 
 - **Planning has a visible next step.** Desktop Platoon gets a purple footer with Next; Loadout gets Previous and Next. Existing round shortcuts still work, with compact step labels on phones instead of another footer. The loadout budget guard applies to both routes through the cards.

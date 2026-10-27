@@ -548,6 +548,7 @@ function aimButtons() {
   $("#bf-command").setAttribute("aria-pressed", String(commanding));
   $("#battlefield").classList.toggle("picking", picking);
   $("#battlefield").classList.toggle("commanding", commanding);
+  $(".bf-fire").setAttribute("aria-label", commanding && !planning ? "Leave command mode and fire" : "Hold to fire cannon (auto-aim)");
 }
 function setAim(next: Aim, message?: string) {
   // Desktop: aim and command are one switch, so picking an aim mode leaves command mode.
@@ -627,8 +628,8 @@ function setCommand(on: boolean, pick = true) {
       planning
         ? "Plan your attack: tap a tank, then the map. Check locks the route; the arrow moves on."
         : railLayout.matches
-          ? "Command mode: half speed. Tap a tank to direct it. Tap Command again to fight."
-          : "Command mode: half speed, your gun is off. Direct a tank, then switch back to Auto.",
+          ? "Command mode: half speed, gun off. Tap a tank to direct it. Tap Fire (x) to fight."
+          : "Command mode: half speed, gun off. Direct a tank. Space or right-click to fight.",
     );
   }
   aimButtons();
@@ -2042,6 +2043,8 @@ listen(document, "keydown", ((e: KeyboardEvent) => {
     keys.add(e.code);
   }
   if (!e.repeat) {
+    // Fire wants the gun: Space leaves command mode (hold it to keep firing).
+    if (e.code === "Space" && commanding && !planning) setCommand(false);
     if (e.code === "KeyF") order("follow");
     if (e.code === "KeyR") order("retreat");
     if (e.code === "KeyE") order("advance");
@@ -2084,12 +2087,16 @@ listen(document, "visibilitychange", () => {
 });
 /** Touch identifiers are kept apart from pointer ids (and from -1, "no finger"). */
 const touchKey = (t: Touch) => -2 - t.identifier;
+/** The Fire key in command mode is a close (x): pressing it leaves command mode and fires. */
+const fireExits = (n: HTMLElement) => n.dataset.key === "Space" && commanding && !planning && setCommand(false);
+listen($("#bf-fight"), "click", () => commanding && !planning && setCommand(false));
 for (const n of document.querySelectorAll<HTMLElement>("[data-key]")) {
   n.addEventListener(
     "touchstart",
     (e) => {
       e.preventDefault();
       if (!playing || paused) return;
+      fireExits(n);
       for (const t of e.changedTouches) touch.set(touchKey(t), n.dataset.key!);
       n.classList.add("down");
     },
@@ -2104,6 +2111,7 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-key]")) {
     if (e.pointerType === "touch" && touchEvents) return;
     e.preventDefault();
     if (!playing || paused) return;
+    fireExits(n);
     n.setPointerCapture(e.pointerId);
     touch.set(e.pointerId, n.dataset.key!);
     n.classList.add("down");
@@ -2355,6 +2363,8 @@ for (const type of ["pointerup", "pointercancel"])
     cmdPanel();
   }) as EventListener);
 listen(viewport, "pointerdown", ((e: PointerEvent) => {
+  // Right-click is fire: in command mode it hands the gun back first.
+  if (playing && !paused && !pan && commanding && !planning && e.button === 2) setCommand(false);
   if (
     playing &&
     !paused &&
@@ -2454,6 +2464,60 @@ try {
   if (!localStorage.getItem(INTRO)) installCard(true);
 } catch {}
 checkGate();
+/* Boot screen (decided before first paint, see index.html): doors, a living grid, the HQs, the
+   sticker, then PRESS START. Pressing it blasts the key and builds the page in. */
+const boot = $("#bf-boot");
+if (root.dataset.boot === "on") {
+  const field = boot.querySelector<HTMLElement>(".bf-boot-field")!,
+    tile = parseFloat(getComputedStyle(field).getPropertyValue("--tile")) || 40;
+  glints(field, Math.ceil(innerWidth / tile), Math.ceil(innerHeight / tile));
+  const ready = () => boot.classList.add("ready"),
+    wait = (root.dataset.bootDoors === "off" ? 0 : 650) + 1700;
+  setTimeout(() => (document.readyState === "complete" ? ready() : addEventListener("load", ready, { once: true })), wait);
+  const go = $<HTMLButtonElement>("#bf-boot-go");
+  listen(go, "click", () =>
+    launchEffects.play(go, () => {
+      audio.unlock();
+      boot.classList.add("out");
+      root.dataset.boot = "in";
+      setTimeout(() => {
+        boot.hidden = true;
+        delete root.dataset.boot;
+        delete root.dataset.bootDoors;
+      }, 1500);
+    }),
+  );
+  // Any key starts too, once PRESS START shows.
+  listen(document, "keydown", ((e: KeyboardEvent) => {
+    if (root.dataset.boot === "on" && boot.classList.contains("ready") && (e.code === "Enter" || e.code === "Space")) e.preventDefault(), go.click();
+  }) as EventListener);
+} else boot.hidden = true;
+/* Back / forward: leaving tears the game down (listeners, audio, the view), so a page the browser
+   brings back from its back/forward cache is a shell. Leaving marks the game as torn down; if the
+   page comes back in any way (restored, shown again, touched), it locks with a refresh prompt.
+   These listeners sit outside the game's abort signal, so they outlive the teardown. */
+let tornDown = false;
+window.addEventListener("pagehide", () => (tornDown = true));
+function lockStale() {
+  if (!tornDown || document.querySelector(".bf-stale")) return;
+  const o = document.createElement("section");
+  o.className = "bf-overlay bf-stale";
+  o.dataset.tone = "flag";
+  o.setAttribute("role", "alertdialog");
+  o.setAttribute("aria-label", "Something went wrong: refresh the browser to restart the game");
+  o.innerHTML = `<div class="bf-sticker"><span>SOMETHING WENT WRONG</span><b>REFRESH</b></div><div class="bf-overlay-keys"><button class="bf-start bf-keep-sticker"><span class="bf-start-icon"><svg viewBox="0 0 64 64" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" stroke="#19f0ff" stroke-opacity=".35" /><rect x="1" y="1" width="62" height="62" fill="none" stroke="#19f0ff" stroke-width="2" /><path d="M44 22a15 15 0 1 0 3 14M44 12v10H34" fill="none" stroke="currentColor" stroke-width="5" /></svg></span><b>REFRESH BROWSER</b></button></div>`;
+  o.querySelector("button")!.addEventListener("click", () => location.reload());
+  root.append(o);
+  $("#bf-boot").hidden = true;
+  say("Something went wrong after the browser's back / forward. Refresh to restart the game.");
+  o.querySelector("button")!.focus();
+}
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) tornDown = true;
+  lockStale();
+});
+for (const type of ["pointerdown", "keydown", "focus"]) window.addEventListener(type, lockStale, true);
+document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && lockStale());
 // Small read-only diagnostic contract for lifecycle and command tests.
 Object.defineProperty(window, "battlefield", {
   value: {

@@ -445,7 +445,7 @@ try {
       await page.locator("#bf-start").click();
       assert.equal(await page.locator("#bf-start").evaluate((n) => n.classList.contains("go")), true);
       assert.equal(await page.locator(".bf-launch-burst").count(), 1, "one launch burst is active");
-      assert.ok((await page.locator(".bf-launch-pixel").count()) <= 16, "launch fragments have a hard cap");
+      assert.ok((await page.locator(".bf-launch-bit").count()) <= 16, "launch fragments have a hard cap");
       await page.waitForFunction(() => document.querySelector("#bf-start").hidden);
       await page.waitForFunction(() => !document.querySelector(".bf-launch-burst"), null, { timeout: 1500 });
       assert.equal(await page.locator("#battlefield").getAttribute("data-stage"), "battle");
@@ -477,15 +477,24 @@ try {
       if (mobile) {
         // Touch battle: no header; Command slides the right rail away and Auto stays on.
         assert.equal(await page.locator(".bf-header").isVisible(), false, "no header in battle");
-        const fireAt = (await box(page, ".bf-fire")).x;
+        const fireAt = await box(page, ".bf-fire"), autoAt = (await box(page, "#bf-auto")).x;
         await page.locator("#bf-command").click();
         assert.equal((await cmd(page)).on, true);
         assert.equal(await page.locator("#bf-auto").getAttribute("aria-pressed"), "true", "auto-aim stays on in command mode");
         await page.waitForTimeout(320);
-        assert.ok((await box(page, ".bf-fire")).x > fireAt + 100, "the right rail slides off");
+        assert.ok((await box(page, "#bf-auto")).x > autoAt + 100, "the right rail slides off");
+        const fireCmd = await box(page, ".bf-fire");
+        assert.ok(fireCmd.width < fireAt.width * 0.75 && fireCmd.width > fireAt.width * 0.5, "Fire shrinks by a third");
+        assert.ok(fireCmd.x + fireCmd.width <= (await page.evaluate(() => innerWidth)) && fireCmd.x > fireAt.x, "Fire slides right, on screen");
         assert.equal(await page.locator("#bf-cmd").isVisible(), false, "touch battle: no info card");
         await page.locator("#bf-command").click();
         assert.equal((await cmd(page)).on, false);
+        await page.waitForTimeout(320);
+        // The shrunk Fire (an x) also closes command mode.
+        await page.locator("#bf-command").click();
+        await page.waitForTimeout(320);
+        await page.locator(".bf-fire").click();
+        assert.equal((await cmd(page)).on, false, "Fire leaves command mode");
         await page.waitForTimeout(320);
         // Auto is a switch: off, the gun points where you drive; on again, back to auto.
         await page.locator("#bf-auto").click();
@@ -502,6 +511,15 @@ try {
         await page.locator("#bf-auto").click();
         assert.equal((await cmd(page)).on, false);
         assert.equal(await page.locator("#bf-cmd").isVisible(), false);
+        // Space (fire) and the GUN OFF · FIGHT key both hand the gun back.
+        await page.locator("#bf-command").click();
+        assert.equal(await page.locator("#bf-fight").isVisible(), true, "command mode shows FIGHT");
+        await page.keyboard.press("Space");
+        assert.equal((await cmd(page)).on, false, "Space leaves command mode");
+        await page.locator("#bf-command").click();
+        await page.locator("#bf-fight").click();
+        assert.equal((await cmd(page)).on, false, "FIGHT leaves command mode");
+        assert.equal(await page.locator("#bf-fight").isVisible(), false);
       }
       const before = await page.evaluate(() => window.battlefield.snapshot().units[0]);
       await page.keyboard.down("KeyD");
@@ -854,7 +872,7 @@ try {
     await page.locator("#bf-new-operation").click();
     await page.locator("#bf-quick").click();
     if (mobile) await passGate(page);
-    assert.equal(await page.locator(".bf-launch-pixel").count(), 0, "reduced motion launches without moving fragments");
+    assert.equal(await page.locator(".bf-launch-bit").count(), 0, "reduced motion launches without moving fragments");
     await page.waitForFunction(() => !document.querySelector(".bf-launch-burst"), null, { timeout: 1500 });
     await ctx.close();
     console.log({ overlays: true, compactDesktop: !mobile, reducedLaunch: true });
@@ -924,6 +942,23 @@ try {
     assert.equal(await desk.evaluate(() => window.battlefield.install), null);
     await desk.close();
     console.log({ install: true });
+  }
+  {
+    // Boot screen (?intro forces it in a test browser): PRESS START builds the page in; a page
+    // restored from the back/forward cache asks for a restart instead of running half torn down.
+    where = "boot";
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await page.goto(`${URL}?intro`);
+    await page.waitForFunction(() => window.battlefield);
+    assert.equal(await page.locator("#bf-boot").isVisible(), true, "the boot screen covers the page");
+    await page.locator("#bf-boot-go").waitFor({ state: "visible", timeout: 8000 });
+    await page.locator("#bf-boot-go").click();
+    await page.waitForFunction(() => document.querySelector("#bf-boot").hidden && !document.querySelector("#battlefield").dataset.boot, null, { timeout: 4000 });
+    await page.locator(".bf-mission").first().click();
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    assert.equal(await page.locator(".bf-stale").isVisible(), true, "a restored page offers a restart");
+    await page.close();
+    console.log({ boot: true });
   }
   {
     // Fast clicks right after load count (no key may swallow an early click).

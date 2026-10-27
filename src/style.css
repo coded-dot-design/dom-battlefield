@@ -4186,7 +4186,7 @@ canvas.bf-ico {
 #battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
   left: 50%;
   right: auto;
-  top: calc(60 * var(--u));
+  top: calc(var(--th, calc(60 * var(--u))) + calc(12 * var(--u)));
   bottom: auto;
   translate: -50% calc(-8 * var(--u));
   max-width: calc(100% - var(--sl) - var(--sr) - calc(40 * var(--u)));
@@ -5049,4 +5049,405 @@ canvas.bf-ico {
   80% {
     translate: calc(6 * var(--u)) 0;
   }
+}
+
+/* Move Tanks: the tank is drawn in your team colour on a team-colour key; an ink outline keeps it
+   off the face. */
+#bf-mode-tanks canvas.bf-ico {
+  filter: drop-shadow(1.5px 0 0 var(--rim)) drop-shadow(-1.5px 0 0 var(--rim)) drop-shadow(0 1.5px 0 var(--rim)) drop-shadow(0 -1.5px 0 var(--rim));
+}
+
+/* ---------- Boot screen: doors, a living grid, the sticker, PRESS START ----------
+   Doors fold open (as the hub's cartridge launch), the grid fades in and lights up, the two HQs
+   draw in, the BATTLEFIELD sticker slams down, then LOADING becomes PRESS START. Pressing it
+   blasts the key, the sticker breaks up, and the page builds in: header and readouts drop from the
+   top, the map frame draws in from the top and sides, and the location card opens in the middle. */
+.bf-boot {
+  display: none;
+}
+#battlefield[data-boot] .bf-boot {
+  --t0: 0.65s;
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: calc(22 * var(--u));
+  padding-bottom: 6vh;
+  perspective: 1400px;
+  overflow: hidden;
+  background: var(--bg);
+}
+#battlefield[data-boot-doors="off"] .bf-boot {
+  --t0: 0s;
+}
+.bf-boot-field {
+  position: absolute;
+  inset: 0;
+  --tile: calc(40 * var(--u));
+  background:
+    linear-gradient(color-mix(in srgb, var(--k-sys) 22%, transparent) 1px, transparent 1px) 0 0 / var(--tile) var(--tile),
+    linear-gradient(90deg, color-mix(in srgb, var(--k-sys) 22%, transparent) 1px, transparent 1px) 0 0 / var(--tile) var(--tile),
+    var(--map);
+  opacity: 0;
+  animation: bf-boot-fade 500ms calc(var(--t0) + 0.05s) ease-out both;
+}
+@keyframes bf-boot-fade {
+  to {
+    opacity: 1;
+  }
+}
+/* The two HQs face off across the middle; their dashed squares draw in. */
+.bf-boot-hq {
+  position: absolute;
+  top: 50%;
+  width: calc(64 * var(--u));
+  translate: 0 -50%;
+  overflow: visible;
+}
+.bf-boot-hq[data-side="0"] {
+  left: max(calc(var(--sl) + calc(36 * var(--u))), 7%);
+  color: var(--team-a);
+}
+.bf-boot-hq[data-side="1"] {
+  right: max(calc(var(--sr) + calc(36 * var(--u))), 7%);
+  color: var(--team-b);
+}
+.bf-boot-hq rect:first-child {
+  fill: color-mix(in srgb, currentColor 8%, transparent);
+  stroke: currentColor;
+  stroke-width: 4;
+  stroke-dasharray: 6 4;
+  stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 6px currentColor);
+  animation: bf-boot-draw 700ms calc(var(--t0) + 0.35s) ease-out both;
+}
+@keyframes bf-boot-draw {
+  from {
+    stroke-dasharray: 0 100;
+  }
+  to {
+    stroke-dasharray: 6 4;
+    stroke-dashoffset: 0;
+  }
+}
+.bf-boot-hq :is(.bf-boot-core, text) {
+  opacity: 0;
+  animation: bf-boot-fade 300ms calc(var(--t0) + 0.9s) steps(3) both;
+}
+.bf-boot-core {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 4;
+}
+.bf-boot-hq text {
+  fill: currentColor;
+  font: 800 13px ui-monospace, monospace;
+  letter-spacing: 2px;
+  text-anchor: middle;
+}
+/* The sticker: the DOM VIRUS cartridge skull and the name, slammed in and pressed. */
+#battlefield .bf-boot-sticker {
+  --tone: var(--k-flag);
+  position: relative;
+  z-index: 2;
+  grid-template-columns: auto auto;
+  grid-template-areas: "icon kicker" "icon name";
+  column-gap: calc(14 * var(--u));
+  align-items: center;
+  justify-items: start;
+  padding: calc(10 * var(--u)) calc(22 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u));
+  animation-delay: calc(var(--t0) + 0.75s);
+}
+.bf-boot-sticker .bf-start-icon {
+  grid-area: icon;
+  color: var(--k-sys);
+}
+.bf-boot-sticker .bf-start-icon svg {
+  display: block;
+  width: calc(58 * var(--u));
+  height: calc(58 * var(--u));
+  padding: calc(3 * var(--u));
+  background: #10233f;
+  border-radius: calc(6 * var(--u));
+}
+.bf-boot-sticker span:not(.bf-start-icon) {
+  grid-area: kicker;
+  align-self: end;
+}
+.bf-boot-sticker b {
+  grid-area: name;
+}
+/* LOADING (with ticking dots) until the page is ready, then PRESS START. */
+.bf-boot-status {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font: 800 calc(11 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(4 * var(--u));
+  color: var(--k-sys-ink);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--k-sys) 60%, transparent);
+  opacity: 0;
+  animation: bf-boot-fade 200ms calc(var(--t0) + 0.4s) steps(2) both;
+}
+.bf-boot-status i::after {
+  content: "";
+  display: inline-block;
+  width: 3ch;
+  text-align: left;
+  animation: bf-boot-dots 1s steps(4) infinite;
+}
+@keyframes bf-boot-dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+#battlefield .bf-boot #bf-boot-go {
+  position: relative;
+  z-index: 2;
+  left: auto;
+  bottom: auto;
+  translate: none;
+  display: none;
+  width: calc(150 * var(--u));
+  height: calc(84 * var(--u));
+  align-content: center;
+  gap: calc(6 * var(--u));
+  border-width: calc(3 * var(--u));
+  border-radius: calc(12 * var(--u));
+}
+#bf-boot-go .bf-start-icon svg {
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+}
+#bf-boot-go b {
+  font-size: calc(11 * var(--u));
+  letter-spacing: calc(2 * var(--u));
+  animation: bf-blink 1s steps(2) infinite;
+}
+.bf-boot.ready .bf-boot-status {
+  display: none;
+}
+#battlefield .bf-boot.ready #bf-boot-go {
+  display: grid;
+  animation: bf-boot-pop 380ms var(--spring) both;
+}
+@keyframes bf-boot-pop {
+  from {
+    scale: 0.4;
+    opacity: 0;
+  }
+}
+/* The doors: the hub's pink hatched covers, folding open from the middle. */
+.bf-boot-door {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: repeating-linear-gradient(135deg, #0000 0 14px, #ffffff14 14px 17px), var(--k-attack);
+  border: 3px solid var(--rim);
+  animation: bf-boot-door 620ms 120ms cubic-bezier(0.6, 0, 0.3, 1) both;
+}
+.bf-boot-door[data-side="l"] {
+  left: 0;
+  transform-origin: 0 50%;
+  --fold: -100deg;
+}
+.bf-boot-door[data-side="r"] {
+  right: 0;
+  transform-origin: 100% 50%;
+  --fold: 100deg;
+}
+@keyframes bf-boot-door {
+  to {
+    transform: rotateY(var(--fold));
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+#battlefield[data-boot-doors="off"] .bf-boot-door {
+  display: none;
+}
+/* Out: the field fades, the sticker breaks up. */
+#battlefield[data-boot] .bf-boot.out {
+  background: transparent;
+  pointer-events: none;
+}
+.bf-boot.out :is(.bf-boot-field, .bf-boot-hq) {
+  animation: bf-boot-out 520ms ease-in both;
+}
+#battlefield .bf-boot.out .bf-boot-sticker {
+  animation: bf-boot-break 520ms cubic-bezier(0.5, 0, 0.8, 0.4) both;
+}
+@keyframes bf-boot-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes bf-boot-break {
+  from {
+    scale: 1;
+    opacity: 1;
+    filter: none;
+  }
+  35% {
+    scale: 1.08;
+    filter: brightness(1.8);
+  }
+  to {
+    scale: 1.5;
+    opacity: 0;
+    filter: blur(6px) brightness(2);
+  }
+}
+/* The page under the boot screen waits off-stage, then builds in. */
+#battlefield[data-boot] :is(.bf-header, .bf-topline, .bf-loc, .bf-stage, .bf-mini) {
+  transition:
+    translate 560ms cubic-bezier(0.2, 0.9, 0.3, 1.15),
+    opacity 420ms ease-out,
+    scale 520ms var(--spring),
+    border-color 300ms 380ms,
+    box-shadow 300ms 380ms;
+}
+#battlefield[data-boot="on"] :is(.bf-header, .bf-topline) {
+  translate: 0 -120%;
+  opacity: 0;
+}
+#battlefield[data-boot="on"] .bf-stage {
+  border-color: transparent;
+  box-shadow: none;
+}
+#battlefield[data-boot="on"] .bf-loc {
+  opacity: 0;
+  scale: 0.4;
+}
+#battlefield[data-boot="in"] .bf-loc {
+  transition-delay: 520ms;
+}
+#battlefield[data-boot="in"] .bf-topline {
+  transition-delay: 90ms;
+}
+/* The map frame draws in from the top, down both sides. */
+#battlefield[data-boot="in"] .bf-stage::after {
+  content: "";
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  border: 2px solid var(--k-sys);
+  border-radius: inherit;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--k-sys) 50%, transparent), inset 0 0 16px color-mix(in srgb, var(--k-sys) 30%, transparent);
+  pointer-events: none;
+  animation: bf-frame 900ms ease-out both;
+}
+@keyframes bf-frame {
+  0% {
+    clip-path: inset(0 50% 100% 50%);
+    opacity: 1;
+  }
+  45% {
+    clip-path: inset(0 0 100% 0);
+  }
+  80% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+}
+.bf-stale { z-index: 80; }
+/* The plan card's tank badge is a platoon key: its base is its own colour (your team, or its
+   health tone), deep, never the command violet. */
+#battlefield .bf-card .bf-fold-key.bf-unit {
+  --edge: color-mix(in srgb, var(--c) 45%, var(--rim));
+}
+
+/* Phone toast: the desktop comms bar's look (a cyan signal edge, square corners, a hard base),
+   above every key and card, and never under the header while the header shows. */
+#battlefield[data-ui="touch"] .bf-footer {
+  z-index: 34;
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  border: calc(1.5 * var(--u)) solid var(--line);
+  border-left: calc(4 * var(--u)) solid var(--k-sys);
+  border-radius: calc(7 * var(--u));
+  box-shadow: 0 calc(3 * var(--u)) 0 var(--rim), 0 0 calc(18 * var(--u)) color-mix(in srgb, var(--k-sys) 22%, transparent);
+}
+#battlefield[data-ui="touch"]:is(.menu-open, :not([data-stage="battle"])):has(.bf-overlay:not([hidden])) .bf-footer,
+#battlefield[data-ui="touch"].menu-open .bf-footer {
+  top: calc(var(--th, calc(60 * var(--u))) + calc(12 * var(--u)));
+  bottom: auto;
+}
+#battlefield:has(.bf-stale:not([hidden])) .bf-footer { z-index: 81; }
+
+/* Command mode reads at a glance: a violet frame on the map, and on desktop a red FIGHT key
+   (Space or right-click also hands the gun back). */
+#battlefield.commanding[data-stage="battle"] #bf-viewport {
+  outline: 2px solid var(--k-cmd);
+  outline-offset: -2px;
+}
+#bf-fight {
+  --c: var(--k-fire);
+  position: absolute;
+  z-index: 9;
+  left: 50%;
+  bottom: 18px;
+  translate: -50% 0;
+  grid-auto-flow: column;
+  gap: 8px;
+  padding: 7px 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+#bf-fight svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+#battlefield:not(.commanding) #bf-fight,
+#battlefield:not([data-stage="battle"]) #bf-fight,
+#battlefield[data-ui="touch"] #bf-fight {
+  display: none;
+}
+/* Phone: in command mode Fire stays, a third smaller, slid right clear of the safe area, and its
+   crosshair turns 45° into an x. Press it to close command mode and shoot. */
+#battlefield[data-ui="touch"][data-stage="battle"] .bf-fire {
+  transition: translate 240ms ease, right 240ms ease, width 240ms ease, height 240ms ease, transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+#battlefield[data-ui="touch"][data-stage="battle"] .bf-fire svg {
+  transition: rotate 240ms ease;
+}
+#battlefield[data-ui="touch"][data-stage="battle"] .bf-fire circle {
+  transition: opacity 160ms ease;
+}
+#battlefield[data-ui="touch"][data-stage="battle"].commanding .bf-fire {
+  translate: 0 0;
+  right: calc(var(--sr) + calc(12 * var(--u)));
+  width: calc(60 * var(--u));
+  height: calc(60 * var(--u));
+  opacity: 1;
+  filter: none;
+}
+#battlefield[data-ui="touch"][data-stage="battle"].commanding .bf-fire svg {
+  rotate: 45deg;
+}
+#battlefield[data-ui="touch"][data-stage="battle"].commanding .bf-fire circle {
+  opacity: 0;
 }

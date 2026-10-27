@@ -31,6 +31,16 @@ export function createBattleOverlays(root: HTMLElement, viewport: HTMLElement, s
     if (focus && previous?.isConnected && previous.getClientRects().length) previous.focus({ preventScroll: true });
     previous = null;
   }
+  /** Restart the slam and press on every entry (and on return to a backgrounded tab). Clearing
+   *  the animation with a reflow restarts it everywhere, Safari included. */
+  function slam() {
+    const sticker = current?.querySelector<HTMLElement>(".bf-sticker");
+    if (!sticker) return;
+    sticker.style.animation = "none";
+    void sticker.offsetWidth;
+    sticker.style.animation = "";
+  }
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && slam(), { signal });
   function schedule() {
     if (current && !frame) frame = requestAnimationFrame(layout);
   }
@@ -64,11 +74,7 @@ export function createBattleOverlays(root: HTMLElement, viewport: HTMLElement, s
       overlay.setAttribute("aria-modal", "true");
       mask();
       layout();
-      // Rewind the same approved slam on every entry, including repeated GAME OVER screens.
-      for (const animation of overlay.querySelector(".bf-sticker")?.getAnimations() ?? []) {
-        animation.currentTime = 0;
-        animation.play();
-      }
+      slam();
       overlay.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
     },
   };

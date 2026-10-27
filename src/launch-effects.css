@@ -1,4 +1,4 @@
-/* The launch uses Battlefield's own cap, hard edges and square debris. One burst at a time. */
+/* The launch: the key shatters like the hub hero's bad guys. One burst at a time. */
 .bf-launch-burst {
   position: fixed;
   z-index: 29;
@@ -6,37 +6,25 @@
   pointer-events: none;
   user-select: none;
 }
-#battlefield .bf-launch-cap {
+
+.bf-launch-flash,
+.bf-launch-ring,
+.bf-launch-bit {
   position: absolute;
-  inset: 0;
-  min-height: 0;
-  margin: 0;
-  translate: none;
-  rotate: none;
-  scale: none;
-  transform: none;
-  transition: none;
-  animation: none;
-  z-index: 1;
-  pointer-events: none;
-}
-.bf-launch-cap.bf-launch-impact {
-  background: var(--k-fire) !important;
-}
-.bf-launch-ring {
-  position: absolute;
-  inset: 8%;
-  border: 2px solid var(--k-sys);
-  border-radius: 2px;
   z-index: 2;
   pointer-events: none;
 }
-.bf-launch-pixel {
-  position: absolute;
-  width: var(--pixel);
-  height: var(--pixel);
+.bf-launch-flash {
+  border-radius: 50%;
+  background: var(--tone);
+}
+.bf-launch-ring {
+  border-radius: 50%;
+  border: 3px solid var(--tone);
+}
+.bf-launch-bit {
   z-index: 3;
-  pointer-events: none;
+  background: var(--tone);
 }
 #battlefield .bf-igniting {
   opacity: 0;

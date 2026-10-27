@@ -22,4 +22,4 @@ console.log(`Total: ${total} gzip bytes`);
 // (sprite-drawn icons, readable card type, dice, emblems, safe-area HQs); 57.5 KB in 0.16.1
 // (desktop controls, overlays and planning cards); 61.5 KB in 0.17.0 (accessible card navigation,
 // bounded launch effects, modal lifecycle and compact desktop platoon). No runtime dependencies.
-if (total > 61500) throw Error("61.5KB compressed app budget exceeded");
+if (total > 66000) throw Error("66KB compressed app budget exceeded");
