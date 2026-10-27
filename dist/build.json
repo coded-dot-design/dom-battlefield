@@ -1,9 +1,9 @@
 {
-  "version": "0.15.4",
+  "version": "0.15.5",
   "files": {
-    "index.html": "0bf48e598dc4ddff68e6e1cf1cbf0f1754764636a9f19bcd75939d4e114ec547",
-    "assets/battlefield.js": "c8c5c980e6d7fe569a7d520341bcf62761d89379514798a6fa4144a3ef7a5699",
-    "assets/battlefield.css": "1c9c7e075c8ade548c238b3b150d1c4458ca619e62db0b90c8349cb90e9133ea",
+    "index.html": "acae9e13e8ec77a8a97b0fd190f1296cb4462dfbeabfe314eb407d0661c43d02",
+    "assets/battlefield.js": "a060f640756e4c89ac4aa18e8ef7fda9b5e7abf99b29b90a48e38b8dd70555b1",
+    "assets/battlefield.css": "6a128d93c809858e078c1ed168a512ad5e0a83ef8aca166d3de4a84a8058a8e1",
     "manifest.webmanifest": "c5bd5094544882f623a50298b23d2675a8ae13a80ceb061c3d2a2ddc2ad7872d",
     "icon.svg": "01820cbcdcbacf3f2e95715b792da41e857d88ecc0259af6aa8409bdbe9a1e93",
     "icon-180.png": "4b5fe83e31b26e00ee2914ee7b0c67cb0ae7be7f756052db6bfb7d20726431df",

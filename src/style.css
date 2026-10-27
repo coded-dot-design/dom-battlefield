@@ -4668,3 +4668,18 @@ canvas.bf-ico {
   bottom: auto;
 }
 .bf-act-next { isolation: isolate; }
+/* The bottom grab has no look in any state (hover, press, focus). */
+#battlefield .bf-card .bf-card-size,
+#battlefield .bf-card .bf-card-size:hover,
+#battlefield .bf-card .bf-card-size:active,
+#battlefield .bf-card .bf-card-size:focus-visible {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  outline: none;
+  transform: none;
+}
+/* Battle keys take every touch as a key press: a second finger on one must not start a pinch. */
+#battlefield[data-active="true"] :is(#bf-controls, .bf-aim, .bf-map-tools) button {
+  touch-action: none;
+}

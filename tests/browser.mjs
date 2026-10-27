@@ -602,6 +602,32 @@ try {
         await page.waitForTimeout(100);
         await page.mouse.up();
         assert.ok(await page.evaluate(() => window.battlefield.snapshot().units[0].cooldown > 0), "touch fire works");
+        // Two fingers: hold the stick, and the right-rail keys still answer (phones send no
+        // click for a second touch).
+        {
+          const cdp = await page.context().newCDPSession(page);
+          const st = await box(page, "#bf-stick"),
+            stick = { x: st.x + st.width / 2, y: st.y + st.height / 2, id: 1 };
+          const tap2 = async (sel) => {
+            const b = await box(page, sel),
+              t = { x: b.x + b.width / 2, y: b.y + b.height / 2, id: 2 };
+            await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [stick, t] });
+            // CDP touchEnd lists the fingers that lift: only the key finger.
+            await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [t] });
+            await page.waitForTimeout(120);
+          };
+          await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [stick] });
+          await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...stick, x: stick.x + 30 }] });
+          stick.x += 30;
+          const auto0 = await page.locator("#bf-auto").getAttribute("aria-pressed");
+          await tap2("#bf-auto");
+          assert.notEqual(await page.locator("#bf-auto").getAttribute("aria-pressed"), auto0, "Auto answers while driving");
+          await tap2("#bf-auto");
+          await tap2("[data-order=retreat]");
+          assert.ok(await squad("retreat"), "orders answer while driving");
+          await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+          await cdp.detach();
+        }
       }
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.screenshot({ path: `artifacts/battle-${mobile ? "mobile" : "desktop"}-${light ? "light" : "dark"}.png` });

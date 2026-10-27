@@ -135,6 +135,28 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
 function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
+/** A key that works while another finger is down (driving with the stick): phones send no
+ *  click for a second touch, so on touch the key acts on release over it; the click that may
+ *  follow is ignored. Mouse and keyboard still use click. */
+function press(el: HTMLElement, fn: () => void) {
+  let id = -1,
+    at = 0;
+  listen(el, "pointerdown", ((e: PointerEvent) => {
+    if (e.pointerType === "touch") id = e.pointerId;
+  }) as EventListener);
+  listen(el, "pointerup", ((e: PointerEvent) => {
+    if (e.pointerId !== id) return;
+    id = -1;
+    const r = el.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    at = performance.now();
+    fn();
+  }) as EventListener);
+  listen(el, "pointercancel", () => (id = -1));
+  listen(el, "click", () => {
+    if (performance.now() - at > 700) fn();
+  });
+}
 let toastTimer = 0;
 function say(text: string) {
   if (announcement.textContent === text) return;
@@ -1360,8 +1382,8 @@ function picker(sel: string, attr: string, apply: (v: string) => void) {
 }
 picker("#bf-side", "side", (v) => (side = Number(v)));
 picker("#bf-size", "size", (v) => (per = Number(v)));
-listen($("#bf-auto"), "click", autoAim);
-listen($("#bf-target"), "click", startPick);
+press($("#bf-auto"), autoAim);
+press($("#bf-target"), startPick);
 picker("#bf-formation", "formation", (v) => (formation = v));
 listen($("#bf-loadout"), "click", ((e: MouseEvent) => {
   const b = (e.target as Element).closest<HTMLElement>("[data-role]");
@@ -1630,7 +1652,7 @@ listen(document, "contextmenu", (e) => {
   if (playing) e.preventDefault();
 });
 // Touch: the menu pauses and drops the header in; tap it again (or resume) to play on.
-listen($("#bf-squad"), "click", () => {
+press($("#bf-squad"), () => {
   const open = !root.classList.contains("menu-open");
   if (open) setPause(true);
   setMenu(open);
@@ -1658,8 +1680,8 @@ listen($("#bf-coach"), "click", ((e: MouseEvent) => {
     } catch {}
   coach(false);
 }) as EventListener);
-listen($("#bf-pause"), "click", () => setPause(!paused));
-listen($("#bf-command"), "click", () => {
+press($("#bf-pause"), () => setPause(!paused));
+press($("#bf-command"), () => {
   // While planning, Command brings a hidden card back; in battle it toggles command mode.
   if (planning) return (cmdHidden = false), cmdPanel();
   setCommand(!commanding);
@@ -1699,14 +1721,14 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-mode]"))
     say(hqPick ? "Move HQ: tap behind the dashed line, or drag your HQ. Your platoon moves with it." : "Move Tanks: tap a tank, then pick an order.");
     cmdPanel();
   });
-listen($("#bf-pan"), "click", () => setPan(!pan));
-listen($("#bf-center"), "click", () => {
+press($("#bf-pan"), () => setPan(!pan));
+press($("#bf-center"), () => {
   follow = true;
   view.center();
   say("Camera following your tank.");
 });
 for (const n of document.querySelectorAll<HTMLElement>("[data-order]"))
-  listen(n, "click", () => order(n.dataset.order as Order));
+  press(n, () => order(n.dataset.order as Order));
 listen(document, "keydown", ((e: KeyboardEvent) => {
   if ((e.target as Element).matches("input,select,textarea")) return;
   if (!playing) return;

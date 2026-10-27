@@ -73,6 +73,11 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.5 — Keys work while you drive
+
+- Every rail key (Auto, Lock, the order diamond, Command, Center, Pan, menu, flag) now answers a second finger while your thumb is on the stick; before, phones only let Fire through.
+- The invisible card grab has no hover outline on desktop.
+
 ### 0.15.4 — Steady keys
 
 - The route check no longer jumps on hover or press: it presses into its base like every key, and once the route is locked it rests pressed and ignores taps.
