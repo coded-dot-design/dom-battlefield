@@ -643,6 +643,22 @@ try {
     console.log({ install: true });
   }
   {
+    // A narrow desktop window (no touch) gets the phone layout; the rails still fit side by side.
+    where = "narrow";
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(URL);
+    await page.waitForFunction(() => window.battlefield);
+    await page.locator(".bf-mission").first().click();
+    await page.locator("#bf-deploy").click();
+    await page.locator("#bf-start").click();
+    const [l, r] = await page.evaluate(() => [document.querySelector("#bf-stick").getBoundingClientRect().right, document.querySelector(".bf-fire").getBoundingClientRect().left]);
+    assert.ok(l < r, `rails don't overlap at 390px: ${l} < ${r}`);
+    await page.locator("#bf-pause").click();
+    assert.equal(await page.evaluate(() => window.battlefield.paused), true);
+    await page.close();
+    console.log({ narrow: true });
+  }
+  {
     // Theme and sound are remembered across reloads (theme shared with the DOM VIRUS site).
     where = "prefs";
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

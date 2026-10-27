@@ -2737,7 +2737,7 @@ circle.bf-grab[data-stop] {
   --sky: #5fd4ff;
 }
 #battlefield[data-ui="touch"] {
-  --u: clamp(0.7px, calc(100dvh / 390), 1.3px);
+  --u: clamp(0.7px, min(calc(100dvh / 390), calc(100dvw / 844)), 1.3px);
   /* Left rail content starts after the notch; the right column centre sits this far in. */
   --lx: calc(var(--sl) + calc(20 * var(--u)));
   --rc: calc(var(--sr) + calc(83 * var(--u)));

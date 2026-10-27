@@ -73,6 +73,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.14.1 — Narrow windows
+
+- The phone layout scales by width as well as height, so a narrow desktop window keeps both rails side by side (the white flag was covered at 390px wide).
+
 ### 0.14.0 — The redesigned flow: setup, plan, battle
 
 - **Setup:** an empty field with the two HQs until you pick a place. A location card with a terrain thumbnail per place; picking one shows its ground and opens Terrain under it (Light by default; the dice rolls a new layout without changing the density). Two sticker keys: Quick start (rolls anything not picked) and Plan battle.
