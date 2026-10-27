@@ -73,6 +73,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.6 — First click counts
+
+- Fix: on desktop a key clicked in the first moments after the page loaded could be ignored (0.15.5).
+
 ### 0.15.5 — Keys work while you drive
 
 - Every rail key (Auto, Lock, the order diamond, Command, Center, Pan, menu, flag) now answers a second finger while your thumb is on the stick; before, phones only let Fire through.

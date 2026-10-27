@@ -691,6 +691,20 @@ try {
     console.log({ install: true });
   }
   {
+    // Fast clicks right after load count (no key may swallow an early click).
+    where = "fast";
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(URL);
+    await page.waitForFunction(() => window.battlefield);
+    await page.locator(".bf-mission").first().click();
+    await page.locator("#bf-deploy").click();
+    await page.locator("#bf-start").click();
+    await page.locator("[data-order=follow]").click();
+    assert.ok(await page.evaluate(() => window.battlefield.snapshot().units.filter((u) => u.side === 0 && u.id !== 0).every((u) => u.order === "follow")), "an early click is not dropped");
+    await page.close();
+    console.log({ fast: true });
+  }
+  {
     // A narrow desktop window (no touch) gets the phone layout; the rails still fit side by side.
     where = "narrow";
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });

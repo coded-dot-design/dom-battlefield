@@ -140,7 +140,7 @@ function listen(target: EventTarget, type: string, fn: EventListener) {
  *  follow is ignored. Mouse and keyboard still use click. */
 function press(el: HTMLElement, fn: () => void) {
   let id = -1,
-    at = 0;
+    at = -Infinity;
   listen(el, "pointerdown", ((e: PointerEvent) => {
     if (e.pointerType === "touch") id = e.pointerId;
   }) as EventListener);
