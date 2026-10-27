@@ -1301,6 +1301,14 @@ function pickMission(i: number) {
   const terrain = $("#bf-terrain");
   document.querySelectorAll(".bf-mission")[i]!.after(terrain);
   terrain.hidden = false;
+  // The card is full height and scrolls: bring the picked place and its Terrain into view.
+  requestAnimationFrame(() => {
+    const list = $("#bf-missions"),
+      bottom = terrain.offsetTop + terrain.offsetHeight - list.offsetTop,
+      top = (terrain.previousElementSibling as HTMLElement).offsetTop - list.offsetTop;
+    if (bottom > list.scrollTop + list.clientHeight || top < list.scrollTop)
+      list.scrollTo({ top: Math.max(0, Math.min(top - 4, bottom - list.clientHeight + 8)), behavior: reduced.matches ? "instant" : "smooth" });
+  });
   $("#bf-go").hidden = false;
   preview();
   say(MISSIONS[i]!.brief);
@@ -1447,6 +1455,27 @@ function dragCard(card: HTMLElement) {
       from = null;
       void e;
     }) as EventListener);
+}
+/* The yellow handle on a card's bottom edge: drag it up to make the card shorter (down to 30% of
+   the window) and see more of the field; drag down to give it the full height again. */
+for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
+  const card = h.parentElement!;
+  let from: { y: number; h: number; max: number } | null = null;
+  listen(h, "pointerdown", ((e: PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const host = card.offsetParent as HTMLElement | null;
+    from = { y: e.clientY, h: card.offsetHeight, max: (host?.clientHeight ?? innerHeight) - card.offsetTop - 12 };
+    try {
+      h.setPointerCapture(e.pointerId);
+    } catch {}
+  }) as EventListener);
+  listen(h, "pointermove", ((e: PointerEvent) => {
+    if (!from) return;
+    const next = Math.max(innerHeight * 0.3, Math.min(from.max, from.h + e.clientY - from.y));
+    card.style.height = `${next.toFixed(0)}px`;
+  }) as EventListener);
+  for (const t of ["pointerup", "pointercancel"]) listen(h, t, () => (from = null));
 }
 function undrag() {
   for (const c of document.querySelectorAll<HTMLElement>("[data-moved]")) {

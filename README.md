@@ -73,6 +73,13 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 
 MIT · Chris Cooley / coded.design
 
+### 0.15.1 — Full-height cards
+
+- Location, Platoon and Loadout cards run the full height of the field (with a margin) and scroll; drag the yellow handle on the bottom edge to make one shorter (down to 30% of the window).
+- A little more type and key height across the cards; cards are wider. The picked squad size sits in a solid dark box. On phones the side keys are just a bigger tank. Line and Column show three tanks, Wedge four.
+- START BATTLE moves into the open space beside an open card; the white flag sits in the bottom corner on your side. The plan toast sits at the top of the open space. Picking a place scrolls its Terrain panel into view.
+- Desktop: big squads (8 or 12) get narrower platoon keys, so the bottom bar no longer overlaps.
+
 ### 0.15.0 — Readable cards, real icons, safe-area HQs
 
 - **Icons from the game's own Sherman sprite**, in your team colour: Platoon (three tanks in a wedge), Loadout (a heavy tank and its weight classes), Plan (a tank, its dashed route and the flag), plus tank keys for sides, formations (the four tanks in wedge, line or column; you are the yellow one) and loadout sizes.

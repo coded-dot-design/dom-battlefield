@@ -71,11 +71,11 @@ function paint(c: CanvasRenderingContext2D, kind: string, k: Colors) {
     c.fillStyle = k.ink;
     c.fillRect(81, 17, 13, 1);
   } else if (kind.startsWith("f-")) {
-    // Formations: four small tanks heading right, as they deploy (you are the brighter one).
+    // Formations heading right, as they deploy: a wedge of four; line and column read as three.
     const at: Record<string, [number, number][]> = {
       "f-wedge": [[46, 22], [30, 9], [30, 35], [13, 22]],
-      "f-line": [[28, 6], [28, 17], [28, 28], [28, 39]],
-      "f-column": [[50, 22], [36, 22], [22, 22], [8, 22]],
+      "f-line": [[30, 8], [30, 22], [30, 36]],
+      "f-column": [[46, 22], [30, 22], [14, 22]],
     };
     for (const [i, [x, y]] of at[kind]!.entries()) tank(x, y, 0, i === 0 ? k.yellow : k.team, 0.5);
   } else if (kind in SCALE) tank(16, 16, 0, k.team, SCALE[kind]);
