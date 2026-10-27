@@ -171,11 +171,13 @@ function flash(el: HTMLElement) {
 /** A key that works while another finger is down (driving with the stick or held keys): touch
  *  presses act the moment the finger lands, like Fire. Mouse and keyboard use click. */
 function press(el: HTMLElement, fn: () => void) {
+  let touched = 0;
   el.addEventListener(
     "touchstart",
     (e) => {
-      if (!e.cancelable) return; // the click that follows will act
-      e.preventDefault();
+      // A touch that can't be cancelled may still send a click: this key skips that one.
+      if (e.cancelable) e.preventDefault();
+      else touched = performance.now();
       flash(el);
       fn();
     },
@@ -188,7 +190,10 @@ function press(el: HTMLElement, fn: () => void) {
     swallowId = e.pointerId;
     fn();
   }) as EventListener);
-  listen(el, "click", () => fn());
+  listen(el, "click", () => {
+    if (performance.now() - touched > 800) fn();
+    touched = 0;
+  });
 }
 let toastTimer = 0;
 function say(text: string) {
