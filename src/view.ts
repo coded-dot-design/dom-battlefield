@@ -249,6 +249,10 @@ export class View {
     return { x: this.ox + p.x * this.tile - this.sl, y: this.oy + p.y * this.tile - this.st };
   }
   location(e: { clientX: number; clientY: number }) {
+    // One fresh read per pointer event: the page (or a card) may have moved the field since.
+    const v = this.viewport.getBoundingClientRect();
+    this.vx = v.left;
+    this.vy = v.top;
     return {
       x: (e.clientX - this.vx - this.ox + this.sl) / this.tile,
       y: (e.clientY - this.vy - this.oy + this.st) / this.tile,
@@ -302,7 +306,9 @@ export class View {
       });
     }
     for (const u of s.units) {
-      const v = this.units.get(u.id)!;
+      const v = this.units.get(u.id);
+      // A frame can land just as the map is rebuilt (a new squad size): skip unknown tanks.
+      if (!v) continue;
       const alive = u.hp > 0;
       if (v.alive !== alive) {
         v.alive = alive;

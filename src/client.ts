@@ -13,7 +13,9 @@ import {
   plot,
   moveBase,
   hqLimit,
+  scatterHq,
 } from "./model";
+import { drawIcons, dieFace, rollDie } from "./icons";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
 import type { RouteLine } from "./view";
@@ -307,6 +309,24 @@ function mapSize() {
       : Math.floor(viewport.clientWidth / unit);
   return { cols: Math.max(18, Math.min(48, cols)), rows: Math.max(14, Math.min(30, rows)) };
 }
+/** The screen's safe-area insets (notch, camera, rounded corners), read once per layout. */
+let safe = { l: 0, r: 0, t: 0, b: 0 };
+function readSafe() {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:fixed;visibility:hidden;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)";
+  document.body.append(probe);
+  const c = getComputedStyle(probe);
+  safe = { l: parseFloat(c.paddingLeft) || 0, r: parseFloat(c.paddingRight) || 0, t: parseFloat(c.paddingTop) || 0, b: parseFloat(c.paddingBottom) || 0 };
+  probe.remove();
+}
+readSafe();
+/** HQ columns from the edge: 2 on desktop; on touch, past the safe area plus a finger's width. */
+function hqInset(cols: number, rows: number) {
+  if (!railLayout.matches) return 2;
+  const tile = Math.min(viewport.clientWidth / cols, viewport.clientHeight / rows) || 20;
+  return Math.max(4, Math.ceil((Math.max(safe.l, safe.r) + 18) / tile) + 1);
+}
 function preview(resized = false) {
   // Setup, or a strategy change during the plan step (same seed, so the same ground).
   if (playing && !planning) return;
@@ -318,7 +338,11 @@ function preview(resized = false) {
   if (resized && planning && state && state.board.cols === cols && state.board.rows === rows) return fit();
   view?.destroy();
   $("#bf-roster").replaceChildren();
-  const b = generate(cols, rows, mission, seed, density);
+  // Phones: the HQs (and the platoons in front of them) sit far enough in from the edges to
+  // clear the notch, so every tank can be tapped. The enemy HQ moves round its own zone.
+  const inset = hqInset(cols, rows),
+    b = generate(cols, rows, mission, seed, density, inset);
+  scatterHq(b, 1 - side, seed, inset);
   if (hqMove && hqMove.key === mapKey()) moveBase(b, side, hqMove.cell);
   state = createBattle(
     b,
@@ -344,6 +368,11 @@ function preview(resized = false) {
   root.classList.toggle("bf-over", over);
   for (const n of document.querySelectorAll<HTMLElement>("[data-badge=per]")) n.textContent = String(per);
   for (const n of document.querySelectorAll<HTMLElement>("[data-badge=pts]")) n.textContent = String(cost);
+  for (const slot of document.querySelectorAll<HTMLElement>("[data-slot]")) {
+    const pips = slot.querySelector<HTMLElement>(".bf-pips")!,
+      n = String(PIPS[roles[Number(slot.dataset.slot)]!] ?? 2);
+    if (pips.dataset.n !== n) (pips.dataset.n = n), (pips.innerHTML = "<s></s>".repeat(Number(n)));
+  }
   for (const n of document.querySelectorAll<HTMLElement>("[data-slot] [data-role]"))
     n.setAttribute(
       "aria-pressed",
@@ -358,6 +387,7 @@ function preview(resized = false) {
         ? "HOLD CROSSROADS / 45s"
         : "ELIMINATE OPPOSING PLATOON";
   remember();
+  drawIcons(root);
   updateHUD();
   if (planning) {
     selected = -1;
@@ -494,6 +524,7 @@ function setCommand(on: boolean, pick = true) {
     draft = null;
     $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
     $("#bf-cmd").hidden = true;
+    if (!planning) follow = true;
   } else {
     if (selected < 0 && pick) nextTank();
     say(
@@ -617,6 +648,7 @@ function startBattle() {
   $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
   setCommand(false);
   setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
+  follow = true;
   syncUi();
   fit();
   view.center();
@@ -724,7 +756,8 @@ function cmdPanel() {
 }
 /** The orders bubble rides above the selected tank; the check rides beside its flag. Positions
  *  come from the cached view geometry, so this costs no layout reads. */
-let actsWidth = 0;
+let actsWidth = 0,
+  actsHeight = 0;
 function rideAlong() {
   const acts = $("#bf-acts"),
     check = $("#bf-check"),
@@ -751,15 +784,22 @@ function rideAlong() {
   const p = view.toStage(u!),
     W = view.vw,
     H = view.vh,
-    bw = (actsWidth ||= acts.offsetWidth) || 100;
-  // Above the tank and above its yellow hint label, kept on screen.
-  const x = Math.max(bw / 2 + 6, Math.min(W - bw / 2 - 6, p.x)),
-    y = Math.max(44, Math.min(H - 8, p.y - view.tile * 0.5 - 26));
+    bw = (actsWidth ||= acts.offsetWidth) || 100,
+    bh = (actsHeight ||= acts.offsetHeight) || 30,
+    // Keep clear of the notch, the screen edges and (on the right) the Next key.
+    lo = safe.l + 10 + bw / 2,
+    hi = W - safe.r - 10 - bw / 2 - 40;
+  // Above the tank and its yellow hint label; below the tank when that would leave the screen.
+  const above = p.y - view.tile * 0.5 - 26,
+    below = above - bh < 8;
+  const x = Math.max(lo, Math.min(hi, p.x)),
+    y = below ? Math.min(H - 8 - bh, p.y + view.tile * 0.7) : Math.min(H - 8, above);
+  acts.classList.toggle("below", below);
   acts.style.transform = `translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;
   if (stops) {
     const end = point(state.board, stops.at(-1)!),
       q = view.toStage(end);
-    check.style.transform = `translate(${Math.min(W - 28, q.x + view.tile * 1.4).toFixed(0)}px,${Math.max(28, q.y - view.tile * 0.6).toFixed(0)}px)`;
+    check.style.transform = `translate(${Math.max(safe.l + 30, Math.min(W - safe.r - 30, q.x + view.tile * 1.4)).toFixed(0)}px,${Math.max(30, Math.min(H - 30, q.y - view.tile * 0.6)).toFixed(0)}px)`;
   }
 }
 /** Route lines: in command mode every wingman's, otherwise only the selected tank's. */
@@ -1184,6 +1224,8 @@ function loop(now: number) {
     if (state.events.at(-1) !== previousEvents) audio.play("kill");
     if (state.events.at(-1) !== previousEvents && state.events.length)
       say(state.events.at(-1)!);
+    // Driving always brings the camera back to your tank (after a pan, a look round in Command).
+    if ((input.x || input.y) && !pan) follow = true;
     if (follow && !drag && !pan && commander(state).hp > 0) view.follow(commander(state));
     view.render(selected, paused, reduced.matches);
     view.routes(routeLines());
@@ -1275,12 +1317,15 @@ for (let i = 0; i < 4; i++) {
   const slot = document.createElement("div");
   slot.className = "bf-slot";
   slot.dataset.slot = String(i);
-  slot.innerHTML = `<span>${i === 0 ? "YOUR TANK" : `WINGMAN ${i}`}</span><div class="bf-seg" role="group" aria-label="${i === 0 ? "Your tank" : `Wingman ${i}`} loadout">${Object.entries(
+  // Each row has an emblem like a platoon key: a star (and an outline) for your tank or the
+  // wingman's field number, over 1-3 dots for the size picked.
+  if (i === 0) slot.classList.add("you");
+  slot.innerHTML = `<span class="bf-emblem" aria-hidden="true">${i === 0 ? "<b>★</b>" : `<i>${i}</i>`}<i class="bf-pips"></i></span><div class="bf-seg" role="group" aria-label="${i === 0 ? "Your tank" : `Wingman ${i}`} loadout">${Object.entries(
     ROLES,
   )
     .map(
       ([id, r]) =>
-        `<button data-role="${id}" aria-pressed="false">${id.toUpperCase()} <small>${r.cost}</small></button>`,
+        `<button data-role="${id}" aria-pressed="false"><canvas class="bf-ico" data-icon="${id}" aria-hidden="true"></canvas><span><b>${id.toUpperCase()}</b><small>${r.cost} PTS</small></span></button>`,
     )
     .join("")}</div>`;
   $("#bf-loadout").append(slot);
@@ -1317,7 +1362,9 @@ listen($("#bf-quick"), "click", () => {
 });
 picker("#bf-density", "density", (v) => (density = Number(v)));
 // Dice: a new layout at the chosen density (the density stays put).
+for (const d of document.querySelectorAll<SVGSVGElement>(".bf-die")) dieFace(d, 5);
 listen($("#bf-reroll"), "click", () => {
+  rollDie($("#bf-reroll"));
   seed = 1 + Math.floor(Math.random() * 1e6);
   hqMove = null;
   preview();
@@ -1344,6 +1391,7 @@ function randomLoadout() {
 }
 for (const n of document.querySelectorAll<HTMLElement>("[data-rand]"))
   listen(n, "click", () => {
+    rollDie(n);
     if (n.dataset.rand === "bf-card-platoon") {
       randomPlatoon();
       preview();
@@ -1357,8 +1405,6 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-rand]"))
   });
 for (const n of document.querySelectorAll<HTMLElement>("[data-open]"))
   listen(n, "click", () => showPanel(n.dataset.open as Panel));
-for (const n of document.querySelectorAll<HTMLElement>(".bf-pcard [data-close]"))
-  listen(n, "click", () => showPanel("home"));
 listen($("#bf-rematch"), "click", () => {
   reset();
   deploy();
@@ -1934,6 +1980,7 @@ listen($("#bf-eject"), "click", () => {
   location.href = $("#bf-eject").dataset.href!;
 });
 listen($("#bf-theme"), "click", () => {
+  requestAnimationFrame(() => drawIcons(root));
   const root = $("#battlefield");
   root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
   // Remembered, and shared with the DOM VIRUS site so both stay in the same theme.
@@ -1966,6 +2013,8 @@ listen($("#bf-sound"), "click", () => {
   if (audio.enabled) audio.unlock();
 });
 listen(window, "resize", () => {
+  readSafe();
+  actsWidth = actsHeight = 0;
   // Setup and planning use a bigger screen (full screen) for a bigger map; a live battle re-fits.
   if (playing && !planning) fit();
   else preview(true);

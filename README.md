@@ -54,7 +54,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 52KB gzip budget, checked by `npm run size` (0.14.0: ~49.5KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10, 46KB in 0.11–0.12, 48KB in 0.13).
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. JavaScript, styles and markup have a combined 54KB gzip budget, checked by `npm run size` (0.15.0: ~52KB; 30KB until 0.7.0, 36KB in 0.7.x, 40KB in 0.8.x, 44KB in 0.9–0.10, 46KB in 0.11–0.12, 48KB in 0.13).
 
 ## Boundaries
 
@@ -72,6 +72,17 @@ This is a **single-player** first release. Multiplayer, friend invites, co-op/op
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
 MIT · Chris Cooley / coded.design
+
+### 0.15.0 — Readable cards, real icons, safe-area HQs
+
+- **Icons from the game's own Sherman sprite**, in your team colour: Platoon (three tanks in a wedge), Loadout (a heavy tank and its weight classes), Plan (a tank, its dashed route and the flag), plus tank keys for sides, formations (the four tanks in wedge, line or column; you are the yellow one) and loadout sizes.
+- **Bigger type and keys everywhere** (phones and desktop): the location card, Platoon, Loadout, the plan card and its badges, the yellow tank hint and the radio toast. Squad size shows its number in a rounded box. Loadout swaps the row labels for emblems: a big star and a team-colour outline for your tank, the field number disc for each wingman.
+- **Move HQ / Move Tanks** is two joined icon keys inside the plan card: one down, one up.
+- **Dice** replace Randomize (dice only on phones) and the terrain re-roll; they tumble when tapped. Platoon and Loadout have no close key: the round shortcuts move on.
+- **START BATTLE** is a wider, stacked sticker at the bottom centre with the white flag beside it, on open ground between the platoons. Orbit buttons are bigger.
+- **Safe areas:** on phones both HQs sit far enough in from the edges to clear the notch, so every tank can be tapped; the order bubble flips under the tank near the top and stays clear of the edges. The enemy HQ now starts somewhere new in its zone on each map.
+- **One shared yellow** from army yellow #FFCB05: a brighter flat neon on dark, the army tone on light (no more brown), and ink for yellow text on light.
+- **Camera:** driving always brings the camera back to your tank (it could stay put after a pan in planning). The Terrain box lines up under the picked place.
 
 ### 0.14.1 — Narrow windows
 

@@ -190,10 +190,9 @@ try {
       await page.locator('[data-slot="1"] [data-role="scout"]').click();
       assert.equal(await page.locator('[data-slot="1"] [data-role="scout"]').getAttribute("aria-pressed"), "true");
       assert.equal(await page.locator("#bf-start").isDisabled(), false);
-      await page.locator("#bf-card-loadout [data-close]").click();
-      assert.equal(await page.locator("#bf-plan-home").isVisible(), true, "close goes back to the three cards");
+      assert.equal(await page.locator("#bf-card-loadout .bf-x").count(), 0, "no close key: the orbit moves on");
       // Planning: drag your HQ to another open spot on your half; the squad redeploys around it.
-      await page.locator('.bf-home-card[data-open="plan"]').click();
+      await page.locator('#bf-card-loadout .bf-orb[data-open="plan"]').click();
       assert.equal(await page.locator("#bf-plan-home").isVisible(), false);
       const hqDrag = await page.evaluate(async () => {
         const { moveBase, point } = await import("/src/model.ts");
@@ -275,6 +274,7 @@ try {
         for (const [id] of s.board.tiles.entries()) {
           const q = point(s.board, id),
             d = Math.hypot(u.x - q.x, u.y - q.y);
+          if (q.x < 2 || q.y < 2 || q.x > s.board.cols - 2 || q.y > s.board.rows - 2) continue;
           if (d < 5 || d > 9 || !plot(s.board, from, [id]) || s.units.some((v) => Math.hypot(v.x - q.x, v.y - q.y) < 1.2)) continue;
           const at = ok(id);
           if (at) return at;
@@ -447,7 +447,19 @@ try {
       await page.locator("#bf-target").click();
       assert.equal(await page.evaluate(() => window.battlefield.aim.picking), true);
       const vp = await box(page, "#bf-viewport");
-      await page.mouse.click(vp.x + vp.width / 2, vp.y + vp.height / 2);
+      // An open square away from the tanks (the camera keeps your tank in the middle).
+      const open = await page.evaluate(() => {
+        const v = document.querySelector("#bf-viewport").getBoundingClientRect();
+        for (let fy = 0.85; fy > 0.1; fy -= 0.05)
+          for (const fx of [0.4, 0.6, 0.5, 0.3, 0.7]) {
+            const x = v.left + v.width * fx,
+              y = v.top + v.height * fy,
+              hit = document.elementFromPoint(x, y);
+            if (hit?.closest("#bf-viewport") && !hit.closest(".bf-tank, .bf-hint")) return { x, y };
+          }
+        return null;
+      });
+      await page.mouse.click(open.x, open.y);
       assert.equal(await page.evaluate(() => window.battlefield.aim.mode), "cell");
       if (mobile) await page.locator("#bf-target").click();
       else await page.locator("#bf-auto").click();

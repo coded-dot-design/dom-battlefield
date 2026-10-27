@@ -233,6 +233,8 @@ export function generate(
   seed: number,
   /** Obstacle density: 0.6 light, 1 normal, 1.45 heavy. Roads and deployment zones are kept clear. */
   density = 1,
+  /** Columns between each HQ and its edge of the field (phones keep the HQs clear of the notch). */
+  inset = 2,
 ): Board {
   const d = Math.max(0.4, Math.min(1.6, density));
   cols = Math.max(18, Math.min(48, Math.floor(cols)));
@@ -245,15 +247,15 @@ export function generate(
     tiles,
     health: [],
     bases: [
-      Math.floor(rows / 2) * cols + 2,
-      Math.floor(rows / 2) * cols + cols - 3,
+      Math.floor(rows / 2) * cols + inset,
+      Math.floor(rows / 2) * cols + cols - 1 - inset,
     ],
     center: Math.floor(rows / 2) * cols + Math.floor(cols / 2),
     seed,
     revision: 0,
   };
   for (let y = 1; y < rows - 1; y++)
-    for (let x = 4; x < cols - 4; x++) {
+    for (let x = inset + 2; x < cols - inset - 2; x++) {
       const r = random();
       let t: Tile = "ground";
       if (mission === 0) {
@@ -302,7 +304,7 @@ export function generate(
       return path;
     };
   for (let y = 1; y < rows - 1; y++)
-    for (const x of [2, 3, cols - 4, cols - 3]) tiles[y * cols + x] = "road";
+    for (const x of [inset, inset + 1, cols - 2 - inset, cols - 1 - inset]) tiles[y * cols + x] = "road";
   let carLane: number[];
   if (mission === 0) {
     // Hedgerow: two winding country lanes and a farm track between them.
@@ -381,6 +383,19 @@ export function moveBase(b: Board, side: number, id: number) {
   }
   b.revision++;
   return true;
+}
+/** Put a side's HQ somewhere new in its own zone (seeded, so the same map keeps the same spot):
+ *  any row clear of the top and bottom, from its edge (plus inset) up to its boundary line. */
+export function scatterHq(b: Board, side: number, seed: number, inset = 2) {
+  const random = rng(seed ^ (0x5bd1e995 + side)),
+    edge = side === 0 ? inset : b.cols - 1 - inset,
+    span = Math.max(1, Math.floor(Math.abs(hqLimit(b, side) - edge)) - 1);
+  for (let i = 0; i < 40; i++) {
+    const x = edge + (side === 0 ? 1 : -1) * Math.floor(random() * span),
+      y = 3 + Math.floor(random() * Math.max(1, b.rows - 6));
+    if (moveBase(b, side, y * b.cols + x)) return true;
+  }
+  return false;
 }
 export function loadoutCost(roles: Role[]) {
   return roles.reduce((n, r) => n + ROLES[r].cost, 0);

@@ -50,7 +50,12 @@ a {
   --cyan: #19f0ff;
   --pink: #ff2e88;
   --green: #39ffb0;
-  --yellow: #ffe14d;
+  /* One yellow for command and planning, from army yellow #FFCB05: a brighter, flat neon face,
+     the army tone for 3D bases, and the colour yellow text uses (ink on light backgrounds). */
+  --army: #ffcb05;
+  --yellow: #ffd51f;
+  --yellow-deep: #d9a900;
+  --yellow-text: var(--yellow);
   --violet: #a77bff;
   --team-a: #39ffb0;
   --team-b: #ff5c8f;
@@ -79,7 +84,9 @@ a {
   --cyan: #00a9d6;
   --pink: #e8177a;
   --green: #00b878;
-  --yellow: #c79a00;
+  --yellow: #ffcb05;
+  --yellow-deep: #c99a00;
+  --yellow-text: var(--ink);
   --violet: #6f45e6;
   --map: #e4e6f7;
   --grid-line: #3b317014;
@@ -325,7 +332,8 @@ h1 {
   border-radius: 8px;
   box-shadow: 5px 5px 0 var(--line);
   isolation: isolate;
-  overflow: hidden;
+  /* Clip, not hidden: nothing (a card, a focus scroll) can scroll the stage sideways. */
+  overflow: clip;
 }
 .bf-main:has(#bf-setup:not([hidden])) .bf-stage {
   height: calc(100dvh - 210px);
@@ -657,7 +665,7 @@ h1 {
 }
 .bf-objective {
   border-color: var(--yellow);
-  color: var(--yellow);
+  color: var(--yellow-text);
   background: #ffe14d1a;
 }
 .bf-tank {
@@ -1029,7 +1037,7 @@ h1 {
   --py: 2px;
   --hx: 0px;
   --hy: 1px;
-  --edge: #8a7414;
+  --edge: var(--yellow-deep);
   --edge-hover: var(--edge);
   --border-hover: #07060f;
   min-height: 0;
@@ -1450,11 +1458,11 @@ html.bf-playing body {
    route is doing; routes draw in map units on one SVG above the tiles, below the tanks. */
 /* Command is always yellow; on, it rests pressed and burns brighter. */
 #bf-command {
-  --c: #d9b92e;
+  --c: var(--yellow-deep);
 }
 #bf-command[aria-pressed="true"] {
-  --c: #fff36b;
-  --glow-press: 0 0 22px #ffe14daa;
+  --c: var(--yellow);
+  --glow-press: 0 0 22px color-mix(in srgb, var(--yellow) 70%, transparent);
 }
 .bf-cmd-tank b {
   letter-spacing: 1px;
@@ -2320,7 +2328,7 @@ circle.bf-grab[data-stop] {
   gap: 5px;
   font: 800 9px/1 ui-monospace, monospace;
   letter-spacing: 1.5px;
-  color: var(--yellow);
+  color: var(--yellow-text);
 }
 .bf-cmd-mode svg {
   width: 13px;
@@ -2730,7 +2738,8 @@ circle.bf-grab[data-stop] {
    [data-ui=touch|desk] and [data-stage=setup|plan|battle], set by the client.
    ===================================================================================== */
 #battlefield {
-  --u: 1.3px;
+  /* Desktop: the phone design at 1.5x, so cards and their type read comfortably. */
+  --u: 1.5px;
   --card: #120f26;
   --rim: #07060f;
   --orange: #ff9a1a;
@@ -2752,15 +2761,15 @@ circle.bf-grab[data-stop] {
   --py: calc(5 * var(--u));
   --hx: 0px;
   --hy: calc(1 * var(--u));
-  --edge: var(--yellow);
-  --edge-hover: var(--yellow);
+  --edge: var(--yellow-deep);
+  --edge-hover: var(--yellow-deep);
   --border-hover: var(--yellow);
   position: absolute;
   z-index: 14;
   color: var(--ink);
-  background: color-mix(in srgb, var(--card) 93%, transparent);
-  border: calc(2 * var(--u)) solid var(--yellow);
-  border-radius: calc(8 * var(--u));
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  border: calc(2.5 * var(--u)) solid var(--yellow);
+  border-radius: calc(10 * var(--u));
   box-shadow: var(--px) var(--py) 0 var(--edge);
   touch-action: none;
   cursor: grab;
@@ -2776,77 +2785,79 @@ circle.bf-grab[data-stop] {
 .bf-card .bf-card-grip {
   position: absolute;
   z-index: 2;
-  top: calc(-7 * var(--u));
+  top: calc(-8 * var(--u));
   left: 50%;
   translate: -50% 0;
   display: grid;
   place-items: center;
-  width: calc(30 * var(--u));
-  height: calc(10 * var(--u));
+  width: calc(36 * var(--u));
+  height: calc(12 * var(--u));
   min-height: 0;
   padding: 0;
   background: var(--yellow);
   border: 0;
-  border-radius: calc(3 * var(--u));
+  border-radius: calc(4 * var(--u));
   box-shadow: none;
   transform: none !important;
   cursor: grab;
 }
 .bf-card-grip > i {
   display: block;
-  width: calc(13 * var(--u));
-  height: calc(4 * var(--u));
-  background: radial-gradient(circle, var(--rim) 0 45%, transparent 55%) 0 0 / calc(3.25 * var(--u)) calc(2 * var(--u));
+  width: calc(16 * var(--u));
+  height: calc(5 * var(--u));
+  background: radial-gradient(circle, var(--rim) 0 45%, transparent 55%) 0 0 / calc(4 * var(--u)) calc(2.5 * var(--u));
 }
 .bf-row-grip {
   display: none !important;
 }
 .bf-badge {
   position: absolute;
-  top: calc(-7 * var(--u));
-  right: calc(-7 * var(--u));
-  min-width: calc(21 * var(--u));
-  height: calc(21 * var(--u));
-  padding: 0 calc(5 * var(--u));
-  border-radius: calc(11 * var(--u));
+  top: calc(-9 * var(--u));
+  right: calc(-9 * var(--u));
+  min-width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+  padding: 0 calc(6 * var(--u));
+  border-radius: calc(13 * var(--u));
   background: var(--green);
   color: var(--rim);
-  font: 800 calc(11 * var(--u)) / calc(21 * var(--u)) system-ui, sans-serif;
+  font: 800 calc(13 * var(--u)) / calc(26 * var(--u)) system-ui, sans-serif;
   text-align: center;
-  box-shadow: 0 0 0 calc(2 * var(--u)) var(--card);
+  box-shadow: 0 0 0 calc(2.5 * var(--u)) var(--card);
 }
 .bf-badge[data-badge="per"] {
   background: var(--team);
 }
-.bf-ico {
-  color: var(--cyan);
+canvas.bf-ico {
+  display: block;
+  height: auto;
+  image-rendering: pixelated;
 }
 
-/* Card buttons (segmented choices, Randomize, close) share one compact key. */
+/* Card buttons: one readable key. Picked ones rest pressed, lit cyan. */
 .bf-card .bf-seg {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: calc(5 * var(--u));
+  gap: calc(7 * var(--u));
 }
 .bf-card .bf-seg button,
 .bf-rand,
 .bf-x {
-  --px: calc(2 * var(--u));
-  --py: calc(2 * var(--u));
+  --px: calc(2.5 * var(--u));
+  --py: calc(2.5 * var(--u));
   --edge: var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: calc(5 * var(--u));
-  min-height: calc(26 * var(--u));
-  padding: 0 calc(4 * var(--u));
-  font: 700 calc(6.5 * var(--u)) / 1 ui-monospace, monospace;
+  gap: calc(6 * var(--u));
+  min-height: calc(36 * var(--u));
+  padding: 0 calc(6 * var(--u));
+  font: 800 calc(10 * var(--u)) / 1.1 ui-monospace, monospace;
   letter-spacing: calc(0.4 * var(--u));
   color: var(--ink);
   background: color-mix(in srgb, var(--raised) 60%, var(--card));
-  border: calc(1.5 * var(--u)) solid var(--line);
-  border-radius: calc(4 * var(--u));
+  border: calc(2 * var(--u)) solid var(--line);
+  border-radius: calc(6 * var(--u));
   white-space: nowrap;
 }
 .bf-card .bf-seg button[aria-pressed="true"] {
@@ -2854,45 +2865,72 @@ circle.bf-grab[data-stop] {
   color: var(--rim);
   background: var(--cyan);
   border-color: var(--cyan);
-  box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--cyan) 55%, transparent);
-}
-.bf-card .bf-seg button small {
-  font-size: calc(5.5 * var(--u));
-  opacity: 0.75;
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--cyan) 55%, transparent);
 }
 .bf-card .bf-seg svg {
-  width: calc(13 * var(--u));
-  height: calc(9 * var(--u));
+  flex: none;
+  width: calc(20 * var(--u));
+  height: calc(14 * var(--u));
   fill: currentColor;
   stroke: none;
 }
-.bf-card .bf-swatch {
-  width: calc(6 * var(--u));
-  height: calc(6 * var(--u));
+.bf-card .bf-seg canvas.bf-ico {
+  flex: none;
+  width: calc(26 * var(--u));
 }
 .bf-card .bf-label {
   display: block;
-  margin: 0 0 calc(4 * var(--u));
-  font-size: calc(5.5 * var(--u));
-  letter-spacing: calc(0.9 * var(--u));
+  margin: 0 0 calc(5 * var(--u));
+  font-size: calc(8.5 * var(--u));
+  font-weight: 700;
+  letter-spacing: calc(1 * var(--u));
   color: var(--muted);
 }
-.bf-rand svg,
+/* Dice: Randomize (and the terrain re-roll) tumble when tapped. */
+.bf-die {
+  width: calc(18 * var(--u));
+  height: calc(18 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.roll .bf-die {
+  animation: bf-roll 380ms cubic-bezier(0.3, 0.9, 0.4, 1);
+}
+@keyframes bf-roll {
+  0% {
+    rotate: 0deg;
+    scale: 1;
+  }
+  45% {
+    rotate: 200deg;
+    scale: 1.25;
+  }
+  100% {
+    rotate: 360deg;
+    scale: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll .bf-die {
+    animation: none;
+  }
+}
 .bf-x svg {
-  width: calc(10 * var(--u));
-  height: calc(10 * var(--u));
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
 }
 
 /* ---------- Step 1: location + terrain ---------- */
 .bf-loc {
   left: 50%;
-  top: calc(15 * var(--u));
+  top: calc(14 * var(--u));
   translate: -50% 0;
-  width: calc(204 * var(--u));
+  width: calc(276 * var(--u));
   max-height: calc(100% - calc(26 * var(--u)));
   display: flex;
   flex-direction: column;
-  padding: calc(13 * var(--u)) calc(8 * var(--u)) calc(9 * var(--u));
+  padding: calc(16 * var(--u)) calc(12 * var(--u)) calc(10 * var(--u));
   transition: left 280ms ease, translate 280ms ease;
 }
 #battlefield:not([data-blank]) .bf-loc {
@@ -2901,19 +2939,20 @@ circle.bf-grab[data-stop] {
 }
 .bf-loc .bf-eyebrow {
   padding-left: calc(2 * var(--u));
-  font-size: calc(5 * var(--u));
-  letter-spacing: calc(1 * var(--u));
+  font-size: calc(8 * var(--u));
+  font-weight: 700;
+  letter-spacing: calc(1.4 * var(--u));
 }
 .bf-loc h2 {
-  margin: calc(4 * var(--u)) 0 calc(9 * var(--u));
+  margin: calc(4 * var(--u)) 0 calc(10 * var(--u));
   padding-left: calc(2 * var(--u));
-  font: 800 calc(12.5 * var(--u)) / 1.15 system-ui, sans-serif;
+  font: 800 calc(17 * var(--u)) / 1.1 system-ui, sans-serif;
   letter-spacing: calc(-0.3 * var(--u));
 }
 .bf-loc .bf-missions {
   display: grid;
   grid-template-columns: 1fr;
-  gap: calc(12 * var(--u));
+  gap: calc(10 * var(--u));
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2929,63 +2968,69 @@ circle.bf-grab[data-stop] {
   --py: calc(3 * var(--u));
   --edge: var(--line);
   display: grid;
-  grid-template-columns: calc(46 * var(--u)) 1fr;
-  height: calc(47 * var(--u));
+  grid-template-columns: calc(58 * var(--u)) 1fr;
+  height: calc(62 * var(--u));
   min-height: 0;
   padding: 0;
   text-align: left;
   background: color-mix(in srgb, var(--raised) 45%, var(--card));
-  border: calc(1.5 * var(--u)) solid var(--line);
-  border-radius: calc(4 * var(--u));
+  border: calc(2 * var(--u)) solid var(--line);
+  border-radius: calc(6 * var(--u));
   overflow: hidden;
 }
+/* The picked place stays where it is (it glows instead of pressing in), so the dashed
+   Terrain box under it lines up edge to edge. */
 .bf-loc .bf-mission[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  transform: none;
   border-color: var(--cyan);
-  background: color-mix(in srgb, var(--cyan) 10%, var(--card));
+  background: color-mix(in srgb, var(--cyan) 12%, var(--card));
   box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--cyan) 55%, transparent);
 }
 .bf-thumb.bf-world {
-  --tile: calc(44 * var(--u) / 5);
-  width: calc(44 * var(--u));
-  height: calc(44 * var(--u));
+  --tile: calc(56 * var(--u) / 5);
+  width: calc(56 * var(--u));
+  height: calc(58 * var(--u));
   margin: 0;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(5, 1fr);
-  border-right: calc(1.5 * var(--u)) solid var(--line);
+  border-right: calc(2 * var(--u)) solid var(--line);
   background-image: none;
   pointer-events: none;
 }
 .bf-mission-text {
   display: grid;
   align-content: center;
-  gap: calc(3 * var(--u));
+  gap: calc(4 * var(--u));
   min-width: 0;
-  padding: 0 calc(7 * var(--u)) 0 calc(8 * var(--u));
+  padding: 0 calc(8 * var(--u)) 0 calc(10 * var(--u));
 }
 .bf-loc .bf-mission-text span {
-  font-size: calc(4.8 * var(--u));
-  letter-spacing: calc(0.5 * var(--u));
+  font-size: calc(7.5 * var(--u));
+  font-weight: 700;
+  letter-spacing: calc(0.4 * var(--u));
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .bf-loc .bf-mission-text strong {
-  font: 800 calc(8.5 * var(--u)) / 1.1 system-ui, sans-serif;
+  font: 800 calc(13.5 * var(--u)) / 1.05 system-ui, sans-serif;
   color: var(--ink);
 }
 .bf-loc .bf-mission-text small {
-  font-size: calc(4.8 * var(--u));
+  font-size: calc(8 * var(--u));
   color: var(--muted);
 }
 .bf-terrain {
   display: grid;
-  gap: calc(7 * var(--u));
-  margin: calc(-9 * var(--u)) calc(-1 * var(--u)) 0;
-  padding: calc(12 * var(--u)) calc(7 * var(--u)) calc(8 * var(--u));
-  border: calc(1.5 * var(--u)) dashed var(--cyan);
+  gap: calc(9 * var(--u));
+  margin: calc(-12 * var(--u)) 0 0;
+  padding: calc(18 * var(--u)) calc(10 * var(--u)) calc(10 * var(--u));
+  border: calc(2 * var(--u)) dashed var(--cyan);
   border-top: 0;
-  border-radius: 0 0 calc(6 * var(--u)) calc(6 * var(--u));
+  border-radius: 0 0 calc(8 * var(--u)) calc(8 * var(--u));
 }
 .bf-terrain-head {
   display: flex;
@@ -2999,27 +3044,22 @@ circle.bf-grab[data-stop] {
   --py: 0px;
   display: grid;
   place-items: center;
-  width: calc(16 * var(--u));
-  height: calc(16 * var(--u));
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
   min-height: 0;
   padding: 0;
   color: var(--ink);
   background: none;
-  border: calc(1.5 * var(--u)) solid var(--ink);
-  border-radius: calc(3 * var(--u));
+  border: 0;
   box-shadow: none;
 }
-.bf-dice svg {
-  width: calc(10 * var(--u));
-  height: calc(10 * var(--u));
-}
-.bf-dice:active {
-  rotate: 90deg;
-  transition: rotate 120ms ease-out;
+.bf-dice .bf-die {
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
 }
 .bf-terrain .bf-seg button {
-  min-height: calc(22 * var(--u));
-  font-size: calc(6 * var(--u));
+  min-height: calc(34 * var(--u));
+  font-size: calc(10 * var(--u));
 }
 
 /* Quick start (navy) + Plan battle (yellow): the big sticker keys. */
@@ -3027,36 +3067,33 @@ circle.bf-grab[data-stop] {
   position: absolute;
   z-index: 15;
   right: calc(var(--sr) + calc(12 * var(--u)));
-  bottom: calc(23 * var(--u));
+  bottom: calc(20 * var(--u));
   display: flex;
-  gap: calc(11 * var(--u));
+  gap: calc(12 * var(--u));
 }
-.bf-go .bf-start,
-#bf-start.bf-start {
-  --py: calc(4 * var(--u));
+.bf-go .bf-start {
+  --py: calc(5 * var(--u));
   position: static;
   translate: none;
-  width: calc(100 * var(--u));
-  height: calc(64 * var(--u));
+  width: calc(122 * var(--u));
+  height: calc(80 * var(--u));
   align-content: center;
-  gap: calc(5 * var(--u));
-  padding: calc(5 * var(--u)) 0 calc(4 * var(--u));
-  border-width: calc(2.5 * var(--u));
-  border-radius: calc(9 * var(--u));
+  gap: calc(6 * var(--u));
+  padding: calc(6 * var(--u)) 0 calc(5 * var(--u));
+  border-width: calc(3 * var(--u));
+  border-radius: calc(11 * var(--u));
 }
-.bf-go .bf-start-icon svg,
-#bf-start .bf-start-icon svg {
-  width: calc(32 * var(--u));
-  height: calc(32 * var(--u));
+.bf-go .bf-start-icon svg {
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
 }
-.bf-go .bf-start b,
-#bf-start.bf-start b {
-  font-size: calc(7.5 * var(--u));
+.bf-go .bf-start b {
+  font-size: calc(10 * var(--u));
   letter-spacing: calc(1.6 * var(--u));
 }
 #battlefield .bf-plan-sticker {
   color: #f6f3ff;
-  background: #ffd83d;
+  background: var(--yellow);
 }
 .bf-plan-sticker .bf-start-icon svg {
   background: #b0179a;
@@ -3067,22 +3104,32 @@ circle.bf-grab[data-stop] {
 #battlefield .bf-plan-sticker b {
   color: #2a1f45;
 }
-/* START BATTLE: the same sticker, a little smaller, bottom right on every planning card. */
+/* START BATTLE: a wide sticker at the bottom centre, on open ground between the platoons. */
 #bf-start.bf-start {
+  --py: calc(5 * var(--u));
   position: absolute;
-  left: auto;
-  right: calc(var(--sr) + calc(12 * var(--u)));
-  bottom: calc(23 * var(--u));
-  width: calc(90 * var(--u));
-  height: calc(56 * var(--u));
-  gap: calc(4 * var(--u));
+  left: 50%;
+  right: auto;
+  bottom: calc(20 * var(--u));
+  translate: -50% 0;
+  width: auto;
+  width: calc(230 * var(--u));
+  height: calc(66 * var(--u));
+  justify-content: center;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  padding: 0 calc(22 * var(--u)) 0 calc(16 * var(--u));
+  border-width: calc(3 * var(--u));
+  border-radius: calc(12 * var(--u));
 }
 #bf-start .bf-start-icon svg {
-  width: calc(26 * var(--u));
-  height: calc(26 * var(--u));
+  width: calc(42 * var(--u));
+  height: calc(42 * var(--u));
 }
 #bf-start.bf-start b {
-  font-size: calc(6.5 * var(--u));
+  font-size: calc(14 * var(--u));
+  letter-spacing: calc(2 * var(--u));
 }
 
 /* ---------- Step 2: plan home (Platoon / Loadout / Plan) ---------- */
@@ -3091,9 +3138,9 @@ circle.bf-grab[data-stop] {
   z-index: 14;
   left: 50%;
   top: 50%;
-  translate: -50% -62%;
+  translate: -50% -66%;
   display: flex;
-  gap: calc(7 * var(--u));
+  gap: calc(10 * var(--u));
   touch-action: none;
 }
 .bf-home-card.bf-card {
@@ -3101,21 +3148,20 @@ circle.bf-grab[data-stop] {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: calc(8 * var(--u));
-  width: calc(130 * var(--u));
-  height: calc(104 * var(--u));
+  gap: calc(10 * var(--u));
+  width: calc(150 * var(--u));
+  height: calc(124 * var(--u));
   min-height: 0;
-  padding: calc(8 * var(--u)) 0 calc(4 * var(--u));
-  border-radius: calc(11 * var(--u));
+  padding: calc(10 * var(--u)) 0 calc(6 * var(--u));
+  border-radius: calc(12 * var(--u));
   cursor: pointer;
 }
-.bf-home-card .bf-ico {
-  width: calc(58 * var(--u));
-  height: calc(46 * var(--u));
+.bf-home-card canvas.bf-ico {
+  width: calc(88 * var(--u));
 }
 .bf-home-card > span {
-  font: 800 calc(9.5 * var(--u)) / 1 system-ui, sans-serif;
-  letter-spacing: calc(0.3 * var(--u));
+  font: 800 calc(14 * var(--u)) / 1 system-ui, sans-serif;
+  letter-spacing: calc(0.6 * var(--u));
 }
 .bf-home-card .bf-card-grip {
   pointer-events: auto;
@@ -3123,51 +3169,51 @@ circle.bf-grab[data-stop] {
 
 /* Platoon + Loadout cards: the corner away from your team; the other cards orbit beside. */
 .bf-pcard {
-  top: calc(31 * var(--u));
-  width: calc(282 * var(--u));
+  top: calc(18 * var(--u));
+  width: calc(352 * var(--u));
+  max-height: calc(100% - calc(30 * var(--u)));
+  overflow: visible;
   display: grid;
-  gap: calc(8 * var(--u));
-  padding: calc(13 * var(--u)) calc(13 * var(--u)) calc(12 * var(--u));
+  gap: calc(10 * var(--u));
+  padding: calc(14 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u));
   transition: none;
 }
 .bf-pcard[data-away="left"] {
   left: calc(var(--sl) + calc(12 * var(--u)));
 }
 .bf-pcard[data-away="right"] {
-  right: calc(var(--sr) + calc(56 * var(--u)));
+  right: calc(var(--sr) + calc(12 * var(--u)));
 }
 .bf-card-head {
   display: flex;
   align-items: center;
   gap: calc(10 * var(--u));
-  margin-bottom: calc(2 * var(--u));
 }
 .bf-card-icon {
   display: grid;
   place-items: center;
-  width: calc(34 * var(--u));
-  height: calc(34 * var(--u));
-  border-radius: calc(6 * var(--u));
+  width: calc(42 * var(--u));
+  height: calc(42 * var(--u));
+  border-radius: calc(8 * var(--u));
   background: var(--raised);
 }
-.bf-card-icon .bf-ico {
-  width: calc(24 * var(--u));
-  height: calc(20 * var(--u));
+.bf-card-icon canvas.bf-ico {
+  width: calc(36 * var(--u));
 }
 .bf-card-head > b,
 .bf-card-head > h3 {
   margin: 0 auto 0 0;
-  font: 800 calc(10 * var(--u)) / 1 system-ui, sans-serif;
-  letter-spacing: calc(0.3 * var(--u));
+  font: 800 calc(16 * var(--u)) / 1 system-ui, sans-serif;
+  letter-spacing: calc(0.4 * var(--u));
 }
 .bf-rand {
-  min-height: calc(22 * var(--u));
-  padding: 0 calc(9 * var(--u));
-  font-size: calc(6 * var(--u));
+  min-height: calc(32 * var(--u));
+  padding: 0 calc(10 * var(--u));
+  font-size: calc(9 * var(--u));
 }
 .bf-x {
-  width: calc(25 * var(--u));
-  min-height: calc(22 * var(--u));
+  width: calc(34 * var(--u));
+  min-height: calc(32 * var(--u));
   padding: 0;
 }
 .bf-pcard .bf-field {
@@ -3175,13 +3221,15 @@ circle.bf-grab[data-stop] {
   gap: 0;
 }
 .bf-budget {
-  margin: 0 0 calc(-3 * var(--u));
+  margin: 0 0 calc(-2 * var(--u));
   text-align: right;
-  font-size: calc(5.5 * var(--u));
-  letter-spacing: calc(0.9 * var(--u));
+  font-size: calc(9 * var(--u));
+  font-weight: 700;
+  letter-spacing: calc(1 * var(--u));
   color: var(--muted);
 }
 .bf-budget strong {
+  font-size: calc(11 * var(--u));
   color: var(--cyan);
 }
 .bf-over .bf-budget strong {
@@ -3189,28 +3237,50 @@ circle.bf-grab[data-stop] {
 }
 .bf-pcard .bf-loadout {
   display: grid;
-  gap: calc(5 * var(--u));
+  gap: calc(7 * var(--u));
 }
 .bf-pcard .bf-slot {
   display: grid;
-  grid-template-columns: calc(52 * var(--u)) 1fr;
+  grid-template-columns: calc(58 * var(--u)) 1fr;
   align-items: center;
-  gap: calc(4 * var(--u));
+  gap: calc(6 * var(--u));
   padding: 0;
   border: 0;
   background: none;
 }
 .bf-pcard .bf-slot > span {
-  font-size: calc(5.5 * var(--u));
-  letter-spacing: calc(0.9 * var(--u));
+  font-size: calc(8.5 * var(--u));
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: calc(0.8 * var(--u));
   color: var(--muted);
 }
+/* Loadout keys: the tank at its real size class, then the name and its cost. */
 .bf-pcard .bf-slot .bf-seg button {
-  min-height: calc(24 * var(--u));
+  justify-content: flex-start;
+  min-height: calc(42 * var(--u));
+  padding: 0 calc(5 * var(--u));
+  gap: calc(5 * var(--u));
+}
+.bf-pcard .bf-slot .bf-seg canvas.bf-ico {
+  width: calc(30 * var(--u));
+}
+.bf-slot .bf-seg button > span {
+  display: grid;
+  gap: calc(2 * var(--u));
+  text-align: left;
+}
+.bf-slot .bf-seg button b {
+  font-size: calc(9.5 * var(--u));
+}
+.bf-slot .bf-seg button small {
+  font-size: calc(7.5 * var(--u));
+  font-weight: 700;
+  opacity: 0.8;
 }
 .bf-pcard #bf-cost-error {
   margin: 0;
-  font-size: calc(6 * var(--u));
+  font-size: calc(9 * var(--u));
   color: var(--alert);
 }
 .bf-pcard #bf-cost-error:empty {
@@ -3222,7 +3292,7 @@ circle.bf-grab[data-stop] {
   top: calc(-4 * var(--u));
   left: calc(100% + calc(13 * var(--u)));
   display: grid;
-  gap: calc(9 * var(--u));
+  gap: calc(12 * var(--u));
 }
 [data-away="right"] > .bf-orbit {
   left: auto;
@@ -3230,35 +3300,34 @@ circle.bf-grab[data-stop] {
 }
 .bf-orb {
   --px: 0px;
-  --py: calc(4 * var(--u));
+  --py: calc(5 * var(--u));
   --hx: 0px;
   --hy: calc(1 * var(--u));
-  --edge: color-mix(in srgb, var(--yellow) 75%, #07060f);
+  --edge: var(--yellow-deep);
   --edge-hover: var(--edge);
   --border-hover: var(--yellow);
   position: relative;
   display: grid;
   place-items: center;
-  width: calc(45 * var(--u));
-  height: calc(45 * var(--u));
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
   min-height: 0;
   padding: 0;
   color: var(--cyan);
   background: var(--card);
-  border: calc(2.5 * var(--u)) solid var(--yellow);
+  border: calc(3 * var(--u)) solid var(--yellow);
   border-radius: 50%;
 }
-.bf-orb .bf-ico {
-  width: calc(26 * var(--u));
-  height: calc(22 * var(--u));
+.bf-orb canvas.bf-ico {
+  width: calc(40 * var(--u));
 }
 .bf-orb .bf-badge {
   top: calc(-9 * var(--u));
   right: calc(-9 * var(--u));
-  min-width: calc(20 * var(--u));
-  height: calc(20 * var(--u));
-  font-size: calc(10 * var(--u));
-  line-height: calc(20 * var(--u));
+  min-width: calc(23 * var(--u));
+  height: calc(23 * var(--u));
+  font-size: calc(12 * var(--u));
+  line-height: calc(23 * var(--u));
 }
 
 /* ---------- Step 3: plan each tank ---------- */
@@ -3266,12 +3335,11 @@ circle.bf-grab[data-stop] {
   top: calc(16 * var(--u));
   left: auto;
   right: auto;
-  width: calc(256 * var(--u));
-  min-height: calc(61 * var(--u));
+  width: calc(388 * var(--u));
   transform: none;
   display: block;
-  padding: calc(10 * var(--u)) calc(11 * var(--u)) calc(9 * var(--u));
-  border-radius: calc(7 * var(--u));
+  padding: calc(11 * var(--u)) calc(11 * var(--u)) calc(11 * var(--u)) calc(12 * var(--u));
+  border-radius: calc(10 * var(--u));
 }
 #battlefield #bf-cmd[data-away="left"] {
   left: calc(var(--sl) + calc(12 * var(--u)));
@@ -3287,46 +3355,50 @@ circle.bf-grab[data-stop] {
 #bf-cmd .bf-cmd-info {
   display: flex;
   align-items: center;
-  gap: calc(9 * var(--u));
+  gap: calc(10 * var(--u));
 }
 #bf-cmd .bf-cmd-badge {
   flex: none;
-  width: calc(29 * var(--u));
-  height: calc(29 * var(--u));
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
   min-height: 0;
-  border-radius: calc(5 * var(--u));
+  border-radius: calc(7 * var(--u));
+}
+#bf-cmd .bf-cmd-badge b {
+  font-size: calc(17 * var(--u));
 }
 #bf-cmd .bf-cmd-text {
+  flex: 1;
   display: grid;
-  gap: calc(3 * var(--u));
+  gap: calc(4 * var(--u));
   min-width: 0;
 }
 #bf-cmd .bf-cmd-mode {
   display: flex;
   align-items: center;
-  gap: calc(4 * var(--u));
-  font-size: calc(5.5 * var(--u));
-  letter-spacing: calc(1 * var(--u));
-  color: var(--yellow);
+  gap: calc(5 * var(--u));
+  font-size: calc(8.5 * var(--u));
+  letter-spacing: calc(1.2 * var(--u));
+  color: var(--yellow-text);
 }
 #bf-cmd .bf-cmd-mode svg {
-  width: calc(8 * var(--u));
-  height: calc(8 * var(--u));
+  width: calc(11 * var(--u));
+  height: calc(11 * var(--u));
 }
 #bf-cmd .bf-cmd-tank {
   display: flex;
   align-items: center;
-  gap: calc(5 * var(--u));
+  gap: calc(6 * var(--u));
   flex-wrap: wrap;
 }
 #bf-cmd .bf-cmd-tank b {
-  font: 800 calc(8.5 * var(--u)) / 1 system-ui, sans-serif;
+  font: 800 calc(13 * var(--u)) / 1 system-ui, sans-serif;
   letter-spacing: calc(0.4 * var(--u));
 }
 #bf-cmd .bf-cmd-tank span {
-  padding: calc(1.5 * var(--u)) calc(4 * var(--u));
-  border-radius: calc(2 * var(--u));
-  font: 700 calc(5.5 * var(--u)) / 1 ui-monospace, monospace;
+  padding: calc(2.5 * var(--u)) calc(5 * var(--u));
+  border-radius: calc(3 * var(--u));
+  font: 800 calc(8.5 * var(--u)) / 1 ui-monospace, monospace;
   letter-spacing: calc(0.5 * var(--u));
   color: var(--rim);
   background: var(--team);
@@ -3339,60 +3411,60 @@ circle.bf-grab[data-stop] {
 }
 #bf-cmd #bf-cmd-hint {
   margin: 0;
-  font-size: calc(6.5 * var(--u));
+  font-size: calc(9.5 * var(--u));
   line-height: 1.3;
   color: var(--muted);
 }
-/* Move HQ / Move Tanks: a tab under the card. One side is always on (yellow, pressed). */
+/* Move HQ / Move Tanks: two joined keys, one always down. Pressing one pops the other up. */
 #bf-cmd .bf-mode {
-  position: absolute;
-  top: calc(100% + calc(2 * var(--u)));
+  flex: none;
+  align-self: center;
   display: flex;
-  gap: calc(10 * var(--u));
-  padding: calc(6 * var(--u)) calc(9 * var(--u)) calc(9 * var(--u));
-  background: color-mix(in srgb, var(--card) 93%, transparent);
-  border-radius: 0 0 calc(7 * var(--u)) calc(7 * var(--u));
-}
-#bf-cmd[data-away="left"] .bf-mode {
-  right: calc(8 * var(--u));
-}
-#bf-cmd[data-away="right"] .bf-mode {
-  left: calc(8 * var(--u));
-}
-.bf-mode-thumb {
-  display: none;
+  margin-bottom: calc(4 * var(--u));
 }
 .bf-mode button {
   --c: var(--team);
   --px: 0px;
-  --py: calc(3 * var(--u));
+  --py: calc(4 * var(--u));
+  --hx: 0px;
+  --hy: 0px;
   --edge: color-mix(in srgb, var(--c) 45%, #07060f);
-  display: flex;
-  align-items: center;
-  gap: calc(5 * var(--u));
-  min-height: calc(22 * var(--u));
-  padding: 0 calc(8 * var(--u));
-  font: 700 calc(6.5 * var(--u)) / 1 ui-monospace, monospace;
+  --edge-hover: var(--edge);
+  --border-hover: var(--rim);
+  display: grid;
+  place-items: center;
+  width: calc(48 * var(--u));
+  height: calc(42 * var(--u));
+  min-height: 0;
+  padding: 0;
   color: var(--rim);
   background: var(--c);
-  border: calc(1.5 * var(--u)) solid var(--rim);
-  border-radius: calc(5 * var(--u));
+  border: calc(2 * var(--u)) solid var(--rim);
+  border-radius: calc(8 * var(--u)) 0 0 calc(8 * var(--u));
+}
+.bf-mode button + button {
+  border-left-width: 0;
+  border-radius: 0 calc(8 * var(--u)) calc(8 * var(--u)) 0;
 }
 .bf-mode button svg {
-  width: calc(11 * var(--u));
-  height: calc(11 * var(--u));
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
+  stroke-width: 2.2;
+}
+.bf-mode button canvas.bf-ico {
+  width: calc(34 * var(--u));
 }
 .bf-mode button[aria-checked="true"] {
   --c: var(--yellow);
   transform: translate(var(--px), var(--py));
-  box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--yellow) 55%, transparent);
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--yellow) 55%, transparent);
 }
 #bf-cmd .bf-orbit {
-  top: calc(6 * var(--u));
+  top: calc(4 * var(--u));
   display: flex;
-  gap: calc(10 * var(--u));
+  gap: calc(12 * var(--u));
 }
-/* The three orders ride above the selected tank; Next floats above them once it has one. */
+/* The three orders ride above the selected tank (below it near the top); Next sits beside. */
 .bf-acts {
   position: absolute;
   z-index: 16;
@@ -3400,36 +3472,39 @@ circle.bf-grab[data-stop] {
   top: 0;
   translate: -50% -100%;
   display: flex;
-  gap: calc(7 * var(--u));
+  gap: calc(9 * var(--u));
   pointer-events: none;
+}
+.bf-acts.below {
+  translate: -50% 0;
 }
 .bf-act,
 .bf-check {
   --c: var(--yellow);
   --px: 0px;
-  --py: calc(3 * var(--u));
+  --py: calc(4 * var(--u));
   --hx: 0px;
   --hy: calc(1 * var(--u));
   --edge: color-mix(in srgb, var(--c) 45%, #07060f);
   --edge-hover: var(--edge);
   --border-hover: var(--rim);
-  --glow-press: 0 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--c) 30%, transparent), 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--c) 70%, transparent);
+  --glow-press: 0 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--c) 30%, transparent), 0 0 calc(14 * var(--u)) color-mix(in srgb, var(--c) 70%, transparent);
   display: grid;
   place-items: center;
-  width: calc(25 * var(--u));
-  height: calc(25 * var(--u));
+  width: calc(34 * var(--u));
+  height: calc(34 * var(--u));
   min-height: 0;
   padding: 0;
   color: var(--rim);
   background: var(--c);
-  border: calc(1.5 * var(--u)) solid var(--rim);
+  border: calc(2 * var(--u)) solid var(--rim);
   border-radius: 50%;
   pointer-events: auto;
 }
 .bf-act svg,
 .bf-check svg {
-  width: calc(13 * var(--u));
-  height: calc(13 * var(--u));
+  width: calc(17 * var(--u));
+  height: calc(17 * var(--u));
   stroke-width: 2.4;
 }
 .bf-act[data-act="hq"] {
@@ -3441,8 +3516,8 @@ circle.bf-grab[data-stop] {
 .bf-act-next {
   --c: var(--cyan);
   position: absolute;
-  right: calc(-24 * var(--u));
-  bottom: calc(100% + calc(12 * var(--u)));
+  left: calc(100% + calc(14 * var(--u)));
+  top: 0;
   box-shadow: 0 var(--py) 0 var(--edge), 0 0 0 calc(5 * var(--u)) color-mix(in srgb, var(--c) 22%, transparent), 0 0 0 calc(9 * var(--u)) color-mix(in srgb, var(--c) 10%, transparent);
 }
 .bf-check {
@@ -3634,10 +3709,11 @@ circle.bf-grab[data-stop] {
   --px: 0px;
   --py: calc(4 * var(--u));
   position: fixed;
-  left: calc(var(--sl) + calc(12 * var(--u)));
-  bottom: calc(23 * var(--u));
-  width: calc(44 * var(--u));
-  height: calc(44 * var(--u));
+  /* Beside START BATTLE, bottom centre: open ground, clear of both platoons. */
+  left: calc(50% - calc(115 * var(--u)) - calc(14 * var(--u)) - calc(56 * var(--u)));
+  bottom: calc(22 * var(--u));
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
   min-height: 0;
   padding: 0;
   border-width: calc(2 * var(--u));
@@ -3647,8 +3723,8 @@ circle.bf-grab[data-stop] {
   display: none;
 }
 [data-ui="touch"][data-stage="plan"] #bf-pause svg {
-  width: calc(18 * var(--u));
-  height: calc(18 * var(--u));
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
 }
 /* Comms: a radio toast that shows briefly. Tap it to clear it. */
 [data-ui="touch"] .bf-footer {
@@ -3659,11 +3735,13 @@ circle.bf-grab[data-stop] {
   translate: -50% calc(8 * var(--u));
   display: flex;
   align-items: center;
-  gap: calc(7 * var(--u));
-  max-width: calc(300 * var(--u));
-  padding: calc(6 * var(--u)) calc(11 * var(--u)) calc(6 * var(--u)) calc(9 * var(--u));
-  font-size: calc(7.5 * var(--u));
-  line-height: 1.35;
+  gap: calc(9 * var(--u));
+  width: max-content;
+  max-width: min(calc(440 * var(--u)), calc(100vw - var(--sl) - var(--sr) - calc(40 * var(--u))));
+  padding: calc(9 * var(--u)) calc(16 * var(--u)) calc(9 * var(--u)) calc(13 * var(--u));
+  font-size: calc(11.5 * var(--u));
+  font-weight: 600;
+  line-height: 1.3;
   color: var(--ink);
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   border: calc(1.5 * var(--u)) solid var(--line);
@@ -3676,11 +3754,11 @@ circle.bf-grab[data-stop] {
 [data-ui="touch"] .bf-footer::before {
   content: "";
   flex: none;
-  width: calc(6 * var(--u));
-  height: calc(6 * var(--u));
+  width: calc(9 * var(--u));
+  height: calc(9 * var(--u));
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 calc(6 * var(--u)) var(--green);
+  box-shadow: 0 0 calc(8 * var(--u)) var(--green);
 }
 [data-ui="touch"] .bf-footer.show {
   opacity: 1;
@@ -3994,4 +4072,280 @@ circle.bf-grab[data-stop] {
   top: calc(8 * var(--u));
   bottom: auto;
   max-width: calc(380 * var(--u));
+}
+
+/* Plan on touch: the radio toast sits above START BATTLE. */
+[data-ui="touch"][data-stage="plan"] .bf-footer {
+  bottom: calc(100 * var(--u));
+}
+/* Touch: the yellow hint by the selected tank is readable at arm's length. */
+[data-ui="touch"] .bf-hint {
+  padding: calc(4 * var(--u)) calc(9 * var(--u));
+  font-size: calc(10.5 * var(--u));
+  border-width: calc(2 * var(--u));
+}
+/* Touch: bigger keys in the location card's terrain panel and the plan cards' Randomize (dice
+   only, the word goes). */
+[data-ui="touch"] .bf-rand {
+  width: calc(36 * var(--u));
+  padding: 0;
+}
+[data-ui="touch"] .bf-rand span {
+  display: none;
+}
+[data-ui="touch"] .bf-rand .bf-die {
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+}
+/* Light theme: yellow text would vanish on white, so yellow labels turn ink on a yellow chip. */
+#battlefield[data-theme="light"] #bf-cmd .bf-cmd-mode {
+  justify-self: start;
+  padding: calc(2 * var(--u)) calc(5 * var(--u));
+  border-radius: calc(3 * var(--u));
+  background: var(--yellow);
+}
+/* Toast placement off the cards: setup, above the two stickers; plan, right of START BATTLE. */
+[data-ui="touch"][data-stage="setup"] .bf-footer {
+  left: auto;
+  right: calc(var(--sr) + calc(12 * var(--u)));
+  bottom: calc(114 * var(--u));
+  translate: 0 calc(8 * var(--u));
+  max-width: calc(256 * var(--u));
+  font-size: calc(10.5 * var(--u));
+}
+[data-ui="touch"][data-stage="setup"] .bf-footer.show {
+  translate: 0 0;
+}
+#battlefield[data-ui="touch"][data-stage="plan"] .bf-footer {
+  left: calc(50% + calc(129 * var(--u)));
+  bottom: calc(22 * var(--u));
+  translate: 0 calc(8 * var(--u));
+  max-width: calc(50% - calc(141 * var(--u)) - var(--sr));
+  font-size: calc(10 * var(--u));
+}
+#battlefield[data-ui="touch"][data-stage="plan"] .bf-footer.show {
+  translate: 0 0;
+}
+/* Loadout rows: the label runs up the side, so the three tank keys get the width. */
+.bf-pcard .bf-slot {
+  grid-template-columns: calc(14 * var(--u)) 1fr;
+  gap: calc(7 * var(--u));
+}
+.bf-pcard .bf-slot > span {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  justify-self: center;
+  font-size: calc(7 * var(--u));
+  letter-spacing: calc(0.6 * var(--u));
+  white-space: nowrap;
+}
+.bf-pcard .bf-slot .bf-seg button {
+  min-height: calc(48 * var(--u));
+  padding: 0 calc(8 * var(--u));
+  gap: calc(7 * var(--u));
+}
+.bf-pcard .bf-slot .bf-seg canvas.bf-ico {
+  width: calc(34 * var(--u));
+}
+.bf-slot .bf-seg button b {
+  font-size: calc(10.5 * var(--u));
+}
+.bf-slot .bf-seg button small {
+  font-size: calc(8.5 * var(--u));
+}
+[data-ui="touch"] .bf-pcard .bf-slot .bf-seg button {
+  min-height: calc(40 * var(--u));
+}
+[data-ui="touch"] .bf-pcard .bf-loadout {
+  gap: calc(6 * var(--u));
+}
+[data-ui="touch"] .bf-pcard .bf-slot > span {
+  font-size: calc(6.5 * var(--u));
+}
+[data-ui="touch"] #bf-card-loadout {
+  gap: calc(8 * var(--u));
+  padding-bottom: calc(12 * var(--u));
+}
+/* Plan toast: taps go through it to whatever card is under it. */
+#battlefield[data-ui="touch"][data-stage="plan"] .bf-footer.show {
+  pointer-events: none;
+}
+/* Budget sits in the Loadout title row. */
+.bf-card-head .bf-budget {
+  margin: 0 calc(4 * var(--u)) 0 0;
+  display: grid;
+  justify-items: end;
+  gap: calc(2 * var(--u));
+  line-height: 1;
+}
+.bf-card-head .bf-budget strong {
+  white-space: nowrap;
+}
+[data-ui="touch"] .bf-pcard .bf-slot .bf-seg button {
+  min-height: calc(38 * var(--u));
+}
+/* A card open on the right: the toast moves to the left of the flag. */
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden]), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
+  left: auto;
+  right: calc(50% + calc(197 * var(--u)));
+  max-width: calc(50% - calc(209 * var(--u)) - var(--sl));
+}
+/* START BATTLE: two stacked words, left-aligned to the skull, so the key stays short and narrow. */
+#bf-start.bf-start {
+  width: auto;
+  padding: 0 calc(20 * var(--u)) 0 calc(12 * var(--u));
+  gap: calc(10 * var(--u));
+}
+#bf-start.bf-start b {
+  text-align: left;
+  font-size: calc(15 * var(--u));
+  line-height: 1.12;
+  letter-spacing: calc(2 * var(--u));
+}
+[data-ui="touch"][data-stage="plan"] #bf-pause {
+  left: calc(50% - calc(80 * var(--u)) - calc(14 * var(--u)) - calc(56 * var(--u)));
+}
+#battlefield[data-ui="touch"][data-stage="plan"] .bf-footer {
+  left: calc(50% + calc(94 * var(--u)));
+  max-width: calc(50% - calc(106 * var(--u)) - var(--sr));
+}
+#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden]), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
+  left: auto;
+  right: calc(50% + calc(162 * var(--u)));
+  max-width: calc(50% - calc(174 * var(--u)) - var(--sl));
+}
+.bf-card .bf-seg {
+  grid-auto-columns: minmax(0, 1fr);
+}
+.bf-card .bf-seg button {
+  min-width: 0;
+}
+.bf-card-head {
+  gap: calc(8 * var(--u));
+  min-width: 0;
+}
+.bf-card-head .bf-budget {
+  font-size: calc(8 * var(--u));
+}
+.bf-card-head .bf-budget strong {
+  font-size: calc(10.5 * var(--u));
+}
+.bf-pcard .bf-slot .bf-seg button {
+  padding: 0 calc(5 * var(--u));
+  gap: calc(5 * var(--u));
+}
+.bf-pcard .bf-slot .bf-seg canvas.bf-ico {
+  width: calc(30 * var(--u));
+}
+/* Loadout: your tank's row carries a star and a tint of your colour; wingmen rows are plain. */
+.bf-pcard .bf-slot {
+  grid-template-columns: calc(18 * var(--u)) 1fr;
+  gap: calc(5 * var(--u));
+}
+.bf-pcard .bf-slot > span {
+  writing-mode: horizontal-tb;
+  rotate: none;
+  font-size: calc(15 * var(--u));
+  color: var(--team);
+}
+.bf-pcard .bf-slot.you {
+  margin: 0 calc(-6 * var(--u));
+  padding: calc(5 * var(--u)) calc(6 * var(--u)) calc(7 * var(--u));
+  border-radius: calc(8 * var(--u));
+  background: color-mix(in srgb, var(--team) 16%, transparent);
+  box-shadow: inset 0 0 0 calc(1.5 * var(--u)) color-mix(in srgb, var(--team) 55%, transparent);
+}
+#battlefield .bf-pcard .bf-slot > span {
+  font-size: calc(16 * var(--u));
+  line-height: 1;
+}
+/* Formation keys: the tanks in that formation; the lead (you) is yellow. */
+.bf-card .bf-seg [data-formation] canvas.bf-ico {
+  width: calc(44 * var(--u));
+}
+/* Squad size: the number in its own rounded box, then the name. */
+.bf-num {
+  display: inline-grid;
+  place-items: center;
+  min-width: calc(24 * var(--u));
+  height: calc(22 * var(--u));
+  padding: 0 calc(4 * var(--u));
+  font-style: normal;
+  font-size: calc(12 * var(--u));
+  font-weight: 800;
+  border: calc(2 * var(--u)) solid currentColor;
+  border-radius: calc(6 * var(--u));
+}
+/* With no close key, the dice gets the corner to itself. */
+#battlefield .bf-pcard .bf-rand {
+  width: calc(42 * var(--u));
+  min-height: calc(38 * var(--u));
+}
+#battlefield .bf-pcard .bf-rand .bf-die {
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+}
+/* Randomize is the dice alone, everywhere (its name is the tooltip). */
+.bf-rand span {
+  display: none;
+}
+/* Loadout rows use the full width; your tank's row is marked by its outline alone. */
+.bf-pcard .bf-slot {
+  grid-template-columns: 1fr;
+}
+#battlefield .bf-pcard .bf-slot > span {
+  display: none;
+}
+.bf-pcard .bf-slot.you {
+  background: none;
+  box-shadow: inset 0 0 0 calc(2 * var(--u)) var(--team);
+}
+/* Loadout emblems: a big star for your tank, the wingman's field number in its yellow disc. */
+.bf-pcard .bf-slot {
+  grid-template-columns: calc(26 * var(--u)) 1fr;
+  gap: calc(6 * var(--u));
+}
+#battlefield .bf-pcard .bf-slot > .bf-emblem {
+  display: grid;
+  place-items: center;
+  font-size: calc(26 * var(--u));
+  line-height: 1;
+  color: var(--team);
+  text-shadow: 0 0 calc(8 * var(--u)) color-mix(in srgb, var(--team) 55%, transparent);
+}
+.bf-emblem i:not(.bf-pips) {
+  display: grid;
+  place-items: center;
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+  font: 800 calc(12 * var(--u)) / 1 ui-monospace, monospace;
+  font-style: normal;
+  color: var(--rim);
+  background: var(--yellow);
+  border: calc(2 * var(--u)) solid var(--rim);
+  border-radius: 50%;
+  text-shadow: none;
+}
+/* Emblem = a little platoon key: star or number over the size dots (1 scout, 2 medium, 3 heavy). */
+#battlefield .bf-pcard .bf-slot > .bf-emblem {
+  gap: calc(4 * var(--u));
+  align-content: center;
+}
+.bf-emblem > b {
+  font-size: calc(24 * var(--u));
+  line-height: 0.9;
+}
+.bf-emblem .bf-pips {
+  display: flex;
+  gap: calc(2.5 * var(--u));
+  justify-content: center;
+}
+.bf-emblem .bf-pips s {
+  width: calc(5 * var(--u));
+  height: calc(5 * var(--u));
+  border-radius: calc(1 * var(--u));
+  background: var(--team);
+}
+.bf-pcard .bf-slot {
+  grid-template-columns: calc(28 * var(--u)) 1fr;
 }
