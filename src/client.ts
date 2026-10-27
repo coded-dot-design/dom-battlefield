@@ -1244,7 +1244,7 @@ function reset(keepBurst = false) {
     pressed("#bf-formation", "formation", formation);
     pressed("#bf-size", "size", String(per));
   }
-  if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  // Full screen stays on across games (surrender, rematch, a new operation): only you turn it off.
   overlays.set($("#bf-giveup"), false);
   keysPanel(false);
   cancelAnimationFrame(frame);
@@ -1702,6 +1702,23 @@ function pinActs(pin: boolean) {
   $("#bf-acts-pin").setAttribute("aria-pressed", String(pin));
   actsWidth = actsHeight = 0;
 }
+/** Unpinned orders never land on the Plan card: they keep a 10px buffer, moving below the card,
+ *  else beside it, whichever side has room. Runs on unpin and on drop (not per frame). */
+function clearOfPlan() {
+  const acts = $("#bf-acts"),
+    card = $("#bf-cmd");
+  if (acts.dataset.pin !== "false" || card.hidden || acts.hidden) return;
+  const gap = 10,
+    w = (actsWidth ||= acts.offsetWidth),
+    h = (actsHeight ||= acts.offsetHeight),
+    c = { l: card.offsetLeft, t: card.offsetTop, r: card.offsetLeft + card.offsetWidth, b: card.offsetTop + card.offsetHeight };
+  const hit = actsAt.x < c.r + gap && actsAt.x + w > c.l - gap && actsAt.y < c.b + gap && actsAt.y + h > c.t - gap;
+  if (!hit) return;
+  if (c.b + gap + h <= view.vh - gap) actsAt.y = c.b + gap;
+  else if (c.r + gap + w <= view.vw - safe.r - gap) actsAt.x = c.r + gap;
+  else actsAt.x = Math.max(safe.l + gap, c.l - gap - w);
+  rideAlong();
+}
 /** Entering command mode in a desktop battle: apply the remembered card layout. */
 function battleLayout() {
   const prefs = battleCards(),
@@ -1715,6 +1732,7 @@ function battleLayout() {
     if (below + (actsHeight || 120) < view.vh) (actsAt.x = card.offsetLeft), (actsAt.y = below);
     else (actsAt.x = card.offsetLeft + card.offsetWidth + 10), (actsAt.y = card.offsetTop);
     rideAlong();
+    clearOfPlan();
   });
 }
 /** Cards back to their places: unfolded, undragged, full height. */
@@ -1998,6 +2016,7 @@ listen($("#bf-acts-pin"), "click", () => {
   const pin = $("#bf-acts").dataset.pin !== "true";
   pinActs(pin);
   if (battleDesk()) saveBattleCards({ pin });
+  if (!pin) requestAnimationFrame(clearOfPlan);
   say(pin ? "Orders pinned to the tank." : "Orders unpinned: drag the bar to move them.");
   rideAlong();
 });
@@ -2018,7 +2037,11 @@ listen($("#bf-acts-pin"), "click", () => {
     actsAt.y = from.ay + e.clientY - from.y;
     rideAlong();
   }) as EventListener);
-  for (const t of ["pointerup", "pointercancel"]) listen(acts, t, () => (from = null));
+  for (const t of ["pointerup", "pointercancel"])
+    listen(acts, t, () => {
+      if (from) requestAnimationFrame(clearOfPlan);
+      from = null;
+    });
 }
 for (const n of document.querySelectorAll<HTMLElement>("[data-act]"))
   listen(n, "click", () => plan(n.dataset.act!));

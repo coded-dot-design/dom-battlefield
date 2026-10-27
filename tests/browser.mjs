@@ -993,6 +993,14 @@ try {
     await desk.waitForFunction(() => window.battlefield.playing && !window.battlefield.command.planning);
     await desk.locator("#bf-command").click();
     assert.equal(await desk.locator("#bf-acts").getAttribute("data-pin"), "true", "the pin choice is remembered");
+    // Full screen survives surrender (and any new game): only its own key turns it off.
+    await desk.locator("#bf-fullscreen").click();
+    await desk.waitForFunction(() => !!document.fullscreenElement);
+    await desk.locator("#bf-pause").click();
+    await desk.locator("#bf-giveup-yes").click();
+    await desk.waitForFunction(() => !window.battlefield.playing, null, { timeout: 3000 });
+    assert.equal(await desk.evaluate(() => !!document.fullscreenElement), true, "surrender keeps full screen");
+    await desk.evaluate(() => document.exitFullscreen());
     await desk.close();
     console.log({ battleCards: true });
   }

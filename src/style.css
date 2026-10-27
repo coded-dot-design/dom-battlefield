@@ -4198,8 +4198,7 @@ canvas.bf-ico {
   height: calc(20 * var(--u));
 }
 /* Plan toast: at the top of the open space, so it never covers a card or START. */
-#battlefield[data-ui="touch"][data-stage="plan"] .bf-footer,
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded), #bf-cmd[data-away="right"]:not([hidden])) .bf-footer {
+#battlefield[data-ui="touch"][data-stage="plan"] .bf-footer {
   left: 50%;
   right: auto;
   top: calc(var(--th, calc(60 * var(--u))) + calc(12 * var(--u)));
@@ -5558,4 +5557,48 @@ canvas.bf-ico {
 }
 .dock-icons .bf-dock-fold .bf-l-grid {
   display: inline;
+}
+/* Phone planning: the round card keys are bigger, so the icon reads and the PREV / NEXT caption
+   has room around it. */
+[data-ui="touch"] .bf-orbit {
+  gap: calc(14 * var(--u));
+}
+[data-ui="touch"] .bf-orb {
+  width: calc(70 * var(--u));
+  height: calc(70 * var(--u));
+}
+[data-ui="touch"] .bf-orb canvas.bf-ico {
+  width: calc(44 * var(--u));
+}
+[data-ui="touch"] .bf-orb:has(.bf-orb-caption) canvas.bf-ico {
+  width: calc(40 * var(--u));
+  transform: translateY(calc(-6 * var(--u)));
+}
+[data-ui="touch"] .bf-orb-caption {
+  bottom: calc(8 * var(--u));
+  gap: calc(3 * var(--u));
+  font-size: calc(9.5 * var(--u));
+}
+[data-ui="touch"] .bf-orb-caption svg {
+  width: calc(10 * var(--u));
+  height: calc(10 * var(--u));
+}
+/* Phone planning with a settings card open: the toast spans the open side, between the safe edge
+   and the card's round keys, and never covers the card. */
+#battlefield#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard:not([hidden], .folded)) .bf-footer {
+  --open-span: calc(496 * var(--u));
+  width: auto;
+  max-width: none;
+  translate: 0 calc(-8 * var(--u));
+}
+#battlefield#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) .bf-footer {
+  left: calc(var(--sl) + calc(12 * var(--u)));
+  right: calc(var(--sr) + var(--open-span));
+}
+#battlefield#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) .bf-footer {
+  left: calc(var(--sl) + var(--open-span));
+  right: calc(var(--sr) + calc(12 * var(--u)));
+}
+#battlefield#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard:not([hidden], .folded)) .bf-footer.show {
+  translate: 0 0;
 }

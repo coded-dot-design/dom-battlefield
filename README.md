@@ -87,6 +87,12 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.1 — Full screen stays on
+
+- Surrender, rematch and a new operation no longer drop you out of full screen; only the full-screen key (or Esc) turns it off.
+- Phone planning: the round card keys (with PREV / NEXT) are bigger, so the icon reads and the caption has room. The planning toast spans the open side of the field instead of sliding under the open card.
+- An unpinned orders card never lands on the Plan card: on unpin or drop it keeps a 10px buffer, moving below the card (or beside it when there is no room).
+
 ### 0.18.0 — Phase 1 go-live
 
 - **Cartridge hand-off.** Launched from the hub's console, the pink doors close over the screen and stay shut through the page load (the stand-in DEPLOYING SQUAD board is gone). The game paints the same shut doors, holds its whole boot until it has loaded, then opens them onto the grid. A one-time session flag (`dom-virus:doors`) carries the hand-off; a direct link or a refresh plays the boot as before.
