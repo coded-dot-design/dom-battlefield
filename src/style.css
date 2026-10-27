@@ -1568,10 +1568,6 @@ html.bf-playing body {
 .commanding #bf-viewport {
   cursor: crosshair;
 }
-.commanding .bf-fire {
-  opacity: 0.35;
-  filter: grayscale(0.7);
-}
 .bf-n {
   position: absolute;
   top: -3px;
@@ -4209,14 +4205,6 @@ canvas.bf-ico {
 #battlefield[data-ui="touch"][data-stage="plan"] .bf-footer.show {
   translate: -50% 0;
 }
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="left"]:not([hidden], .folded)) .bf-footer {
-  left: calc((var(--sl) + var(--card-span) + 100% - var(--sr)) / 2);
-  max-width: calc(100% - var(--sl) - var(--sr) - var(--card-span) - calc(24 * var(--u)));
-}
-#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard[data-away="right"]:not([hidden], .folded)) .bf-footer {
-  left: calc((var(--sl) + 100% - var(--sr) - var(--card-span)) / 2);
-  max-width: calc(100% - var(--sl) - var(--sr) - var(--card-span) - calc(24 * var(--u)));
-}
 /* With the plan card up top, the toast drops to the bottom of the open side instead. */
 #battlefield[data-ui="touch"][data-stage="plan"]:has(#bf-cmd:not([hidden])) .bf-footer {
   top: auto;
@@ -4635,13 +4623,9 @@ canvas.bf-ico {
 }
 [data-ui="desk"][data-full="true"] .bf-dock-cmd {
   left: 30px;
-  padding-top: 12px;
 }
 [data-ui="desk"][data-full="true"] .bf-quick {
   right: 30px;
-}
-[data-ui="desk"][data-full="true"] .bf-quick > .bf-aim::before {
-  bottom: calc(100% + 4px);
 }
 [data-ui="desk"][data-full="true"] .bf-mini {
   width: 180px;
@@ -4750,38 +4734,13 @@ canvas.bf-ico {
   flex-direction: column;
   align-items: stretch;
 }
-[data-ui="desk"][data-full="true"] :is(.bf-dock-cmd, .bf-quick) {
-  gap: 10px;
-  padding: 44px 12px 12px;
-}
-[data-ui="desk"][data-full="true"] :is(.bf-task, .bf-quick > .bf-aim) {
-  padding: 0 0 10px;
-  border-right: 0;
-  border-bottom: 1px solid var(--line);
-}
 [data-ui="desk"][data-full="true"] :is(.bf-task, .bf-squad-orders) {
   justify-items: stretch;
-}
-[data-ui="desk"][data-full="true"] .bf-dock button:not(.bf-dock-fold) {
-  justify-content: start;
-}
-[data-ui="desk"][data-full="true"] .bf-quick > .bf-aim::before {
-  position: static;
-  margin-bottom: -4px;
-}
-[data-ui="desk"][data-full="true"] .bf-task .bf-group-label,
-[data-ui="desk"][data-full="true"] .bf-quick > .bf-aim::before {
-  margin-top: -30px;
-  margin-right: 34px;
 }
 [data-ui="desk"][data-full="true"].dock-icons .bf-dock button :is(span, kbd),
 [data-ui="desk"][data-full="true"].dock-icons .bf-dock .bf-group-label,
 [data-ui="desk"][data-full="true"].dock-icons .bf-quick > .bf-aim::before {
   display: none;
-}
-[data-ui="desk"][data-full="true"].dock-icons .bf-dock button:not(.bf-dock-fold) {
-  justify-content: center;
-  width: 46px;
 }
 
 /* ---------- The blank first screen: a clear grid that flickers to life ---------- */
@@ -5454,8 +5413,6 @@ canvas.bf-ico {
   right: calc(var(--sr) + calc(12 * var(--u)));
   width: calc(60 * var(--u));
   height: calc(60 * var(--u));
-  opacity: 1;
-  filter: none;
 }
 #battlefield[data-ui="touch"][data-stage="battle"].commanding .bf-fire svg {
   rotate: 45deg;
@@ -5601,4 +5558,84 @@ canvas.bf-ico {
 }
 #battlefield#battlefield[data-ui="touch"][data-stage="plan"]:has(.bf-pcard:not([hidden], .folded)) .bf-footer.show {
   translate: 0 0;
+}
+
+/* Full-screen action cards, one spacing system: a 52px header row holds the card's title (RADIO,
+   AIM) and its list / grid switch; groups below carry their own small label (EACH TANK, WHOLE
+   SQUAD); text keys put their shortcut on the right edge. */
+.bf-dock-title {
+  display: none;
+}
+[data-ui="desk"][data-full="true"] :is(.bf-dock-cmd, .bf-quick) {
+  gap: 12px;
+  padding: 54px 14px 14px;
+}
+[data-ui="desk"][data-full="true"] .bf-dock-title {
+  display: block;
+  position: absolute;
+  left: 16px;
+  top: 21px;
+  font: 700 11px/1 ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+[data-ui="desk"][data-full="true"] .bf-dock-fold {
+  top: 12px;
+  right: 12px;
+}
+[data-ui="desk"][data-full="true"] .bf-quick > .bf-aim::before,
+[data-ui="desk"][data-full="true"] .bf-lbl-pre {
+  display: none;
+}
+[data-ui="desk"][data-full="true"] .bf-dock .bf-group-label {
+  margin: 0 0 2px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+[data-ui="desk"][data-full="true"] :is(.bf-task, .bf-quick > .bf-aim) {
+  gap: 8px;
+  padding: 0 0 12px;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+}
+[data-ui="desk"][data-full="true"] :is(.bf-squad-orders, .bf-orders) {
+  gap: 8px;
+}
+[data-ui="desk"][data-full="true"] .bf-dock button:not(.bf-dock-fold) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+}
+[data-ui="desk"][data-full="true"] .bf-dock button:not(.bf-dock-fold) kbd {
+  margin-left: auto;
+}
+/* Icons only: no titles or labels, a narrower header. */
+[data-ui="desk"][data-full="true"].dock-icons :is(.bf-dock-cmd, .bf-quick) {
+  padding-top: 48px;
+}
+[data-ui="desk"][data-full="true"].dock-icons .bf-dock-title {
+  display: none;
+}
+[data-ui="desk"][data-full="true"].dock-icons .bf-dock button:not(.bf-dock-fold) {
+  justify-content: center;
+  width: 46px;
+  padding: 0;
+}
+
+/* Keyboard focus on a 3D key: the ring wraps the face and its hard base together (an outline
+   only follows the face, so it stopped short of the base). Pressed keys have no base. */
+button:focus-visible:not(.bf-fold-key) {
+  outline: none;
+  box-shadow:
+    0 var(--py, 0px) 0 var(--edge, transparent),
+    0 0 0 3px var(--bg),
+    0 var(--py, 0px) 0 3px var(--bg),
+    0 0 0 6px var(--k-sys-ink),
+    0 var(--py, 0px) 0 6px var(--k-sys-ink);
+}
+button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed="true"], [aria-expanded="true"]) {
+  box-shadow:
+    0 0 0 3px var(--bg),
+    0 0 0 6px var(--k-sys-ink);
 }

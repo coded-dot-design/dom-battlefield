@@ -87,6 +87,12 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.2 — Full-screen card polish
+
+- Keyboard focus on a 3D key: the ring wraps the face and its hard base together (the outline used to stop short of the base).
+- Full screen from the first screen: the platoon card waits in the map's top-right corner during setup and planning (it used to land in the middle, over START BATTLE), then moves under the sector map in battle.
+- Full-screen action cards share one spacing system: a header row with the card title (RADIO, AIM) and the list / grid switch (no longer clipped), group labels EACH TANK and WHOLE SQUAD, and each key's shortcut on its right edge.
+
 ### 0.18.1 — Full screen stays on
 
 - Surrender, rematch and a new operation no longer drop you out of full screen; only the full-screen key (or Esc) turns it off.

@@ -104,7 +104,7 @@ function syncUi() {
   if (root.dataset.panel !== panel) root.dataset.panel = panel;
   if (root.dataset.per !== String(per)) root.dataset.per = String(per);
   if (view) view.fitAll = ui === "desk" || stage !== "battle";
-  if (changed) requestAnimationFrame(barIcons);
+  if (changed) requestAnimationFrame(() => (barIcons(), placePlatoon()));
 }
 /** A platoon key's inside: the tank number over 1-3 size pips. */
 const PIPS: Record<string, number> = { scout: 1, medium: 2, heavy: 3 };
@@ -507,6 +507,10 @@ function preview(resized = false) {
     cmdPanel();
   }
 }
+/** Orders label: "ORDERS · WHOLE SQUAD" in the bar; the full-screen Radio card drops "ORDERS · ". */
+function orderLabel(who: string) {
+  $("#bf-order-label").innerHTML = `<span class="bf-lbl-pre">ORDERS · </span>${who}`;
+}
 function selectUnit(id: number, fromList = false) {
   if (!playing || paused || pan) return;
   // Planning: tapping one of your tanks from any card jumps straight to Plan (Move Tanks).
@@ -536,8 +540,7 @@ function selectUnit(id: number, fromList = false) {
   if (!commanding && !planning && (!own || fromList)) setCommand(true, false);
   selected = own && !routeOwn ? -1 : id;
   draft = selected < 0 ? null : { id: selected, stops: [...u.route] };
-  $("#bf-order-label").textContent =
-    selected < 0 || own ? "ORDERS · WHOLE SQUAD" : `ORDERS · TANK ${tankNo(id)}`;
+  orderLabel(selected < 0 || own ? "WHOLE SQUAD" : `TANK ${tankNo(id)}`);
   say(
     selected < 0
       ? "Squad selected."
@@ -630,7 +633,7 @@ function setCommand(on: boolean, pick = true) {
     // Back to fighting: squad orders go to the whole squad again.
     selected = -1;
     draft = null;
-    $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
+    orderLabel("WHOLE SQUAD");
     $("#bf-cmd").hidden = true;
     if (!planning) follow = true;
   } else {
@@ -757,7 +760,7 @@ function startBattle() {
   // Squad orders go to the whole squad again once the battle starts.
   selected = -1;
   draft = null;
-  $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
+  orderLabel("WHOLE SQUAD");
   setCommand(false);
   setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
   follow = true;
@@ -1201,7 +1204,7 @@ function deploy(quick = false) {
   setPan(false);
   follow = true;
   setAim({ mode: railLayout.matches ? (autoOn ? "auto" : "free") : "pointer" });
-  $("#bf-order-label").textContent = "ORDERS · WHOLE SQUAD";
+  orderLabel("WHOLE SQUAD");
   // Plan battle opens the frozen planning step on its home cards; Quick start skips it.
   planning = !quick;
   panel = "home";
@@ -1798,8 +1801,15 @@ const fullHome = $("#bf-fullscreen").parentElement!,
 function placePlatoon() {
   if (railLayout.matches || (root.dataset.full !== "true" && !root.classList.contains("platoon-floating")) || tactics.dataset.moved !== undefined) return;
   const m = $(".bf-mini").getBoundingClientRect();
-  // No sector map yet (planning): leave the card where the stylesheet puts it.
-  if (!m.width) return void (tactics.style.top = tactics.style.left = tactics.style.right = "");
+  // No sector map yet (setup, planning): the card waits in the map's top-right corner, where the
+  // sector map will be, clear of the planning cards and START BATTLE.
+  if (!m.width) {
+    const st = $(".bf-stage").getBoundingClientRect();
+    tactics.style.top = `${Math.round(st.top + 12)}px`;
+    tactics.style.left = "auto";
+    tactics.style.right = `${Math.round(innerWidth - st.right + 12)}px`;
+    return;
+  }
   tactics.style.top = `${Math.round(m.bottom + 10)}px`;
   tactics.style.left = "auto";
   tactics.style.right = `${Math.round(innerWidth - m.right)}px`;
