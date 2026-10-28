@@ -1076,7 +1076,8 @@ try {
     // finger's taps on the bottom bar (orders, aim, platoon keys) still count.
     where = "desk-touch";
     const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, hasTouch: true });
-    await ctx.addInitScript(() => localStorage.setItem("dom-battlefield:tips", "off"));
+    // Some Chromium builds report a coarse pointer here, which brings the install card: not this test's subject.
+    await ctx.addInitScript(() => { localStorage.setItem("dom-battlefield:tips", "off"); localStorage.setItem("dom-battlefield:intro", "seen"); });
     const page = await ctx.newPage();
     await page.goto(URL);
     await page.waitForFunction(() => window.battlefield);
