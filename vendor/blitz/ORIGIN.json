@@ -1,11 +1,11 @@
 {
   "note": "Pinned build of Battlefield Blitz (its dist/). Release coded-dot-design/dom-battlefield-blitz, then run node scripts/sync-blitz.mjs.",
   "repository": "https://github.com/coded-dot-design/dom-battlefield-blitz",
-  "version": "0.6.4",
-  "commit": "9c15a81996269ac37e867a88889bcfdffb471427",
+  "version": "0.6.5",
+  "commit": "c8c8ca403d78c9583ad03f133b70a110138285b5",
   "files": {
-    "blitz.js": "4ffb1e5335a83d3c7028d4bf0bf478e1a54ae1b05f6f4f37416adf09506733e0",
-    "blitz.mjs": "f79bef155f5bf1be6fa87897c5216016c2503b1690e3a3fe4e1346fce2db11a0",
+    "blitz.js": "d240a4930245c8a954eb9d541960973a4ee64aa0cfe1e2bc3059524deab1c453",
+    "blitz.mjs": "6ab5eee35312622c8a34c2e0eb2fd21b3239f9b2c5904da68cb55a37b90dc28c",
     "blitz.d.ts": "363d36a9fb7d56f86477eb3d587e87747d802c33279b709f71b7e2b2cad088fa"
   }
 }
