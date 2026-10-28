@@ -5792,17 +5792,37 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
 #bf-cmd #bf-cmd-state {
   --pill: var(--raised);
   position: absolute;
-  top: calc(10 * var(--u));
+  z-index: 2;
+  top: calc(-12 * var(--u));
   right: calc(14 * var(--u));
   display: flex;
   align-items: center;
   gap: calc(4 * var(--u));
-  padding: calc(3 * var(--u)) calc(7 * var(--u));
+  height: calc(22 * var(--u));
+  padding: 0 calc(9 * var(--u)) 0 calc(7 * var(--u));
+  font: 800 calc(9 * var(--u)) / 1 ui-monospace, monospace;
+  letter-spacing: calc(1.2 * var(--u));
   color: var(--rim);
   background: var(--pill);
   border: calc(1.5 * var(--u)) solid var(--rim);
-  border-radius: calc(5 * var(--u));
-  box-shadow: 0 calc(2 * var(--u)) 0 var(--rim);
+  border-radius: calc(6 * var(--u));
+  /* Flat (it is a status, not a key) with the locked key's breathing glow in its colour. */
+  box-shadow: 0 0 calc(12 * var(--u)) color-mix(in srgb, var(--pill) 55%, transparent);
+  animation: bf-pill 1.8s ease-in-out infinite;
+}
+@keyframes bf-pill {
+  50% {
+    box-shadow: 0 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--pill) 35%, transparent), 0 0 calc(20 * var(--u)) color-mix(in srgb, var(--pill) 80%, transparent);
+  }
+}
+#bf-cmd #bf-cmd-state[data-kind="none"] {
+  animation: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #bf-cmd #bf-cmd-state {
+    animation: none;
+  }
 }
 #bf-cmd #bf-cmd-state svg {
   width: calc(11 * var(--u));
@@ -5822,8 +5842,14 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
 #bf-cmd.folded #bf-cmd-state {
   display: none;
 }
-/* The switch sits under the order pill. */
-#battlefield[data-plan="true"] #bf-cmd .bf-mode {
-  align-self: end;
-  margin-top: calc(26 * var(--u));
+/* Move HQ: the badge is the HQ, in your team colour. */
+#bf-cmd-badge[data-key="hq"] {
+  --c: var(--team);
+}
+#battlefield #bf-cmd-badge[data-key="hq"] svg {
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+  fill: none;
+  stroke: var(--rim);
+  stroke-width: 2;
 }

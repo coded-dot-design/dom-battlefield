@@ -87,6 +87,12 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.8 — Plan card pill on the top edge, radio talk
+
+- The order pill moved to the card's top edge, opposite the LOADOUT tab: flat (no 3D shadow) and breathing with the same glow as the selected tank key, so the two read as one. The Move HQ / Move Tanks switch and the tank number now sit opposite each other.
+- Radio talk: a sent command location reads ROGER · GRID 0412 (the last waypoint's grid). Unsent routes read PLOTTING. Other orders keep their names.
+- In Move HQ the card's badge shows the HQ icon instead of an empty box, and the title reads MOVE HQ.
+
 ### 0.18.7 — Plan card order pill, cards that fit
 
 - Planning cards fit their content (up to the old height cap): the Next / Previous footer closes up instead of leaving an empty card over the map, and the resize handle can't stretch a card past its content.

@@ -360,7 +360,7 @@ try {
       await page.mouse.click(spot.x, spot.y);
       assert.deepEqual((await cmd(page)).draft.stops, [spot.id]);
       await page.waitForFunction(() => document.querySelectorAll(".bf-route.draft").length === 1);
-      assert.equal(await page.locator("#bf-cmd-state").textContent(), "DRAFT");
+      assert.equal(await page.locator("#bf-cmd-state").textContent(), "PLOTTING");
       assert.equal(await page.locator("#bf-check").isVisible(), true);
       assert.equal(await page.locator("#bf-check").getAttribute("data-state"), "draft");
       // Drag the middle of the line to an open square nearby: that adds a turn.
@@ -405,7 +405,7 @@ try {
       const locked = await page.evaluate(() => window.battlefield.snapshot().units[1]);
       assert.deepEqual(locked.route, drafted, "the check sends the route to the tank");
       assert.equal(locked.order, "hold");
-      assert.match(await page.locator("#bf-cmd-state").textContent(), /^COMMAND · \d STOP/);
+      assert.match(await page.locator("#bf-cmd-state").textContent(), /^ROGER · GRID \d{4}$/);
       assert.equal(await page.locator("#bf-cmd-state").getAttribute("data-kind"), "command", "the order pill takes the order's colour");
       assert.equal(await page.locator("#bf-check").getAttribute("data-state"), "locked", "the check stays lit by the flag");
       await page.waitForFunction(() => !document.querySelector(".bf-route.draft"), null, { timeout: 2000 });

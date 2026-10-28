@@ -818,6 +818,10 @@ function showPanel(next: Panel, pick = true) {
     view.render(selected, paused, reduced.matches);
   }
 }
+/** A four-digit map reference (column then row, two digits each), radio style: GRID 3412. */
+const grid = (tile: number) =>
+  `${String(tile % state.board.cols).padStart(2, "0")}${String(Math.floor(tile / state.board.cols)).padStart(2, "0")}`;
+const HQ_ICON = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15" stroke-dasharray="3 2" /><rect x="6.5" y="8.5" width="7" height="5" /></svg>';
 /** Order icons for the plan card's pill (the same glyphs as the order keys). */
 const ORDER_ICON: Record<string, string> = {
   attack: "M5 18V3M5 4h10l-3 3.5 3 3.5H5",
@@ -837,13 +841,14 @@ function cmdPanel() {
     alive = u && u.hp > 0;
   text("#bf-cmd-mode span", planning ? "PLAN · TIME FROZEN" : "COMMAND · HALF SPEED");
   // Badge: the same platoon key as the list (colour = health, pips = size, number).
+  // Move HQ: the badge shows the HQ (the card is about the HQ now), never an empty key.
   const badge = $("#bf-cmd-badge"),
-    key = alive ? `${u!.role}|${tankNo(u!.id)}` : "";
+    key = hqPick ? "hq" : alive ? `${u!.role}|${tankNo(u!.id)}` : "";
   if (badge.dataset.key !== key) {
     badge.dataset.key = key;
-    badge.innerHTML = alive ? unitKey(u!.role, u!.id === commander(state).id ? "★" : String(tankNo(u!.id))) : "";
+    badge.innerHTML = hqPick ? HQ_ICON : alive ? unitKey(u!.role, u!.id === commander(state).id ? "★" : String(tankNo(u!.id))) : "";
   }
-  badge.dataset.hp = alive ? healthTone(u!) : "lost";
+  badge.dataset.hp = hqPick ? "ok" : alive ? healthTone(u!) : "lost";
   text("#bf-cmd-hp", alive ? `${Math.ceil(u!.hp)} HP` : "");
   $("#bf-cmd-hp").dataset.hp = badge.dataset.hp;
   const cells = draftCells(),
@@ -868,17 +873,17 @@ function cmdPanel() {
                   ? "Route locked. The arrow moves to the next tank."
                   : "Pick an order beside the tank: Attack HQ, Follow, or Command.",
   );
-  text("#bf-cmd-tank", alive ? `${tankName(u!.id).toUpperCase()} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
+  text("#bf-cmd-tank", hqPick ? "MOVE HQ" : alive ? `${tankName(u!.id).toUpperCase()} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
   // The order pill (top right): the order's colour and icon, the same as its key beside the tank.
   const route = u?.order === "hold" && u.route.length,
     [kind, label] = !alive
       ? ["", ""]
       : dirty()
-        ? ["command", "DRAFT"]
+        ? ["command", "PLOTTING"]
         : on?.hq
           ? ["attack", "ATTACKING HQ"]
           : route
-            ? ["command", `COMMAND · ${u!.route.length} STOP${u!.route.length > 1 ? "S" : ""}`]
+            ? ["command", `ROGER · GRID ${grid(u!.route.at(-1)!)}`]
             : u!.order === "hold"
               ? ["command", "HOLDING"]
               : u!.order === "follow"
