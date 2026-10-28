@@ -11,7 +11,8 @@ and it is the special-edition cartridge 02 on the shelf. Ecosystem context is in
 [FUTURE.md](FUTURE.md). The README holds the player-facing controls table and the changelog.
 
 - **Play:** https://coded-dot-design.github.io/dom-virus/battlefield/ (pinned release, via the hub)
-- **Preview:** https://coded-dot-design.github.io/dom-battlefield/ (every checked `main` push)
+- **Site:** https://coded-dot-design.github.io/dom-battlefield/ (landing page), `/style-guide/` (Board
+  UI) and `/play/` (the game, every checked `main` push). Source: `site/`, `board-ui/`.
 
 | Task | Where |
 |---|---|
@@ -26,6 +27,8 @@ and it is the special-edition cartridge 02 on the shelf. Ecosystem context is in
 | Manifest and Home Screen icons | `public/` |
 | Tank art, selection lock, audio | not here: `sherman-bytes/src/sprites.ts`, `dom-virus/src/{selection-lock,audio}.ts`, then `node scripts/sync-shared.mjs` |
 | Size budget | `scripts/size.mjs` |
+| Landing page, hero arena, style guide (Astro, GitHub Pages) | `site/`, `scripts/pages.mjs`, `tests/site.mjs` |
+| Board UI kit and spec (the board design system) | `board-ui/` |
 
 **Invariants**
 

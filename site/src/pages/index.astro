@@ -1,0 +1,995 @@
+---
+// The DOM Battlefield landing page. Seeded from the game: the page is a Board UI root, the hero is
+// a live battle drawn with the game's own tank sprites, and every key here is the kit's key.
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Skull from '../components/Skull.astro';
+import { MISSIONS, ROLES } from '../../../src/model';
+import { VERSION, REPO, HUB, HUB_GAME, base } from '../site';
+
+const title = 'DOM Battlefield · Squad tactics in a browser tab';
+const description = 'Command a platoon of up to twelve tanks. Pick the ground, freeze time to plan every route, then radio your squad through a live firefight. No install, no account.';
+// The headline: every letter is a target (shots knock it, treads flatten it).
+const lines = [['Twelve', 'tanks.'], ['One', 'radio.']];
+const orders = [
+  { id: 'fallin', key: 'F', label: 'Fall in', icon: 'M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6', says: 'FALL IN · the squad forms up on your tank and follows you.' },
+  { id: 'retreat', key: 'R', label: 'Retreat', icon: 'M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4', says: 'RETREAT · everyone heads home. Your HQ repairs tanks nearby.' },
+  { id: 'advance', key: 'E', label: 'Advance', icon: 'M4 5l5 5-5 5M10 5l5 5-5 5', says: 'ADVANCE · the squad pushes to the objective by its own lanes.' },
+  { id: 'attack', key: 'G', label: 'Attack', icon: 'M12 4c2 0 4 2 4 4l-6 6-4-4 6-6ZM6 10l-2 4 2 2 4-2M5 15l-2 2', says: 'ATTACK · all guns on the enemy HQ. Released after the kill.' },
+  { id: 'cmd', key: 'O', label: 'Command', icon: 'M4 8.5 10 4l6 4.5M4 13.5 10 9l6 4.5', says: 'ROGER · GRID 0412 · one tank, one route, sent by radio.' },
+];
+const steps = [
+  { n: '01', kicker: 'PICK THE GROUND', title: 'Four fronts. One board.', text: 'Hedgerows that stop shells until they burn, desert ridges, a frozen crossroads, a city split by a canal. Pick a location and the board rebuilds around you.', shot: 'setup', alt: 'The location card: Hedgerow breach, Desert spearhead, Winter crossroads and Twin bridges over the empty board.' },
+  { n: '02', kicker: 'PLAN · TIME FROZEN', title: 'Freeze time. Draw the war.', text: 'Build the platoon, spend the loadout budget on scouts, mediums and heavies, then give every tank its job: attack the HQ, follow you, or a route of grid squares it will drive on its own.', shot: 'plan', alt: 'Planning with time frozen: Platoon, Loadout and Plan keys over the desert board, Start battle below.' },
+  { n: '03', kicker: 'RADIO THE SQUAD', title: 'Then it all goes loud.', text: 'Drive your own tank, aim or let it auto-aim, and radio the squad mid-fight. Damaged tanks slow down, HQs repair, shells chew through cover. Every battle plays out differently.', shot: 'battle', alt: 'A live battle: two platoons trading fire across the desert, the sector map in the corner.' },
+];
+const features = [
+  { icon: 'phone', title: 'A real phone cockpit', text: 'Landscape, full screen, notch-safe rails: stick on the left, orders and Fire on the right.' },
+  { icon: 'full', title: 'Full screen command', text: 'The header steps aside; radio and aim float as dock cards over a bigger map.' },
+  { icon: 'install', title: 'Install it like an app', text: 'Add it to your home screen and it opens straight into the cockpit.' },
+  { icon: 'bolt', title: 'Tiny on purpose', text: 'The whole game is about 68 KB gzipped. No engine download, no assets to wait for.' },
+  { icon: 'grid', title: 'The grid is the DOM', text: 'Every square on the board is a real element. It is a web page, fighting back.' },
+  { icon: 'sun', title: 'Dark and light', text: 'Neon on ink at night, crisp on paper by day. Same colours, same jobs.' },
+];
+const roles = Object.entries(ROLES);
+const terrain = { hedge: 'Hedges, houses', sand: 'Ridges, fences', snow: 'Crossroads, HQ repair', river: 'Canal, bridges, towers' };
+const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold: 'Hold the crossroads' };
+---
+<Base title={title} description={description} page="home">
+  <!-- HERO: a live battle across the whole hero. Tap the field to call an airstrike. -->
+  <section class="hero" data-arena aria-labelledby="hero-title">
+    <div class="hero-field" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <div class="hero-top">
+        <p class="eyebrow"><span class="dot"></span>SHERMAN OPERATIONS <span>/</span> <b>SQUAD TACTICS</b></p>
+        <p class="eyebrow hero-ver">SOLO · V{VERSION} · <b>MULTIPLAYER SOON</b></p>
+      </div>
+      <h1 id="hero-title" class="hero-title" aria-label="Twelve tanks. One radio.">
+        {lines.map((words, i) => (
+          <span class:list={['hl', { two: i === 1 }]} aria-hidden="true">{words.map((w) => <span class="w">{[...w].map((c) => <span class="hx">{c}</span>)}</span>)}</span>
+        ))}
+      </h1>
+      <p class="lead">Squad tactics in a browser tab. Pick the ground, freeze time to plan every route, then radio your platoon through a live firefight. No install. No account. One more battle.</p>
+      <div class="hero-ctas">
+        <a class="start-key hero-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
+        <div class="hero-side">
+          <a class="bui-key bui-arcade bui-sys" href="#how"><Icon name="down" size={16} />How it plays</a>
+          <a class="hero-hub" href={HUB_GAME}><Icon name="cart" size={16} />Play it inside DOM VIRUS ↗</a>
+        </div>
+      </div>
+      <p class="hero-hint mono-caps"><span class="blink"></span>Tap the field · call an airstrike</p>
+    </div>
+    <canvas class="arena" aria-hidden="true"></canvas>
+    <div class="arena-hud" data-no-strike>
+      <span><small>WRECKS</small><b data-wrecks>000</b></span>
+      <span><small>FLATTENED</small><b data-flat>000</b></span>
+      <span><small>STRIKES</small><b data-strikes>00</b></span>
+      <button class="bui-arcade bui-attack" type="button" data-airstrike><svg viewBox="0 0 20 20"><path d="M10 1v5M10 14v5M1 10h5M14 10h5" /><circle cx="10" cy="10" r="5" /></svg>Airstrike</button>
+      <button class="bui-icon-key" type="button" data-sound aria-pressed="false" aria-label="Sound"><span class="snd-off"><Icon name="mute" /></span><span class="snd-on"><Icon name="sound" /></span></button>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats" aria-label="The game in numbers">
+    <div class="wrap stats-row">
+      <span><b>12 v 12</b><small>TANKS A SIDE</small></span>
+      <span><b>04</b><small>FRONTS</small></span>
+      <span><b>03</b><small>TANK ROLES</small></span>
+      <span><b>~68 KB</b><small>THE WHOLE GAME</small></span>
+      <span><b>00</b><small>INSTALLS NEEDED</small></span>
+      <span class="soon"><i></i><b>SOON</b><small>BATTLEFIELD MULTIPLAYER</small></span>
+    </div>
+  </section>
+
+  <!-- HOW IT PLAYS -->
+  <section id="how" class="section how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow"><span class="index">01</span> HOW A BATTLE PLAYS</p>
+        <h2 id="how-title">Plan it frozen.<br /><em>Fight it live.</em></h2>
+      </div>
+      <ol class="steps">
+        {steps.map((s, i) => (
+          <li class:list={['step', { flip: i % 2 === 1 }]}>
+            <div class="step-text">
+              <span class="step-n">{s.n}</span>
+              <p class="eyebrow"><b>{s.kicker}</b></p>
+              <h3>{s.title}</h3>
+              <p>{s.text}</p>
+            </div>
+            <figure class="panel lit shot">
+              <img src={base(`shots/${s.shot}.webp`)} alt={s.alt} width="1392" height={s.shot === 'setup' ? 690 : 656} loading={i ? 'lazy' : 'eager'} decoding="async" />
+            </figure>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- THE RADIO: the real keys, live -->
+  <section id="radio" class="section radio" aria-labelledby="radio-title">
+    <div class="wrap radio-grid">
+      <div>
+        <p class="eyebrow"><span class="index">02</span> THE RADIO</p>
+        <h2 id="radio-title">Five keys run the war.</h2>
+        <p class="lead">Every order is one key, one colour, one job: the same on desktop and phone. Tap one to lock it in, tap again to release. Go on, they are the real keys.</p>
+      </div>
+      <div class="panel lit radio-board">
+        <div class="radio-bar">
+          <div class="radio-group">
+            <span class="bui-label"><b>RADIO</b> · EACH TANK</span>
+            {orders.filter((o) => o.id === 'cmd').map((o) => (
+              <button class={`bui-arcade bui-${o.id}`} type="button" aria-pressed="false" data-order={o.id} data-says={o.says}><svg viewBox="0 0 20 20"><path d={o.icon} /></svg>{o.label}<kbd>{o.key}</kbd></button>
+            ))}
+          </div>
+          <i class="radio-sep" aria-hidden="true"></i>
+          <div class="radio-group">
+            <span class="bui-label"><b>RADIO</b> · WHOLE SQUAD</span>
+            <div class="radio-keys" role="group" aria-label="Squad orders">
+              {orders.filter((o) => o.id !== 'cmd').map((o) => (
+                <button class={`bui-arcade bui-${o.id}`} type="button" aria-pressed="false" data-order={o.id} data-says={o.says}><svg viewBox="0 0 20 20"><path d={o.icon} /></svg>{o.label}<kbd>{o.key}</kbd></button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p class="bui-toast radio-toast" data-radio-toast aria-live="polite">COMMS · Pick an order. The squad is listening.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FRONTS -->
+  <section id="fronts" class="section fronts" aria-labelledby="fronts-title">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow"><span class="index">03</span> FOUR FRONTS · THREE TANKS</p>
+        <h2 id="fronts-title">Every map fights differently.</h2>
+      </div>
+      <ul class="missions">
+        {MISSIONS.map((m, i) => (
+          <li class="panel mission" data-terrain={m.terrain}>
+            <span class="mission-n">0{i + 1}</span>
+            <p class="eyebrow">{m.region}</p>
+            <h3>{m.name}</h3>
+            <p class="mission-brief">{m.brief}</p>
+            <p class="mission-tags"><span>{objective[m.objective]}</span><span>{terrain[m.terrain]}</span></p>
+          </li>
+        ))}
+      </ul>
+      <ul class="roles">
+        {roles.map(([name, r]) => (
+          <li class="panel role">
+            <b class="role-name">{name}</b>
+            <span class="role-cost">{r.cost} PTS</span>
+            <dl>
+              <div><dt>ARMOR</dt><dd><i style={`--v:${r.hp / 150}`}></i></dd></div>
+              <div><dt>SPEED</dt><dd><i style={`--v:${r.speed / 2.9}`}></i></dd></div>
+              <div><dt>PUNCH</dt><dd><i style={`--v:${r.damage / 42}`}></i></dd></div>
+            </dl>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- ANYWHERE -->
+  <section id="anywhere" class="section anywhere" aria-labelledby="any-title">
+    <div class="wrap any-grid">
+      <figure class="panel lit phone-shot">
+        <img src={base('shots/phone.webp')} alt="The phone cockpit in landscape: menu, readouts, Command and the stick on the left; orders, Auto, Lock and Fire on the right." width="1688" height="780" loading="lazy" decoding="async" />
+      </figure>
+      <div>
+        <p class="eyebrow"><span class="index">04</span> DESK OR POCKET</p>
+        <h2 id="any-title">A cockpit for every screen.</h2>
+        <ul class="features">
+          {features.map((f) => (
+            <li><span class="feat-icon"><Icon name={f.icon} /></span><div><h3>{f.title}</h3><p>{f.text}</p></div></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOM VIRUS + STYLE GUIDE -->
+  <section class="section family" aria-labelledby="family-title">
+    <div class="wrap family-grid">
+      <a class="panel cart-card" href={HUB}>
+        <div class="cart" aria-hidden="true">
+          <span class="cart-grip"><i></i><i></i><i></i><i></i></span>
+          <span class="cart-label"><span class="cart-art"><Skull size={46} /></span><small>06 / SQUAD TACTICS</small><strong>DOM Battlefield</strong><em>Special edition</em></span>
+          <span class="cart-pins">{Array.from({ length: 11 }, () => <i></i>)}</span>
+        </div>
+        <div class="cart-text">
+          <p class="eyebrow"><span class="index">05</span> A DOM VIRUS CARTRIDGE</p>
+          <h2 id="family-title">Born in the arcade.</h2>
+          <p>Battlefield started life on the DOM VIRUS shelf: tiny games that turn your page into the game board. Plug it into the console there, or try the other cartridges.</p>
+          <span class="bui-arcade bui-cmd as-link">Visit DOM VIRUS <Icon name="out" size={16} /></span>
+        </div>
+      </a>
+      <a class="panel guide-card" href={base('style-guide/')}>
+        <p class="eyebrow"><b>BOARD UI</b> · DESIGN SYSTEM</p>
+        <h3>Built on its own board design system.</h3>
+        <p>3D keys, cards, overlays, launch bursts and layouts, all documented and live. Only the palette changes from game to game.</p>
+        <span class="guide-keys" aria-hidden="true"><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i></span>
+        <span class="go">Open the style guide <Icon name="book" size={16} /></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- FINAL CALL -->
+  <section class="section final" aria-labelledby="final-title">
+    <div class="wrap final-inner">
+      <p class="eyebrow">COMMS · ALL UNITS STANDING BY</p>
+      <h2 id="final-title">The squad is waiting.</h2>
+      <a class="start-key final-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
+      <p class="final-links"><a href={REPO}>Source on GitHub</a> · <a href={`${REPO}#readme`}>Release notes</a> · <a href={HUB}>DOM VIRUS</a></p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { startArena } from "../scripts/arena";
+  import { launch } from "../../../board-ui/board-ui";
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const hero = document.querySelector<HTMLElement>("[data-arena]");
+  if (hero) startArena(hero);
+  // Start keys launch like the game's: press, invert, shatter, then the game.
+  for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-launch-link]"))
+    a.addEventListener("click", (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+      e.preventDefault();
+      launch(a, () => {}, { reduced: reduced(), done: () => (location.href = a.href) });
+    });
+  // The radio: tap to lock, tap again to release; one order at a time, said in the comms line.
+  const toast = document.querySelector<HTMLElement>("[data-radio-toast]");
+  const keys = [...document.querySelectorAll<HTMLButtonElement>("[data-order]")];
+  for (const k of keys)
+    k.addEventListener("click", () => {
+      const on = k.getAttribute("aria-pressed") !== "true";
+      for (const o of keys) o.setAttribute("aria-pressed", String(on && o === k));
+      if (toast) toast.textContent = on ? `COMMS · ${k.dataset.says}` : "COMMS · Order released. The squad is on its own.";
+    });
+  addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || (e.target as Element).closest("input, textarea")) return;
+    const k = keys.find((b) => b.querySelector("kbd")?.textContent?.toLowerCase() === e.key.toLowerCase());
+    const radio = document.querySelector("#radio")!.getBoundingClientRect();
+    if (k && radio.top < innerHeight && radio.bottom > 0) k.click();
+  });
+</script>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    min-height: min(860px, calc(100svh - 78px));
+    display: grid;
+    align-items: center;
+    border-bottom: 2px solid var(--line);
+    background: radial-gradient(ellipse 80% 70% at 75% 30%, color-mix(in srgb, var(--k-cmd) 16%, transparent), transparent 70%), var(--bg);
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .hero-field {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 44px 44px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 44px 44px;
+    mask-image: radial-gradient(ellipse 100% 90% at 60% 50%, #000 40%, transparent 100%);
+  }
+  .arena {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    padding-top: 40px;
+    padding-bottom: 96px;
+    will-change: transform;
+  }
+  .hero-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: clamp(30px, 6vh, 64px);
+  }
+  .hero-title {
+    display: grid;
+    gap: 0.02em;
+    margin: 0 0 26px;
+    font-size: clamp(56px, 11vw, 148px);
+    line-height: 0.92;
+    letter-spacing: -0.05em;
+  }
+  .hl {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.26em;
+  }
+  .hl.two {
+    color: var(--team-a);
+    text-shadow: 0 0 40px color-mix(in srgb, var(--team-a) 35%, transparent);
+  }
+  html.bui[data-theme="light"] .hl.two {
+    color: color-mix(in srgb, var(--team-a) 55%, #0b3d2c);
+    text-shadow: none;
+  }
+  .w {
+    display: inline-flex;
+    white-space: nowrap;
+  }
+  .hx {
+    display: inline-block;
+    transform-origin: 50% 100%;
+  }
+  .hero .lead {
+    max-width: 560px;
+  }
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px 30px;
+    margin-top: 34px;
+  }
+  .hero-start,
+  .final-start {
+    position: relative;
+    z-index: 3;
+  }
+  .hero-start :global(svg),
+  .final-start :global(svg) {
+    width: 64px;
+    height: 64px;
+    color: var(--k-sys);
+  }
+  .hero-side {
+    display: grid;
+    gap: 14px;
+    justify-items: start;
+  }
+  .hero-hub {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 700 12px var(--mono);
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .hero-hub:hover {
+    color: var(--ink);
+  }
+  .hero-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 0 0;
+    color: var(--k-attack);
+  }
+  .blink {
+    width: 10px;
+    height: 10px;
+    border: 2px solid currentColor;
+    animation: blink 1.1s steps(2) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+  .arena-hud {
+    position: absolute;
+    z-index: 3;
+    right: max(var(--gutter), calc((100% - var(--page)) / 2 + var(--gutter)));
+    bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 12px 10px 16px;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 5px 0 var(--base);
+    cursor: default;
+  }
+  .arena-hud > span {
+    display: grid;
+    line-height: 1.1;
+  }
+  .arena-hud small {
+    font: 700 9px var(--mono);
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .arena-hud b {
+    font: 800 18px var(--mono);
+    color: var(--ink);
+  }
+  .arena-hud [data-wrecks] {
+    color: var(--k-attack);
+  }
+  .arena-hud [data-flat] {
+    color: var(--hurt);
+  }
+  .arena-hud [data-sound][aria-pressed="false"] .snd-on,
+  .arena-hud [data-sound][aria-pressed="true"] .snd-off {
+    display: none;
+  }
+  @media (max-width: 760px) {
+    .hero {
+      min-height: 0;
+    }
+    .hero-inner {
+      padding-top: 28px;
+      padding-bottom: 150px;
+    }
+    .hero-ver {
+      display: none;
+    }
+    .arena-hud {
+      left: var(--gutter);
+      right: var(--gutter);
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+    }
+    .arena-hud b {
+      font-size: 15px;
+    }
+    .arena-hud .bui-arcade {
+      padding-inline: 10px;
+    }
+  }
+  @media (max-width: 420px) {
+    .arena-hud > span:nth-of-type(3) {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero {
+      cursor: default;
+    }
+    .hero-hint,
+    .arena-hud [data-airstrike] {
+      display: none;
+    }
+  }
+
+  /* ---------- Stats ---------- */
+  .stats {
+    border-bottom: 2px solid var(--line);
+    background: var(--surface);
+  }
+  .stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 34px;
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+  .stats-row span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .stats-row b {
+    font: 800 20px var(--mono);
+  }
+  .stats-row small {
+    font: 700 10px var(--mono);
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .stats-row .soon {
+    margin-left: auto;
+    align-items: center;
+  }
+  .stats-row .soon i {
+    width: 8px;
+    height: 8px;
+    background: var(--k-sys);
+    box-shadow: 0 0 10px var(--k-sys);
+  }
+  .stats-row .soon b {
+    font-size: 12px;
+    color: var(--k-sys-ink);
+    letter-spacing: 0.14em;
+  }
+
+  /* ---------- Sections ---------- */
+  .section {
+    padding: clamp(70px, 10vw, 120px) 0 0;
+  }
+  .section-head {
+    max-width: 760px;
+    margin-bottom: 44px;
+  }
+  .section h2 {
+    margin-top: 14px;
+  }
+  .section h2 em,
+  .hero h2 em {
+    font-style: normal;
+    color: var(--k-attack);
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: clamp(50px, 8vw, 90px);
+  }
+  .step {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(26px, 5vw, 60px);
+    align-items: center;
+  }
+  .step.flip .step-text {
+    order: 2;
+  }
+  .step-n {
+    display: block;
+    font: 900 64px/1 var(--mono);
+    color: transparent;
+    -webkit-text-stroke: 2px var(--k-cmd);
+    margin-bottom: 14px;
+  }
+  .step h3 {
+    margin: 10px 0 12px;
+    font-size: clamp(24px, 2.6vw, 32px);
+  }
+  .step p:not(.eyebrow) {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .shot {
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+  .shot img {
+    width: 100%;
+    height: auto;
+  }
+  @media (max-width: 860px) {
+    .step {
+      grid-template-columns: 1fr;
+    }
+    .step.flip .step-text {
+      order: 0;
+    }
+  }
+
+  /* ---------- Radio ---------- */
+  .radio-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(26px, 5vw, 60px);
+    align-items: center;
+  }
+  .radio-grid .lead {
+    margin-top: 16px;
+  }
+  .radio-board {
+    display: grid;
+    gap: 22px;
+    padding: 28px 24px 26px;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 30px 30px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 30px 30px,
+      var(--card);
+  }
+  .radio-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 16px 18px;
+  }
+  .radio-group {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
+  }
+  .radio-sep {
+    align-self: stretch;
+    width: 1px;
+    background: var(--line);
+  }
+  .radio-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .radio-toast {
+    position: static;
+    margin: 0;
+    transform: none;
+  }
+  @media (max-width: 860px) {
+    .radio-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- Fronts ---------- */
+  .missions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 22px;
+  }
+  .mission {
+    position: relative;
+    padding: 22px 20px 20px;
+    overflow: hidden;
+  }
+  .mission::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    background: var(--tone, var(--k-cmd));
+  }
+  .mission[data-terrain="hedge"] {
+    --tone: var(--team-a);
+  }
+  .mission[data-terrain="sand"] {
+    --tone: var(--k-advance);
+  }
+  .mission[data-terrain="snow"] {
+    --tone: var(--k-sys);
+  }
+  .mission[data-terrain="river"] {
+    --tone: var(--team-b);
+  }
+  .mission-n {
+    float: right;
+    font: 900 28px var(--mono);
+    color: var(--tone);
+  }
+  .mission h3 {
+    margin: 10px 0 8px;
+    font-size: 22px;
+  }
+  .mission-brief {
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  .mission-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+  }
+  .mission-tags span {
+    padding: 4px 8px;
+    font: 700 10px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 2px solid var(--tone);
+    border-radius: 6px;
+    color: var(--ink);
+  }
+  .roles {
+    list-style: none;
+    margin: 22px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .role {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 18px 20px;
+  }
+  .role-name {
+    font: 900 18px var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .role-cost {
+    font: 800 12px var(--mono);
+    color: var(--k-cmd-ink);
+  }
+  .role dl {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 8px;
+    margin: 0;
+  }
+  .role dl div {
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    align-items: center;
+  }
+  .role dt {
+    font: 700 10px var(--mono);
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .role dd {
+    margin: 0;
+    height: 10px;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .role dd i {
+    display: block;
+    height: 100%;
+    width: calc(var(--v) * 100%);
+    background: var(--team-a);
+  }
+  @media (max-width: 760px) {
+    .roles {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- Anywhere ---------- */
+  .any-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(26px, 5vw, 60px);
+    align-items: center;
+  }
+  .phone-shot {
+    margin: 0;
+    padding: 14px;
+    border-radius: 30px;
+    background: var(--rim);
+  }
+  .phone-shot img {
+    width: 100%;
+    height: auto;
+    border-radius: 18px;
+  }
+  .features {
+    list-style: none;
+    margin: 26px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 18px;
+  }
+  .features li {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 14px;
+  }
+  .feat-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: var(--k-sys-ink);
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 4px 0 var(--base);
+  }
+  .features h3 {
+    font-size: 16px;
+  }
+  .features p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  @media (max-width: 860px) {
+    .any-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- Family ---------- */
+  .family-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr);
+    gap: 22px;
+  }
+  .family a {
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .cart-card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 30px;
+    align-items: center;
+    padding: 30px;
+    transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+  }
+  .cart-card:hover,
+  .guide-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 var(--base);
+  }
+  .cart-card h2 {
+    font-size: clamp(26px, 3vw, 36px);
+    margin: 10px 0;
+  }
+  .cart-card p:not(.eyebrow) {
+    margin: 0 0 18px;
+    color: var(--muted);
+  }
+  .as-link {
+    pointer-events: none;
+  }
+  /* A DOM VIRUS cartridge, in Battlefield's colours. */
+  .cart {
+    position: relative;
+    display: grid;
+    width: 200px;
+    height: 250px;
+    padding: 34px 18px 40px;
+    background: #3a3f5c;
+    clip-path: polygon(6% 0, 89% 0, 100% 8%, 100% 100%, 4% 100%, 0 97%, 0 5%);
+    transform: rotate(-4deg);
+  }
+  .cart-grip {
+    position: absolute;
+    inset: 10px 20px auto;
+    display: grid;
+    gap: 4px;
+  }
+  .cart-grip i {
+    height: 3px;
+    background: #2a2e45;
+  }
+  .cart-label {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    padding: 14px 12px;
+    background: var(--rim);
+    border: 3px solid var(--k-attack);
+    color: #f6f3ff;
+  }
+  .cart-art {
+    color: var(--team-a);
+    margin-bottom: 6px;
+  }
+  .cart-label small {
+    font: 700 8px var(--mono);
+    letter-spacing: 0.1em;
+    color: #aea4d6;
+  }
+  .cart-label strong {
+    font-size: 17px;
+    line-height: 1.1;
+  }
+  .cart-label em {
+    font: 700 9px var(--mono);
+    font-style: normal;
+    color: var(--k-attack);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .cart-pins {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 10px;
+    display: flex;
+    gap: 4px;
+  }
+  .cart-pins i {
+    flex: 1;
+    height: 16px;
+    background: #c9a54a;
+  }
+  .guide-card {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 30px;
+    transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+  }
+  .guide-card h3 {
+    font-size: 24px;
+  }
+  .guide-card p:not(.eyebrow) {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .guide-keys {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .guide-keys i {
+    width: 44px;
+    height: 36px;
+    border: 2px solid var(--rim);
+    border-radius: 8px;
+    box-shadow: 0 4px 0 color-mix(in srgb, currentColor 45%, var(--rim));
+  }
+  .guide-keys .k1 {
+    background: var(--k-cmd);
+    color: var(--k-cmd);
+  }
+  .guide-keys .k2 {
+    background: var(--k-fallin);
+    color: var(--k-fallin);
+  }
+  .guide-keys .k3 {
+    background: var(--team-a);
+    color: var(--team-a);
+  }
+  .guide-keys .k4 {
+    background: var(--k-attack);
+    color: var(--k-attack);
+  }
+  .go {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    font: 800 12px var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--k-sys-ink);
+  }
+  @media (max-width: 960px) {
+    .family-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .cart-card {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
+      padding: 26px 20px;
+    }
+    .cart-card .as-link {
+      justify-self: center;
+    }
+  }
+
+  /* ---------- Final ---------- */
+  .final {
+    padding-bottom: 40px;
+  }
+  .final-inner {
+    display: grid;
+    justify-items: center;
+    gap: 22px;
+    padding-top: 60px;
+    padding-bottom: 60px;
+    text-align: center;
+    border-top: 2px dashed var(--line);
+  }
+  .final-inner h2 {
+    margin: 0;
+    font-size: clamp(40px, 7vw, 80px);
+  }
+  .final-links {
+    margin: 10px 0 0;
+    font: 12px var(--mono);
+    color: var(--muted);
+  }
+</style>

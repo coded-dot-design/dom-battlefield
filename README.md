@@ -2,10 +2,27 @@
 
 A separate, lightweight squad-tactics app in the DOM Virus family. Battlefield builds the map, terrain, objectives and platoon simulation. Sherman Bytes owns the tank artwork and its cached renderer. Battlefield adds **zero bytes** to the Sherman game bundle.
 
+Site: https://coded-dot-design.github.io/dom-battlefield/ (landing page, every checked `main` push)
+Style guide: https://coded-dot-design.github.io/dom-battlefield/style-guide/ (Board UI, the board design system)
+Preview: https://coded-dot-design.github.io/dom-battlefield/play/ (the game, every checked `main` push)
 Play: https://coded-dot-design.github.io/dom-virus/battlefield/ (latest release, via the hub)
-Preview: https://coded-dot-design.github.io/dom-battlefield/ (every checked `main` push)
 
-Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the preview deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
+Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the site deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
+
+## The site
+
+`site/` is an Astro site for GitHub Pages, seeded from the game: the page is a Board UI root
+(`<html class="bui">`), so it wears the game's own tokens, keys and vertical shadows.
+
+| Path | What | Source |
+|---|---|---|
+| `/` | Landing page; the hero is a live battle (game sprites, airstrikes, shootable headline) | `site/src/pages/index.astro`, `site/src/scripts/arena.ts` |
+| `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
+| `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
+
+`npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
+`npm run test:site` tests it; `npm run shots` retakes the landing-page screenshots from `dist/`.
+The Board UI kit and its spec live in `board-ui/` (`BOARD-UI.md`).
 
 ## The game
 
@@ -86,6 +103,11 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 MIT · Chris Cooley / coded.design
 
 ## Changelog
+
+### Site — landing page and style guide (no game change)
+
+- The repo's GitHub Pages is now the game's own site: a landing page at `/` (the hero is a live battle with the game's tank sprites: shells and treads knock the headline around, tap anywhere for an airstrike), the Board UI style guide at `/style-guide/` (moved here from DOM VIRUS with its kit and spec in `board-ui/`), and the game itself at `/play/`.
+- Board UI kit: link keys (`<a class="bui-key ...">`) get the same face, base, hover, press and focus as button keys.
 
 ### 0.18.10 — Planning footer matches battle
 

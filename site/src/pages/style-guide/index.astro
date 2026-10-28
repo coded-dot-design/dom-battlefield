@@ -1,0 +1,510 @@
+---
+// Board UI style guide: the game board and controls design system, shown live. Every demo is
+// built from board-ui/board-ui.css + board-ui.ts only (the kit new boards use), so this page can't
+// drift from the kit. The palette switcher passes a palette in, exactly as a game or an embed would.
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import { REPO, base } from '../../site';
+const repo = `${REPO}/blob/main/board-ui`;
+const sections = [
+  ['principles', 'Principles'], ['palette', 'Palette'], ['key', 'The 3D key'], ['families', 'Key families'], ['labels', 'Labels'],
+  ['cards', 'Cards'], ['overlays', 'Overlays'], ['launch', 'Launch'], ['comms', 'Comms & tips'], ['layouts', 'Layouts'], ['motion', 'Motion & sound'], ['build', 'Build a board'],
+];
+const principles = [
+  ['3D keys', 'Everything you can press is a face over a hard base straight below it. Never a side shadow on the board.'],
+  ['One travel', 'Face and base move together on one curve: 120ms ease-out, 50ms on press. Nothing snaps.'],
+  ['Colour is the job', 'One colour per job, the same on desktop and phone, dark and light.'],
+  ['Locked reads down', 'On rests pressed in the lock colour and breathes. Tap again to release.'],
+  ['Call reads up', 'The next key to press stays up and sends a ring from the bottom of its base.'],
+  ['The ink rim', 'Keys, stickers and cards share one ink rim in both themes: neon caps on ink.'],
+  ['Short, loud words', 'Mono caps. FIRST WORD bold · detail. Explanations go to the comms toast.'],
+  ['Overlay ritual', 'Grey dim, a sticker that slams and presses in, two keys at the map’s bottom.'],
+  ['The field first', 'Cards move away from your team, shrink to a key and never cover each other.'],
+  ['Embed-safe, small', 'One root class, one AbortSignal, reduced motion respected, a budget in CI.'],
+];
+const roles = [
+  ['sys', '--k-sys', 'Navigation, camera, pager, tips, focus'],
+  ['cmd', '--k-cmd', 'Command, planning, every locked order'],
+  ['fire', '--k-fire', 'The main action'],
+  ['aim', '--k-aim', 'Aim modes, dim when off'],
+  ['attack', '--k-attack', 'Offensive order'],
+  ['advance', '--k-advance', 'Push to objective'],
+  ['fallin', '--k-fallin', 'Form up on the player'],
+  ['flag', '--k-flag', 'White flag: pause, surrender'],
+  ['go', '--k-go', 'Start and confirm'],
+  ['teamA', '--team-a', 'Side A (retreat = your team)'],
+  ['teamB', '--team-b', 'Side B'],
+];
+const palettes = {
+  battlefield: {},
+  swarm: { sys: '#06c4ff', cmd: '#8573ee', fire: '#f4457a', aim: '#ff8fb0', attack: '#e83fd0', advance: '#ffc94a', fallin: '#4bce82', go: '#4bce82', teamA: '#06c4ff', teamB: '#f4457a' },
+  sherman: { sys: '#ffc94a', cmd: '#ee6875', fire: '#ff5a36', aim: '#ff9a7a', attack: '#ff3d6e', advance: '#ffb01f', fallin: '#c6f24a', go: '#7cf0a4', teamA: '#7cf0a4', teamB: '#ee6875' },
+};
+const motion = [
+  ['Key travel', '120ms ease-out · press 50ms', 'transform + box-shadow together'],
+  ['Locked breath', '1.8s ease-in-out ∞', 'glow ring in the lock colour'],
+  ['Call ring', '1.4s ease-out ∞', 'from the bottom of the base'],
+  ['Sticker slam', '1100ms', 'drop · hit 36% · settle · hold · press in'],
+  ['Launch burst', '760ms', 'press + invert 90ms · 6 chunks · flash · ring · 12 bits'],
+  ['Surrender', '16 × 18ms + wave 120ms × 4', 'white-out, then the burst at 480ms'],
+  ['Boot doors', '620ms after 120ms', 'rotateY ±100°; the boot runs from t0 = 0.65s'],
+  ['Pop-ins', '380ms spring', 'cubic-bezier(.34,1.7,.5,1), never on key travel'],
+];
+const sounds = [['start', 'two rising notes'], ['fire', 'short zap'], ['hit', 'square thud'], ['hurt', 'saw drop (surrender press)'], ['won', 'three notes up'], ['gameover', 'the end cue']];
+const icon = {
+  fallin: 'M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6', retreat: 'M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4', advance: 'M4 5l5 5-5 5M10 5l5 5-5 5',
+  attack: 'M12 4c2 0 4 2 4 4l-6 6-4-4 6-6ZM6 10l-2 4 2 2 4-2M5 15l-2 2', command: 'M4 8.5 10 4l6 4.5M4 13.5 10 9l6 4.5', flag: 'M5 18V3M5 4h10l-3 3.5 3 3.5H5',
+  auto: 'M10 1v4M10 15v4M1 10h4M15 10h4M4 4l2.5 2.5M13.5 13.5 16 16M4 16l2.5-2.5M13.5 6.5 16 4', lock: 'M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4M10 7v6M7 10h6',
+  menu: 'M4 5h12M4 10h12M4 15h12', back: 'M12 4 6 10l6 6', next: 'm8 4 6 6-6 6', list: 'M4 5h12M4 10h7M4 15h12', fire: 'M10 1v5M10 14v5M1 10h5M14 10h5',
+};
+// A top-down pixel tank in the team colour (treads, hull, turret, barrel up).
+const tank = '<rect x="0" y="6" width="3" height="14" fill="var(--rim)"/><rect x="11" y="6" width="3" height="14" fill="var(--rim)"/><rect x="2" y="7" width="10" height="12" fill="var(--team)"/><rect x="4" y="10" width="6" height="6" fill="var(--rim)" opacity=".35"/><rect x="6" y="0" width="2" height="10" fill="var(--team)"/>';
+const skull = 'M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z';
+const cells = Array.from({ length: 16 }, (_, i) => ({ x: (i % 4) * 16, y: Math.floor(i / 4) * 16, i: [0, 1, 4, 2, 5, 8, 3, 6, 9, 12, 7, 10, 13, 11, 14, 15].indexOf(i) }));
+---
+<Base title="Board UI · DOM Battlefield style guide" description="The game board and controls design system behind DOM Battlefield: 3D keys, cards, overlays, launch bursts, layouts and motion, shown live. Only the palette changes from game to game." page="style">
+
+<section class="board-guide" aria-labelledby="bu-title">
+  <header class="bu-hero">
+    <div class="eyebrow"><span class="index">BUI</span> GAME BOARD DESIGN SYSTEM</div>
+    <h1 id="bu-title">One board UI.<br/><em>Every game.</em></h1>
+    <p class="lead">The keys, cards, overlays, bursts and layouts we dialled in on DOM Battlefield, made portable. A new board reuses all of it exactly. The only thing a game changes is its palette.</p>
+    <div class="bu-links">
+      <a class="bui-key bui-arcade bui-cmd" href={`${repo}/BOARD-UI.md`}><Icon name="book" size={18}/>Read the spec</a>
+      <a class="bui-key bui-arcade bui-sys" href={`${repo}/tokens.json`}><Icon name="grid" size={18}/>tokens.json</a>
+      <a class="bui-key bui-arcade bui-go" href={base('play/')}><Icon name="play" size={18}/>Play DOM Battlefield</a>
+    </div>
+    <nav class="bu-toc" aria-label="Board UI sections">{sections.map(([id, label], i) => <a href={`#${id}`}><b>{String(i + 1).padStart(2, '0')}</b>{label}</a>)}</nav>
+  </header>
+
+  <!-- The control strip: every demo on the page follows it (palette, board theme). -->
+  <div class="bu-strip panel" role="group" aria-label="Board demo settings">
+    <span class="bu-strip-label">PALETTE</span>
+    <div class="bui-seg bu-chips" data-palettes={JSON.stringify(palettes)}>
+      <button type="button" data-palette="battlefield" aria-pressed="true">Battlefield</button>
+      <button type="button" data-palette="swarm" aria-pressed="false">Swarm</button>
+      <button type="button" data-palette="sherman" aria-pressed="false">Sherman</button>
+      <button type="button" data-palette="custom" aria-pressed="false">Custom</button>
+    </div>
+    <span class="bu-strip-label">BOARD</span>
+    <div class="bui-seg bu-chips"><button type="button" data-board-theme="dark" aria-pressed="true">Dark</button><button type="button" data-board-theme="light" aria-pressed="false">Light</button><button type="button" data-board-side aria-pressed="false">Side B</button></div>
+    <div class="bu-custom" hidden>
+      {['sys', 'cmd', 'fire', 'teamA', 'teamB'].map((k) => <label><input type="color" data-custom={k}/><span>{k}</span></label>)}
+    </div>
+  </div>
+
+  <!-- 01 PRINCIPLES -->
+  <section id="principles" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">01</span> PRINCIPLES</span><h2>Ten rules. No exceptions.</h2><p>Everything else on this page follows from these. If a board needs something new, it goes in the spec first.</p></div>
+    <ol class="bu-rules">{principles.map(([t, b], i) => <li class="panel"><b>{String(i + 1).padStart(2, '0')}</b><h3>{t}</h3><p>{b}</p></li>)}</ol>
+  </section>
+
+  <!-- 02 PALETTE -->
+  <section id="palette" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">02</span> PALETTE</span><h2>The only thing a game changes.</h2><p>One colour per job. Pass any subset as hex; the rest keep their defaults, and every base, glow and lock colour is derived. Try the switcher above: every demo on this page repaints.</p></div>
+    <div class="bui bu-board" data-bui>
+      <ul class="bu-roles">{roles.map(([key, name, job]) => <li><i style={`background:var(${name})`}></i><b>{key}</b><code>{name}</code><span>{job}</span><em data-hex={name}></em></li>)}</ul>
+    </div>
+    <pre class="bu-code"><code>{`import { applyPalette } from "board-ui";
+applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", teamB: "#f4457a" });
+// or in an embed config: palette: { cmd: "#8573ee" }   (hex only; anything else is ignored)`}</code></pre>
+  </section>
+
+  <!-- 03 THE KEY -->
+  <section id="key" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">03</span> THE 3D KEY</span><h2>A face over its own base.</h2><p>Families only set variables (<code>--c</code>, <code>--py</code>, <code>--lock</code>); the state rules do all the motion. Press them: they are the real thing.</p></div>
+    <div class="bui bu-board" data-bui>
+      <div class="bu-states">
+        <figure><button class="bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Rest</b>base --py below</figcaption></figure>
+        <figure><button class="bui-arcade bui-fallin bu-hover" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Hover</b>lift --hy (fine pointers)</figcaption></figure>
+        <figure><button class="bui-arcade bui-fallin down" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Press</b>face onto the base</figcaption></figure>
+        <figure><button class="bui-arcade bui-fallin" type="button" aria-pressed="true" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Locked</b>down, lock colour, breath</figcaption></figure>
+        <figure><button class="bui-arcade bui-go bui-call" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.next}/></svg>Next<kbd>N</kbd></button><figcaption><b>Call</b>ring from the base</figcaption></figure>
+        <figure><button class="bui-arcade bui-fallin" type="button" disabled><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Disabled</b>flat, 45%</figcaption></figure>
+        <figure><button class="bui-arcade bui-fallin bu-focus" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Focus</b>ring wraps the base</figcaption></figure>
+      </div>
+      <div class="bu-try"><span class="bui-label"><b>TRY</b> · tap to lock, tap again to release</span><button class="bui-arcade bui-cmd" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button></div>
+    </div>
+    <div class="bu-table panel"><table><thead><tr><th>Variable</th><th>Base</th><th>Arcade</th><th>Sticker</th><th>Meaning</th></tr></thead><tbody>
+      <tr><td><code>--py</code></td><td>3u</td><td>4u</td><td>5u</td><td>base height</td></tr>
+      <tr><td><code>--hy</code></td><td>1u</td><td>2u</td><td>2u</td><td>hover lift</td></tr>
+      <tr><td><code>--edge</code></td><td>--line</td><td>--c 45% into rim</td><td>#f6f3ff</td><td>base colour</td></tr>
+      <tr><td><code>--lock</code></td><td></td><td>role or --k-cmd</td><td></td><td>colour when locked</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <!-- 04 FAMILIES -->
+  <section id="families" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">04</span> KEY FAMILIES</span><h2>One family, many jobs.</h2><p>Orders lock in the command colour. Aim keys rest dim and light up when on. The shortcut always sits on the right edge.</p></div>
+    <div class="bui bu-board" data-bui>
+      <div class="bu-row"><span class="bui-label"><b>ORDERS</b> · fall in · retreat · advance · attack</span>
+        <div class="bu-keys">
+          <button class="bui-arcade bui-fallin" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button>
+          <button class="bui-arcade bui-retreat" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg>Retreat<kbd>R</kbd></button>
+          <button class="bui-arcade bui-advance" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.advance}/></svg>Advance<kbd>E</kbd></button>
+          <button class="bui-arcade bui-attack" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg>Attack<kbd>G</kbd></button>
+        </div></div>
+      <div class="bu-row"><span class="bui-label"><b>AIM</b> · auto / lock · and the flag</span>
+        <div class="bu-keys">
+          <button class="bui-arcade bui-aim" type="button" aria-pressed="true" data-toggle><svg viewBox="0 0 20 20"><path d={icon.auto}/></svg>Auto<kbd>Q</kbd></button>
+          <button class="bui-arcade bui-aim" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button>
+          <button class="bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
+          <button class="bui-arcade bui-fire" type="button"><svg viewBox="0 0 20 20"><path d={icon.fire}/><circle cx="10" cy="10" r="5"/></svg>Fire<kbd>Space</kbd></button>
+          <button class="bui-arcade bui-sys" type="button"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
+        </div></div>
+      <div class="bu-row"><span class="bui-label"><b>PLATOON</b> · radios · health · lost</span>
+        <div class="bu-keys">
+          <button class="bui-arcade bui-unit active" type="button"><b>★</b><span class="bui-pips"><s></s><s></s></span></button>
+          <button class="bui-arcade bui-unit" type="button"><b>1</b><span class="bui-pips"><s></s><s></s><s></s></span></button>
+          <button class="bui-arcade bui-unit" type="button" data-hp="hurt"><b>2</b><span class="bui-pips"><s></s></span></button>
+          <button class="bui-arcade bui-unit" type="button" data-hp="critical"><b>3</b><span class="bui-pips"><s></s><s></s></span></button>
+          <button class="bui-arcade bui-unit" type="button" disabled><b>4</b><span class="bui-pips"><s></s></span></button>
+        </div></div>
+      <div class="bu-row"><span class="bui-label"><b>NAVIGATION</b> · pager · segmented · icon keys</span>
+        <div class="bu-keys">
+          <span class="bui-pager"><button class="bui-arcade" type="button" aria-label="Previous"><svg viewBox="0 0 20 20"><path d={icon.back}/></svg></button><button class="bui-arcade" type="button" aria-label="You" aria-pressed="true">★</button><button class="bui-arcade bui-call" type="button" aria-label="Next"><svg viewBox="0 0 20 20"><path d={icon.next}/></svg></button></span>
+          <span class="bui-seg" role="group" aria-label="Density" data-seg><button type="button" aria-pressed="true">Light</button><button type="button" aria-pressed="false">Normal</button><button type="button" aria-pressed="false">Heavy</button></span>
+          <button class="bui-icon-key" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
+        </div></div>
+      <div class="bu-row"><span class="bui-label"><b>PLANNING</b> · round step keys · count badge · caption</span>
+        <div class="bu-keys bu-orbs">
+          <button class="bui-orb" type="button" aria-label="Platoon"><svg class="bui-outline" viewBox="0 0 48 36" shape-rendering="crispEdges" style="stroke:none">{[[18,0],[4,16],[32,16]].map(([x,y]) => <g transform={`translate(${x} ${y})`} set:html={tank}/>)}</svg><span class="bui-badge">4</span></button>
+          <button class="bui-orb" type="button" aria-label="Previous step"><svg class="bui-outline" viewBox="0 0 48 36" shape-rendering="crispEdges" style="stroke:none;translate:0 -6px"><g transform="translate(4 8)" set:html={tank}/><rect x="24" y="8" width="10" height="4" fill="var(--k-sys)"/><rect x="24" y="16" width="16" height="4" fill="var(--k-sys)"/><rect x="24" y="24" width="20" height="4" fill="var(--k-sys)"/></svg><small>‹ PREV</small><span class="bui-badge">12</span></button>
+        </div></div>
+    </div>
+  </section>
+
+  <!-- 05 LABELS -->
+  <section id="labels" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">05</span> LABELS</span><h2>FIRST WORD bold · detail.</h2><p>Mono caps, spaced, muted, with the first word in ink. Each layout keeps the same grammar at its own length.</p></div>
+    <div class="bu-table panel"><table><thead><tr><th>Group</th><th>Desktop bar</th><th>Compact desktop</th><th>Full-screen card</th><th>Phone</th></tr></thead><tbody>
+      <tr><td>per unit</td><td><b>RADIO</b> · EACH TANK</td><td><b>RADIO</b></td><td>title RADIO · EACH TANK</td><td>rail key</td></tr>
+      <tr><td>squad</td><td><b>RADIO</b> · WHOLE SQUAD</td><td><b>WHOLE SQUAD</b></td><td>WHOLE SQUAD</td><td>ORDERS · WHOLE SQUAD</td></tr>
+      <tr><td>roster</td><td><b>PLATOON</b> · RADIOS</td><td><b>PLATOON</b></td><td><b>PLATOON</b></td><td>PLATOON</td></tr>
+      <tr><td>aim</td><td><b>AIM</b> · AUTO / LOCK</td><td><b>AIM</b></td><td>title AIM</td><td>rail keys</td></tr>
+    </tbody></table></div>
+    <div class="bui bu-board bu-bar" data-bui>
+      <div><span class="bui-label"><b>RADIO</b> · EACH TANK</span><button class="bui-arcade bui-cmd" type="button"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button></div>
+      <i class="bu-sep"></i>
+      <div><span class="bui-label"><b>RADIO</b> · WHOLE SQUAD</span><span class="bu-keys"><button class="bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><button class="bui-arcade bui-retreat" type="button"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg>Retreat<kbd>R</kbd></button></span></div>
+      <div class="bu-center"><span class="bui-label"><b>PLATOON</b> · RADIOS</span><span class="bu-keys"><button class="bui-arcade bui-unit" type="button"><b>★</b><span class="bui-pips"><s></s><s></s></span></button><button class="bui-arcade bui-unit" type="button"><b>1</b><span class="bui-pips"><s></s></span></button><button class="bui-arcade bui-unit" type="button"><b>2</b><span class="bui-pips"><s></s><s></s><s></s></span></button></span></div>
+      <div><span class="bui-label"><b>AIM</b> · AUTO / LOCK</span><span class="bu-keys"><button class="bui-arcade bui-aim" type="button" aria-pressed="true"><svg viewBox="0 0 20 20"><path d={icon.auto}/></svg>Auto<kbd>Q</kbd></button><button class="bui-arcade bui-aim" type="button"><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button></span></div>
+      <i class="bu-sep"></i>
+      <button class="bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
+    </div>
+  </section>
+
+  <!-- 06 CARDS -->
+  <section id="cards" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">06</span> CARDS</span><h2>Float, fold, step back.</h2><p>Cards float over the field on the side away from your team. The grip drags them, the icon key shrinks them, the back tab goes one step back. A unit card's status pill sits on the top edge opposite the back tab, flat, breathing with the selected key's glow, in radio talk. Two cards never cover each other (10px buffer).</p></div>
+    <div class="bui bu-board bu-cards" data-bui>
+      <div class="bui-card bu-plan">
+        <span class="bui-grip"></span>
+        <button class="bui-back-tab" type="button"><svg viewBox="0 0 20 20"><path d={icon.back}/></svg>LOADOUT</button>
+        <span class="bu-pill"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>ROGER · GRID 0412</span>
+        <div class="bu-plan-body">
+          <button class="bui-arcade bui-unit bu-big" type="button" aria-label="Shrink plan card"><b>2</b><span class="bui-pips"><s></s><s></s></span></button>
+          <div><p class="bu-card-title">TANK 2 · MEDIUM</p><p class="bu-card-text">Pick an order beside the tank: Attack HQ, Follow, or Command.</p></div>
+        </div>
+      </div>
+      <div class="bui-dock bu-dock">
+        <span class="bui-dock-title">RADIO</span>
+        <button class="bui-dock-switch" type="button" aria-label="Icons only"><svg viewBox="0 0 20 20"><path d={icon.list}/></svg></button>
+        <span class="bui-label">EACH TANK</span>
+        <button class="bui-arcade bui-cmd" type="button"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button>
+        <i class="bui-divider"></i>
+        <span class="bui-label">WHOLE SQUAD</span>
+        <button class="bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button>
+        <button class="bui-arcade bui-attack" type="button"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg>Attack<kbd>G</kbd></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 OVERLAYS -->
+  <section id="overlays" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">07</span> OVERLAYS</span><h2>Dim. Slam. Two keys.</h2><p>Grey dim that blocks the board, a sticker that slams down and presses in a little above centre, at most two keys centred at the map’s bottom. The explanation goes to the toast. Try Surrender: the white flag whites out, waves, and blows up.</p></div>
+    <div class="bui bu-board bu-stage" data-bui>
+      <div class="bu-field" aria-hidden="true"></div>
+      <button class="bui-sticker-key bu-open" type="button" data-open-overlay><svg viewBox="0 0 64 64"><path d="M14 10h10v44H14zM40 10h10v44H40z"/></svg><b>PAUSE</b></button>
+      <div class="bui-overlay" hidden data-overlay role="dialog" aria-label="Battle paused">
+        <div class="bui-sticker"><span>BATTLE PAUSED</span><b>GIVE UP?</b></div>
+        <div class="bui-overlay-keys">
+          <button class="bui-sticker-key" type="button" data-close-overlay><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>KEEP FIGHTING</b></button>
+          <button class="bui-sticker-key bui-second bui-surrender" type="button" data-surrender><svg viewBox="0 0 64 64" shape-rendering="crispEdges"><g class="bui-cells">{cells.map((c) => <rect x={c.x} y={c.y} width="16" height="16" style={`--i:${c.i}`}/>)}</g><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" fill="none" stroke="#07060f" stroke-opacity=".3"/><path d="M17 9h4v46h-4Z" fill="#f6f3ff" stroke="#07060f" stroke-width="2"/><path class="bui-cloth" d="M21 12h24l-6 9 6 9H21Z" fill="#f6f3ff" stroke="#07060f" stroke-width="2"/></svg><b>SURRENDER</b></button>
+        </div>
+      </div>
+    </div>
+    <div class="bu-table panel"><table><thead><tr><th>Overlay</th><th>Kicker / word</th><th>Keys</th></tr></thead><tbody>
+      <tr><td>Pause</td><td>BATTLE PAUSED / GIVE UP?</td><td>KEEP FIGHTING · SURRENDER</td></tr>
+      <tr><td>Lost</td><td>INSERT COIN / GAME OVER</td><td>REMATCH · NEW CAMPAIGN</td></tr>
+      <tr><td>Won</td><td>STAGE CLEAR / MISSION COMPLETE</td><td>REMATCH · NEW CAMPAIGN</td></tr>
+      <tr><td>Stale page</td><td>SOMETHING WENT WRONG / REFRESH</td><td>REFRESH BROWSER</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <!-- 08 LAUNCH -->
+  <section id="launch" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">08</span> LAUNCH</span><h2>Press, invert, shatter.</h2><p>Every key that starts or ends a game presses into its base, flips to its inverse, then breaks into spinning chunks with a flash, a shock ring and falling square debris. The action runs in the click; the burst lives on the page body.</p></div>
+    <div class="bui bu-board bu-launch" data-bui>
+      <button class="bui-sticker-key" type="button" data-launch><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>START BATTLE</b></button>
+      <button class="bui-sticker-key bui-plan" type="button" data-launch><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>PLAN BATTLE</b></button>
+      <button class="bui-sticker-key bui-second" type="button" data-launch><svg viewBox="0 0 64 64"><path d="m22 14 28 18-28 18Z"/></svg><b>PRESS START</b></button>
+    </div>
+    <ol class="bu-steps">
+      <li><b>0–90ms</b> an inert copy presses into its base and inverts (light for dark, same hues)</li>
+      <li><b>90ms</b> six chunks fly out, spin and fall</li>
+      <li><b>90–410ms</b> flash, core in the key’s ink, round shock ring</li>
+      <li><b>90–730ms</b> twelve square bits radiate and drop</li>
+      <li><b>760ms</b> the layer is gone; the key stays hidden if the action removed it</li>
+    </ol>
+  </section>
+
+  <!-- 09 COMMS & TIPS -->
+  <section id="comms" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">09</span> COMMS &amp; TIPS</span><h2>Say it once, where it reads.</h2><p>One comms line carries every explanation. It never sits under the header or slides under a card. Button tips dim the page and ring each group's keys.</p></div>
+    <div class="bui bu-board bu-comms" data-bui>
+      <p class="bui-toast">Tank 2: tap a square to send it, or Attack HQ.</p>
+      <div class="bu-tip"><button class="bui-tip-label" type="button">Squad: fall in · repair · advance · attack</button><span class="bui-tip-ring"><span class="bu-keys"><button class="bui-arcade bui-fallin" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg></button><button class="bui-arcade bui-retreat" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg></button><button class="bui-arcade bui-attack" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg></button></span></span></div>
+    </div>
+  </section>
+
+  <!-- 10 LAYOUTS -->
+  <section id="layouts" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">10</span> LAYOUTS</span><h2>Four shapes, one set of keys.</h2><p>The same keys rearrange for each screen. The thresholds are measured, not guessed: the roster needs 52u per unit and never wraps.</p></div>
+    <div class="bu-layouts">
+      <figure class="panel"><div class="bu-mock phone"><i class="rail l"></i><i class="map"></i><i class="rail r"></i></div><figcaption><b>Phone cockpit</b>Landscape + full screen gates. Left rail: menu, pause, readouts, Command, camera, stick. Right rail: orders, Auto, Lock, Fire. Notch-safe; Command slides the right rail away and Fire becomes a small ✕.</figcaption></figure>
+      <figure class="panel"><div class="bu-mock desk"><i class="head"></i><i class="map"></i><i class="bar"></i></div><figcaption><b>Desktop bar</b>RADIO (Command) · RADIO · WHOLE SQUAD · PLATOON · RADIOS (centre) · AIM · Surrender far right. Labels when it all fits on one line.</figcaption></figure>
+      <figure class="panel"><div class="bu-mock compact"><i class="head"></i><i class="map"></i><i class="bar"></i><i class="float"></i></div><figcaption><b>Compact desktop</b>Icon keys when the bar can't fit (and with more than 4 units below 1750px). In battle the roster moves to a card under the mini-map (below 1180px, or more than 4 units below 1160px).</figcaption></figure>
+      <figure class="panel"><div class="bu-mock full"><i class="map"></i><i class="dock l"></i><i class="dock r"></i><i class="float"></i></div><figcaption><b>Full screen</b>Header hidden. RADIO and AIM float as dock cards (54u header row, list / grid switch), the roster card sits under the mini-map. Full screen survives new games.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 11 MOTION & SOUND -->
+  <section id="motion" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">11</span> MOTION &amp; SOUND</span><h2>Snappy keys, theatrical moments.</h2><p>Keys never spring. Springs are for pop-ins only. Reduced motion keeps every end state and drops the motion.</p></div>
+    <div class="bu-table panel"><table><thead><tr><th>Motion</th><th>Timing</th><th>Notes</th></tr></thead><tbody>{motion.map(([a, b, c]) => <tr><td>{a}</td><td><code>{b}</code></td><td>{c}</td></tr>)}</tbody></table></div>
+    <div class="bu-table panel"><table><thead><tr><th>Sound cue</th><th>Character</th></tr></thead><tbody>{sounds.map(([a, b]) => <tr><td><code>{a}</code></td><td>{b}</td></tr>)}</tbody></table></div>
+  </section>
+
+  <!-- 12 BUILD -->
+  <section id="build" class="bu-block">
+    <div class="bu-head"><span class="eyebrow"><span class="index">12</span> BUILD A BOARD</span><h2>A new game in an hour.</h2><p>Swap the game logic and the board; keep everything above. The spec has the full checklist, every exact value and the lessons we already paid for.</p></div>
+    <div class="bu-iso">
+      <div class="bu-iso-text"><span class="eyebrow">ISOLATION · SHADOW DOM</span><p>On someone else's site, mount the board in a shadow root: <code>mount(host, css, {"{"} palette {"}"})</code>. This box sits under a page rule that turns every button red with a dashed border. The board inside doesn't see it.</p></div>
+      <div class="bu-hostile" data-shadow-demo aria-label="Board mounted in a shadow root"></div>
+    </div>
+    <ol class="bu-check panel">
+      <li>Wrap the board in <code>&lt;div class="bui" data-theme data-side&gt;</code> and include the kit.</li>
+      <li>Pass the palette; check every face reads with ink text on it.</li>
+      <li>Map each action to a role colour; write labels as <b>WORD</b> · detail.</li>
+      <li>Bar groups: per-unit radio · squad orders · roster · aim / mode · flag far right.</li>
+      <li>Overlays: pause, result, stale page, with the sticker copy above.</li>
+      <li>Launch keys use <code>launch()</code>; a reset never cancels the burst.</li>
+      <li>Cards: grip, fold key, back tab, the placement rules.</li>
+      <li>Comms toast placement per stage; tips mode.</li>
+      <li>Boot screen and door hand-off if it ships as a full-game cartridge.</li>
+      <li>Test 844×390, 1100, 1400, 1750, 1920 and full screen, both themes, both sides, 4 and 12 units.</li>
+      <li>Reduced motion, keyboard and screen reader names; a size budget in CI.</li>
+    </ol>
+    <a class="nerd-link panel" href={`${repo}/BOARD-UI.md`}><span class="eyebrow">SPEC · GITHUB</span><strong>BOARD-UI.md: the full spec for humans and agents</strong><span>Exact tokens, states, timings, DOM, layouts, lessons and the checklist</span><Icon name="github" size={20}/></a>
+  </section>
+</section>
+</Base>
+
+<script>
+  import { applyPalette, launch, slam, mount } from "../../../../board-ui/board-ui";
+  import kitCss from "../../../../board-ui/board-ui.css?raw";
+  const boards = [...document.querySelectorAll<HTMLElement>("[data-bui]")];
+  const html = document.documentElement;
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let boardTheme: "dark" | "light" = html.dataset.theme === "light" ? "light" : "dark";
+  let restore: (() => void)[] = [];
+  const chips = document.querySelector<HTMLElement>("[data-palettes]")!;
+  const palettes = JSON.parse(chips.dataset.palettes!) as Record<string, Record<string, string>>;
+  const custom: Record<string, string> = { sys: "#19f0ff", cmd: "#9a63ff", fire: "#ff2b4e", teamA: "#39ffb0", teamB: "#ff5c8f" };
+  function paint(name: string) {
+    restore.forEach((r) => r());
+    const p = name === "custom" ? custom : palettes[name] ?? {};
+    restore = boards.map((b) => applyPalette(b, p));
+    for (const b of chips.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.palette === name));
+    (document.querySelector(".bu-custom") as HTMLElement).hidden = name !== "custom";
+    requestAnimationFrame(hexes);
+  }
+  function hexes() {
+    const css = getComputedStyle(boards[0]!);
+    for (const n of document.querySelectorAll<HTMLElement>("[data-hex]")) n.textContent = css.getPropertyValue(n.dataset.hex!).trim();
+  }
+  function theme(t: "dark" | "light") {
+    boardTheme = t;
+    for (const b of boards) b.dataset.theme = t;
+    for (const b of document.querySelectorAll<HTMLElement>("[data-board-theme]")) b.setAttribute("aria-pressed", String(b.dataset.boardTheme === t));
+    requestAnimationFrame(hexes);
+  }
+  for (const b of chips.querySelectorAll<HTMLElement>("button")) b.addEventListener("click", () => paint(b.dataset.palette!));
+  for (const b of document.querySelectorAll<HTMLElement>("[data-board-theme]")) b.addEventListener("click", () => theme(b.dataset.boardTheme as "dark" | "light"));
+  document.querySelector<HTMLElement>("[data-board-side]")!.addEventListener("click", (e) => {
+    const on = (e.currentTarget as HTMLElement).getAttribute("aria-pressed") !== "true";
+    (e.currentTarget as HTMLElement).setAttribute("aria-pressed", String(on));
+    for (const b of boards) b.dataset.side = on ? "1" : "0";
+  });
+  for (const input of document.querySelectorAll<HTMLInputElement>("[data-custom]")) {
+    input.value = custom[input.dataset.custom!]!;
+    input.addEventListener("input", () => {
+      custom[input.dataset.custom!] = input.value;
+      paint("custom");
+    });
+  }
+  // The site theme sets the board theme until a board theme is picked.
+  new MutationObserver(() => theme(html.dataset.theme === "light" ? "light" : "dark")).observe(html, { attributes: true, attributeFilter: ["data-theme"] });
+  theme(boardTheme);
+  hexes();
+  // Isolation: a board in a shadow root, under a hostile page rule (.bu-hostile button).
+  const isoHost = document.querySelector<HTMLElement>("[data-shadow-demo]")!;
+  const iso = mount(isoHost, kitCss, { theme: boardTheme });
+  iso.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:18px;background:var(--bg);border-radius:12px";
+  iso.innerHTML = `<button class="bui-arcade bui-fallin" type="button" aria-pressed="false">Fall in<kbd>F</kbd></button><button class="bui-arcade bui-attack" type="button" aria-pressed="false">Attack<kbd>G</kbd></button><button class="bui-arcade bui-cmd bui-call" type="button" aria-pressed="false">Command<kbd>O</kbd></button>`;
+  for (const b of iso.querySelectorAll<HTMLElement>("button")) b.addEventListener("click", () => b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")));
+  boards.push(iso);
+  // Toggles: tap to lock, tap again to release (repaint in the handler: no bounce).
+  for (const b of document.querySelectorAll<HTMLElement>("[data-toggle]"))
+    b.addEventListener("click", () => b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")));
+  for (const g of document.querySelectorAll<HTMLElement>("[data-seg]"))
+    for (const b of g.querySelectorAll("button")) b.addEventListener("click", () => g.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))));
+  // Overlay ritual.
+  const overlay = document.querySelector<HTMLElement>("[data-overlay]")!;
+  const open = () => {
+    overlay.hidden = false;
+    slam(overlay.querySelector(".bui-sticker"));
+    overlay.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+  };
+  const close = () => (overlay.hidden = true);
+  document.querySelector("[data-open-overlay]")!.addEventListener("click", open);
+  document.querySelector("[data-close-overlay]")!.addEventListener("click", close);
+  overlay.addEventListener("keydown", (e) => e.key === "Escape" && close());
+  const flag = document.querySelector<HTMLButtonElement>("[data-surrender]")!;
+  flag.addEventListener("click", () => {
+    if (flag.classList.contains("go")) return;
+    flag.classList.add("go");
+    setTimeout(() => launch(flag, close, { reduced: reduced(), done: () => flag.classList.remove("go") }), reduced() ? 0 : 480);
+  });
+  for (const b of document.querySelectorAll<HTMLElement>("[data-launch]")) b.addEventListener("click", () => launch(b, () => {}, { reduced: reduced() }));
+</script>
+
+<style>
+.board-guide{--bu-gap:22px;max-width:var(--page);margin:0 auto;padding:56px var(--gutter) 90px}
+.bu-hero{padding-bottom:28px;border-bottom:1px solid var(--line)}
+.bu-hero h1{margin:14px 0 12px;font-size:clamp(40px,6vw,76px);line-height:.98;letter-spacing:-.03em}
+.bu-hero h1 em{font-style:normal;color:var(--k-cmd-ink)}
+.bu-hero .lead{max-width:640px;color:var(--muted);font-size:17px}
+.bu-links{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.bu-toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.bu-toc a{display:inline-flex;gap:8px;align-items:center;padding:7px 11px;border:2px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:12px var(--mono);text-decoration:none;box-shadow:0 3px 0 var(--base)}
+.bu-toc a:hover{border-color:var(--k-sys)}
+.bu-toc a b{color:var(--k-cmd-ink);font-weight:600}
+.bu-strip{position:sticky;top:8px;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:22px;padding:10px 14px}
+.bu-strip-label{font:700 10px var(--mono);letter-spacing:.14em;color:var(--muted)}
+.bu-chips{flex-wrap:wrap}
+.bu-chips button{min-height:34px;padding:5px 11px;font:700 11px var(--mono)}
+.bu-custom{display:flex;flex-wrap:wrap;gap:10px}
+.bu-custom label{display:flex;align-items:center;gap:6px;font:11px var(--mono)}
+.bu-custom input{width:34px;height:26px;padding:0;border:2px solid var(--line);border-radius:4px;background:none}
+.bu-block{padding:64px 0 0;scroll-margin-top:80px}
+.bu-head{max-width:720px;margin-bottom:26px}
+.bu-head h2{margin:10px 0 8px;font-size:clamp(28px,3.6vw,42px);line-height:1.05}
+.bu-head p{margin:0;color:var(--muted);line-height:1.6}
+.bu-rules{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--bu-gap)}
+.bu-rules li{padding:16px}
+.bu-rules b{font:700 11px var(--mono);color:var(--k-cmd-ink)}
+.bu-rules h3{margin:6px 0;font-size:16px}
+.bu-rules p{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
+/* A board panel: the kit's own surface, so demos look exactly like a game. */
+.bu-board{display:grid;gap:22px;padding:28px 24px;background:var(--bg);border:2px solid var(--line);border-radius:14px;box-shadow:0 6px 0 var(--base);overflow:hidden}
+.bu-roles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.bu-roles li{display:grid;grid-template-columns:44px 1fr;grid-template-areas:"sw name" "sw var" "sw job" "sw hex";column-gap:12px;font-size:12px;color:var(--muted)}
+.bu-roles i{grid-area:sw;width:44px;height:44px;border:2px solid var(--rim);border-radius:10px;box-shadow:0 4px 0 color-mix(in srgb,currentColor 0%,var(--rim))}
+.bu-roles b{grid-area:name;color:var(--ink);font-size:13px}
+.bu-roles code{grid-area:var;font-size:11px}
+.bu-roles span{grid-area:job}
+.bu-roles em{grid-area:hex;font-style:normal;font-size:11px;color:var(--ink)}
+.bu-code{max-width:100%;margin:16px 0 0;padding:16px;overflow:auto;font:12px/1.6 var(--mono);background:var(--surface);border:2px solid var(--line);border-radius:10px}
+.bu-states{display:flex;flex-wrap:wrap;gap:22px 18px}
+.bu-states figure{display:grid;justify-items:start;gap:10px;margin:0}
+.bu-states figcaption{display:grid;font-size:11px;color:var(--muted)}
+.bu-states figcaption b{color:var(--ink);font-size:12px}
+/* Forced demo states (the real ones need a pointer or focus). */
+.bui .bu-hover{transform:translateY(calc(-1 * var(--hy)));box-shadow:0 calc(var(--py) + var(--hy)) 0 var(--edge-hover),var(--glow-hover)}
+.bui .bu-focus{box-shadow:0 var(--py) 0 var(--edge),0 0 0 3px var(--bg),0 var(--py) 0 3px var(--bg),0 0 0 6px var(--k-sys-ink),0 var(--py) 0 6px var(--k-sys-ink)}
+.bu-try{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.bu-row{display:grid;gap:10px}
+.bu-keys{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.bu-orbs{gap:22px;padding-top:10px}
+.bu-bar{grid-template-columns:auto auto auto 1fr auto auto auto;align-items:end;gap:14px;overflow-x:auto}
+.bu-bar > div{display:grid;gap:6px}
+.bu-bar .bu-center{justify-items:center}
+.bu-sep{align-self:stretch;width:1px;background:var(--line)}
+.bu-cards{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);align-items:start;padding-top:40px}
+.bu-plan-body{display:flex;gap:14px;align-items:center;padding-top:8px}
+.bui .bu-big{width:56px;height:56px}
+.bu-card-title{margin:4px 0;font:800 18px/1.2 var(--mono);color:var(--ink)}
+.bu-card-text{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.bu-dock{max-width:220px}
+.bu-stage{position:relative;min-height:340px;place-items:center}
+.bu-field{position:absolute;inset:0;background:linear-gradient(color-mix(in srgb,var(--k-sys) 10%,transparent) 1px,transparent 1px) 0 0/30px 30px,linear-gradient(90deg,color-mix(in srgb,var(--k-sys) 10%,transparent) 1px,transparent 1px) 0 0/30px 30px}
+.bu-open{position:relative}
+.bu-stage:has(.bui-overlay:not([hidden])) .bu-open{visibility:hidden}
+.bu-launch{grid-auto-flow:column;justify-content:center;gap:24px;padding:40px 24px}
+.bu-steps{margin:16px 0 0;padding-left:20px;color:var(--muted);font-size:13px;line-height:1.8}
+.bu-steps b{color:var(--ink);font-family:var(--mono)}
+.bu-comms{justify-items:start}
+.bu-tip{display:grid;justify-items:start;gap:8px}
+.bu-layouts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--bu-gap)}
+.bu-layouts figure{margin:0;padding:16px}
+.bu-layouts figcaption{display:grid;gap:4px;margin-top:12px;font-size:12px;line-height:1.55;color:var(--muted)}
+.bu-layouts figcaption b{color:var(--ink);font-size:14px}
+.bu-mock{position:relative;aspect-ratio:16/9;background:#07060f;border:2px solid var(--line);border-radius:8px;overflow:hidden}
+.bu-mock i{position:absolute;display:block;border-radius:3px}
+.bu-mock .map{inset:18% 4% 22%;background:#120f26;border:1px solid #3b3170}
+.bu-mock .head{left:4%;right:4%;top:5%;height:8%;background:#1d1738}
+.bu-mock .bar{left:4%;right:4%;bottom:5%;height:12%;background:repeating-linear-gradient(90deg,#9a63ff 0 8%,transparent 8% 10%,#a8ff3e 10% 16%,transparent 16% 18%,#39ffb0 18% 30%,transparent 30% 34%,#ff7389 34% 42%)}
+.bu-mock.phone .map{inset:4% 22%}
+.bu-mock .rail{top:4%;bottom:4%;width:18%;background:#1d1738}
+.bu-mock .rail.l{left:2%}.bu-mock .rail.r{right:2%}
+.bu-mock .float{right:7%;top:24%;width:16%;height:24%;background:#39ffb0;opacity:.85}
+.bu-mock.full .map{inset:4%}
+.bu-mock .dock{bottom:10%;width:16%;height:46%;background:#1d1738;border:1px solid #3b3170}
+.bu-mock .dock.l{left:7%}.bu-mock .dock.r{right:7%;height:34%}
+.bu-table{margin-top:22px;padding:0;overflow-x:auto}
+.bu-table + .bu-board{margin-top:22px}
+.bu-table table{width:100%;border-collapse:collapse;font-size:13px}
+.bu-table th,.bu-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.bu-table th{font:10px var(--mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.bu-table tr:last-child td{border-bottom:0}
+.bu-iso{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:center;margin-bottom:22px}
+.bu-iso-text p{margin:8px 0 0;color:var(--muted);line-height:1.6;font-size:14px}
+.bu-hostile button{background:red!important;border:3px dashed currentColor!important;font:italic 20px serif!important}
+.bu-check{margin:0;padding:18px 18px 18px 38px;line-height:1.9;font-size:14px}
+.nerd-link{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:center;margin-top:22px;padding:18px 20px;text-decoration:none;color:var(--ink)}
+.nerd-link .eyebrow{grid-column:1}.nerd-link strong{grid-column:1;font-size:17px}.nerd-link span:not(.eyebrow){grid-column:1;font-size:13px;color:var(--muted)}
+.nerd-link :global(svg){grid-column:2;grid-row:1/4}
+.nerd-link:hover{border-color:var(--k-sys)}
+.bu-hero .eyebrow .index{color:var(--k-cmd-ink)}
+/* A unit card's status pill: top edge, opposite the back tab, flat, breathing. */
+.bu-pill{position:absolute;top:-12px;right:14px;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;font:800 10px/1 var(--mono);letter-spacing:.12em;color:#fff;background:var(--k-cmd);border:2px solid var(--rim);border-radius:6px;animation:bu-pill 1.8s ease-in-out infinite}
+.bu-pill svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4}
+@keyframes bu-pill{50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--k-cmd) 35%,transparent),0 0 22px color-mix(in srgb,var(--k-cmd) 80%,transparent)}}
+@media (prefers-reduced-motion:reduce){.bu-pill{animation:none}}
+@media (max-width:960px){.bu-bar{grid-template-columns:1fr 1fr}.bu-bar .bu-sep{display:none}.bu-bar .bu-center{justify-items:start}}
+@media (max-width:760px){
+  .board-guide{padding:36px var(--gutter) 60px}
+  .bu-block{padding-top:48px}
+  .bu-cards{grid-template-columns:1fr}
+  .bu-dock{max-width:none}
+  .bu-launch{grid-auto-flow:row;justify-items:center}
+  .bu-board{padding:22px 16px;gap:18px}
+  .bu-strip{position:static}
+  .bu-states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bu-bar{grid-template-columns:1fr}
+  .bu-roles{grid-template-columns:1fr}
+  .bu-iso{grid-template-columns:1fr}
+}
+</style>

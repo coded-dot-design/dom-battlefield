@@ -1,4 +1,4 @@
-name: Deploy Battlefield preview
+name: Deploy Battlefield site
 on:
   push:
     branches: [main]
@@ -23,11 +23,13 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check
       - run: npm run size
-      # The committed dist is what the hub ships; the preview must be the same bytes.
+      # The committed dist is what the hub ships; /play/ must be the same bytes.
       - run: git diff --exit-code -- dist
+      # Landing page (/), style guide (/style-guide/) and the game (/play/).
+      - run: npm run site:build
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: dist
+          path: artifacts/pages
   deploy:
     needs: build
     runs-on: ubuntu-latest

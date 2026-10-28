@@ -17,6 +17,8 @@ jobs:
       - run: git diff --exit-code -- dist
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - run: npm run site:build
+      - run: npm run test:site
   tag-version:
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
