@@ -13,14 +13,19 @@ const eggSnippet = `<script src="${script}" data-easter-egg="true" defer></scrip
 const tiles = [
   ['»', '#39ffb0', '', 'Rapid', 'rapid fire for 8 seconds'],
   ['≡', '#19f0ff', '', 'Triple', 'three shells a shot for 8 seconds'],
-  ['✚', '#ff2e88', '', 'Airstrike', 'one charge: three blasts wherever you point'],
+  ['✈', '#ff2e88', '', 'Airstrike', 'one more strike: tap a spot, a bomber does the rest'],
   ['◆', '#f6f3ff', '#07060f', 'Shield', 'six seconds of nothing hurts'],
+  ['✚', '#a8ff3e', '#07060f', 'Health', 'two armour back'],
+  ['◎', '#ffc21a', '#07060f', 'Long', 'one more long shot'],
   ['!', '#ff2b4e', '', 'Mine', 'blows up whoever drives on it, or goes off on its own'],
 ];
 const rules = [
   ['FREE FOR ALL', 'Eight tanks, no teams', 'You and seven bots, every tank for itself. No plans, no radio: drive, aim, shoot.'],
   ['PARACHUTE IN', 'Die, drop back in', 'Every tank respawns by parachute, invulnerable on the way down. Nobody is ever out.'],
   ['THE GRID BLINKS', 'Slot-machine squares', 'A lit square rolls through colours, then settles: a power-up, or a mine. Get there first.'],
+  ['TWO GUNS', 'Spray, or snipe', 'The cannon fires fast and overheats. The LONG gun locks on and wrecks in one hit from across the field. Three to start.'],
+  ['AIRSTRIKES', 'Tap the spot', 'A bomber flies in over your shoulder; the bombs fall and the blasts leave black scorch. Carpet bombs at a five-kill streak.'],
+  ['KILL STREAKS', 'Two, three, five, eight', 'A long shot, an airstrike, a carpet bomb, then a NUKE. Supply crates parachute in too.'],
   ['THREE MINUTES', 'Most kills wins', 'Double kills, rampages, airstrikes. When the clock hits zero, the standings decide.'],
 ];
 ---
@@ -63,7 +68,7 @@ const rules = [
         <ul class="tiles">
           {tiles.map(([icon, c, ink, name, what]) => <li><i style={`--c:${c};${ink ? `--t:${ink}` : ''}`}>{icon}</i><span><b>{name}</b> {what}</span></li>)}
         </ul>
-        <p class="keys-line"><kbd>WASD</kbd> drive · <kbd>mouse</kbd> aim · <kbd>click</kbd> / <kbd>space</kbd> fire · <kbd>Q</kbd> or right-click: airstrike · <kbd>Esc</kbd> pause. Phones: drag on the left to drive; the turret aims and fires itself; ✚ calls a strike.</p>
+        <p class="keys-line"><kbd>WASD</kbd> drive · <kbd>mouse</kbd> aim · <kbd>click</kbd> / <kbd>space</kbd> fire · <kbd>E</kbd> long shot · <kbd>F</kbd> airstrike, then click the spot · <kbd>Q</kbd> auto-aim · <kbd>T</kbd> aim lock · <kbd>Esc</kbd> pause. Phones: drag on the left to drive and use the round arcade keys: FIRE, LONG, STRIKE, AUTO, LOCK.</p>
       </div>
       <a class="panel lit shot" href={base('blitz/play/')} aria-label="Play Battlefield Blitz">
         <img src={base('shots/blitz.webp')} alt="Battlefield Blitz: eight tanks in a free-for-all, an airstrike exploding, a parachute dropping a tank in, the kill feed on the right." width="1440" height="820" loading="lazy" decoding="async" />
