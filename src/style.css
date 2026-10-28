@@ -5853,3 +5853,8 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
   stroke: var(--rim);
   stroke-width: 2;
 }
+
+/* Planning past four tanks on a narrow desktop: the footer drops the platoon instead of wrapping. */
+#battlefield[data-ui="desk"].platoon-tucked:not([data-full="true"]) #bf-tactics {
+  display: none;
+}

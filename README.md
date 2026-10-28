@@ -87,6 +87,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.9 — Planning footer stays on one row
+
+- Planning on a compact desktop (below 1160px with more than four tanks, or whenever the platoon can't fit): the footer drops the PLATOON · RADIOS keys instead of wrapping, and the other keys get their labels back. You pick tanks on the plan card and the map; in battle the platoon card goes under the map as before.
+
 ### 0.18.8 — Plan card pill on the top edge, radio talk
 
 - The order pill moved to the card's top edge, opposite the LOADOUT tab: flat (no 3D shadow) and breathing with the same glow as the selected tank key, so the two read as one. The Move HQ / Move Tanks switch and the tank number now sit opposite each other.

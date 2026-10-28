@@ -826,6 +826,11 @@ try {
     if (!mobile) {
       await page.locator('.bf-home-card[data-open="platoon"]').click();
       await page.locator('#bf-size [data-size="12"]').click();
+      // Planning on a compact desktop: the footer drops the platoon instead of wrapping.
+      await page.waitForFunction(() => document.querySelector("#battlefield").classList.contains("platoon-tucked"));
+      assert.equal(await page.locator("#bf-tactics").isVisible(), false, "the planning footer hides a big platoon");
+      const tops = await page.locator("#bf-controls button:visible").evaluateAll((nodes) => new Set(nodes.map((n) => Math.round(n.getBoundingClientRect().top))).size);
+      assert.equal(tops, 1, "the planning footer stays on one row");
     }
     await page.locator("#bf-start").click();
     await page.waitForFunction(() => document.querySelector("#battlefield").dataset.stage === "battle");

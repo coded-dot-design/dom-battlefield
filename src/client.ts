@@ -1889,7 +1889,12 @@ function barIcons() {
     delete tactics.dataset.moved;
     tactics.style.left = tactics.style.top = tactics.style.right = tactics.style.bottom = "";
   }
+  // Planning has no room on the map for it: past four tanks below 1160px (or when it can't fit)
+  // the footer drops the platoon instead of wrapping. Tanks are picked on the plan card.
+  const tucked = desktop && !full && planning && (width < 1180 || (big && vw < 1160) || needed + roster > width);
+  root.classList.toggle("platoon-tucked", tucked);
   if (!desktop || full) return;
+  if (tucked) icons = docksWidth() > width;
   // With the platoon on the map the bar may have room for labels again.
   if (floating && icons) {
     root.classList.remove("bar-icons");
