@@ -829,6 +829,11 @@ try {
       await page.keyboard.press("y");
       await page.waitForFunction(() => document.querySelector("#bf-cmd-state")?.textContent === "YOU'RE DRIVING");
       assert.equal(await page.locator("#bf-cmd-state").getAttribute("data-kind"), "you");
+      // ...but its orders show like any tank's: Attack HQ, then tap again to clear.
+      await page.locator('#bf-acts [data-act="hq"]').click();
+      await page.waitForFunction(() => document.querySelector("#bf-cmd-state")?.textContent === "ATTACKING HQ");
+      await page.locator('#bf-acts [data-act="hq"]').click();
+      await page.waitForFunction(() => document.querySelector("#bf-cmd-state")?.textContent === "YOU'RE DRIVING");
       await page.goto(`${URL}/?debug`);
       await page.waitForFunction(() => window.battlefield);
       await plan(page, mobile);

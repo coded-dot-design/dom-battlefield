@@ -104,6 +104,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.12 — Your tank's orders on the plan card
+
+- Your own tank's pill and order keys now see its route: Attack HQ reads ATTACKING HQ (and the key lights, so a second tap clears it), a sent spot reads ROGER · GRID 0412. Your tank keeps its own order while it drives a route, which the card used to miss.
+
 ### 0.18.11 — Your tank on the plan card
 
 - Your own tank's plan-card pill no longer says ON ITS OWN. It shows the same orders as the squad (ATTACKING HQ, ROGER · GRID 0412, PLOTTING), and with no order it reads YOU'RE DRIVING in your team colour with a star.

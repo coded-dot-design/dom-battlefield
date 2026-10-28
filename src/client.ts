@@ -708,11 +708,13 @@ function actState() {
   if (!u || u.hp <= 0) return null;
   const enemyHq = state.board.bases[1 - side]!,
     stops = draft!.stops.length ? draft!.stops : u.route,
-    hq = stops.at(-1) === enemyHq && (dirty() || (u.order === "hold" && u.route.length > 0));
+    // Your tank keeps its own order while it drives a route (so you can take over any time).
+    routed = u.route.length > 0 && (u.order === "hold" || u.id === commander(state).id),
+    hq = stops.at(-1) === enemyHq && (dirty() || routed);
   return {
     hq,
     follow: u.order === "follow" && !draft!.stops.length,
-    route: armed || (!hq && (dirty() ? draft!.stops.length > 0 : u.order === "hold" && u.route.length > 0)),
+    route: armed || (!hq && (dirty() ? draft!.stops.length > 0 : routed)),
   };
 }
 function plan(action: string) {
@@ -876,7 +878,7 @@ function cmdPanel() {
   );
   text("#bf-cmd-tank", hqPick ? "MOVE HQ" : alive ? `${tankName(u!.id).toUpperCase()} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
   // The order pill (top right): the order's colour and icon, the same as its key beside the tank.
-  const route = u?.order === "hold" && u.route.length,
+  const route = !!u && u.route.length > 0 && (u.order === "hold" || u.id === commander(state).id),
     [kind, label] = !alive
       ? ["", ""]
       : dirty()
