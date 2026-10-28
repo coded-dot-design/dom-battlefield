@@ -20,7 +20,7 @@ const tiles = [
   ['!', '#ff2b4e', '', 'Mine', 'blows up whoever drives on it, or goes off on its own'],
 ];
 const rules = [
-  ['FREE FOR ALL', 'Eight tanks, no teams', 'You and seven bots, every tank for itself. No plans, no radio: drive, aim, shoot.'],
+  ['SOLO OR PLATOON', 'Every tank, or every platoon', 'Solo: eight tanks, every tank for itself. Platoon: you and three wingmen in your colour against two other platoons. Your wingmen cover you.'],
   ['PARACHUTE IN', 'Die, drop back in', 'Every tank respawns by parachute, invulnerable on the way down. Nobody is ever out.'],
   ['THE GRID BLINKS', 'Slot-machine squares', 'A lit square rolls through colours, then settles: a power-up, or a mine. Get there first.'],
   ['TWO GUNS', 'Spray, or snipe', 'The cannon fires fast and overheats. The LONG gun locks on and wrecks in one hit from across the field. Three to start.'],
@@ -29,7 +29,7 @@ const rules = [
   ['THREE MINUTES', 'Most kills wins', 'Double kills, rampages, airstrikes. When the clock hits zero, the standings decide.'],
 ];
 ---
-<Base title="Battlefield Blitz · the Blitz version of DOM Battlefield" description="Battlefield Blitz is the arcade version of DOM Battlefield: a free-for-all where every tank parachutes in, the grid blinks with power-ups and mines, and most kills in three minutes wins. Drop it onto any website with one line." page="blitz">
+<Base title="Battlefield Blitz · the Blitz version of DOM Battlefield" description="Battlefield Blitz is the arcade version of DOM Battlefield: solo or platoon-vs-platoon, where every tank parachutes in, the grid blinks with power-ups and mines, and most kills in three minutes wins. Drop it onto any website with one line." page="blitz">
   <section class="bz-hero" aria-labelledby="bz-title">
     <div class="bz-demo" id="bz-demo" aria-hidden="true"></div>
     <div class="wrap bz-hero-inner">
@@ -93,7 +93,7 @@ const rules = [
           <b>DOM Battlefield</b><span>The original. Squad tactics: plan with time frozen, radio your platoon, take the HQ.</span><em>Play the original ↗</em>
         </a>
         <a class="panel lit bz-version" href={base('blitz/play/')}>
-          <b>Battlefield Blitz</b><span>The arcade version. Free for all, parachutes, power-ups, airstrikes. Three minutes.</span><em>Play Blitz ↗</em>
+          <b>Battlefield Blitz</b><span>The arcade version. Solo or platoons, parachutes, power-ups, airstrikes. Three minutes.</span><em>Play Blitz ↗</em>
         </a>
         <p class="bz-built">Built on <a href="https://github.com/coded-dot-design/fizlet">Fizlet</a>, the tiny engine behind the DOM VIRUS arcade. Game code: <a href="https://github.com/coded-dot-design/dom-battlefield-blitz">dom-battlefield-blitz</a>.</p>
       </div>
