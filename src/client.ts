@@ -1841,16 +1841,33 @@ function barIcons() {
   root.classList.remove("bar-icons");
   const full = desktop && root.dataset.full === "true";
   const docks = [...bar.querySelectorAll<HTMLElement>(".bf-dock")];
-  const width = bar.clientWidth;
-  const needed = desktop && !full ? docks.reduce((sum, dock) => sum + dock.scrollWidth, 0) : 0;
-  const floating = desktop && !full && playing && !planning && (width < 1180 || needed + 240 > width);
+  const width = bar.clientWidth,
+    vw = innerWidth,
+    big = per > 4;
+  const docksWidth = () => docks.reduce((sum, dock) => sum + dock.scrollWidth, 0);
+  // The platoon row needs one 44px key + 8px gap per tank and its own margins; it never wraps.
+  const roster = per * 52 + 64;
+  let needed = desktop && !full ? docksWidth() : 0;
+  // Labels when everything fits on one line; icon keys when it doesn't (and always past four
+  // tanks below 1750px); the platoon card on the map when even icons can't make room for it.
+  let icons = desktop && !full && (needed + roster > width || (big && vw < 1750));
+  if (icons) {
+    root.classList.add("bar-icons");
+    needed = docksWidth();
+  }
+  const floating = desktop && !full && playing && !planning && (width < 1180 || (big && vw < 1160) || needed + roster > width);
   if (root.classList.contains("platoon-floating") !== floating) {
     root.classList.toggle("platoon-floating", floating);
     delete tactics.dataset.moved;
     tactics.style.left = tactics.style.top = tactics.style.right = tactics.style.bottom = "";
   }
   if (!desktop || full) return;
-  root.classList.toggle("bar-icons", needed + (floating ? 32 : 240) > width);
+  // With the platoon on the map the bar may have room for labels again.
+  if (floating && icons) {
+    root.classList.remove("bar-icons");
+    icons = docksWidth() + 32 > width;
+  }
+  root.classList.toggle("bar-icons", icons);
   if (floating) requestAnimationFrame(placePlatoon);
 }
 new ResizeObserver(() => barIcons()).observe($("#bf-controls"));

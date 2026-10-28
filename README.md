@@ -87,6 +87,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.4 — The platoon row never wraps
+
+- The desktop bar measures the platoon row (one 44px key and gap per tank) before choosing a layout: labels when everything fits on one line, icon keys when it doesn't (and always with more than four tanks below 1750px), and in battle the platoon moves to its card on the map (always with more than four tanks below 1160px). Eight or twelve keys no longer wrap to a second row.
+
 ### 0.18.3 — Labels and a clearer plan step
 
 - **Desktop bar labels read like the full-screen cards**, first word bold: RADIO · EACH TANK, RADIO · WHOLE SQUAD (RADIO · TANK 2 with a tank selected), PLATOON · RADIOS and AIM · AUTO / LOCK. The compact desktop bar (icon keys, platoon card on the map) keeps one word per group: RADIO, WHOLE SQUAD, PLATOON, AIM. Full screen and touch are unchanged.

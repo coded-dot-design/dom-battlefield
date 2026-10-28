@@ -784,6 +784,12 @@ try {
       await page.locator("#bf-start").click();
       await page.waitForTimeout(800);
       assert.equal(await page.evaluate(() => window.battlefield.snapshot().units.length), 24);
+      if (!mobile) {
+        // A big platoon never wraps the desktop bar: icon keys, or its own card on the map.
+        const rows = await page.evaluate(() => document.querySelector("#battlefield").classList.contains("platoon-floating")
+          ? 1 : new Set([...document.querySelectorAll("#bf-roster .bf-unit")].map((n) => Math.round(n.getBoundingClientRect().top))).size);
+        assert.equal(rows, 1, "the platoon row stays on one line in the bar");
+      }
       await restart(page);
       // The platoon stuck: still 12 a side on the next setup.
       assert.equal(await page.locator(".bf-tank").count(), 24);
