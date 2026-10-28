@@ -139,6 +139,24 @@ try {
   assert.deepEqual(berr, []);
   await bp.close();
 
+  where = "blitz-phone";
+  // Phones: the game page loads like the Battlefield app (no header/footer, no scroll, no zoom).
+  const phone = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  const pp = await phone.newPage();
+  await pp.goto(base + "blitz/play/");
+  const app = await pp.evaluate(() => {
+    const r = document.querySelector(".blitz-stage").getBoundingClientRect();
+    return {
+      head: getComputedStyle(document.querySelector(".site-head")).display,
+      foot: getComputedStyle(document.querySelector(".site-foot")).display,
+      stage: [r.top, r.left, Math.round(r.width), Math.round(r.height)],
+      scroll: document.documentElement.scrollHeight <= innerHeight + 1,
+      zoom: /user-scalable=no/.test(document.querySelector("meta[name=viewport]").content),
+    };
+  });
+  assert.deepEqual(app, { head: "none", foot: "none", stage: [0, 0, 844, 390], scroll: true, zoom: true });
+  await phone.close();
+
   where = "blitz-landing";
   const lp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const lerr = [];
@@ -192,7 +210,7 @@ try {
   });
   assert.equal(frames, true, "reduced motion: the arena is a still frame");
   await still.close();
-  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + drop-in, reduced motion passed.");
+  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + drop-in, reduced motion passed.");
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;

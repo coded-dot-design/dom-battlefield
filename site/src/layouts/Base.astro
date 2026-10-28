@@ -6,7 +6,8 @@ import '../styles/site.css';
 import Icon from '../components/Icon.astro';
 import Skull from '../components/Skull.astro';
 import { VERSION, REPO, HUB, HUB_GAME, base } from '../site';
-const { title, description, page = 'home' } = Astro.props;
+// app: a game page. On phones it loads like the Battlefield app: no header or footer, no scroll, no zoom.
+const { title, description, page = 'home', app = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const nav = [
   ['home', 'Game', base()],
@@ -19,7 +20,7 @@ const nav = [
 <html lang="en" class="bui" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content={app ? "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" : "width=device-width, initial-scale=1, viewport-fit=cover"} />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -39,7 +40,7 @@ const nav = [
       } catch (e) {}
     </script>
   </head>
-  <body data-page={page}>
+  <body data-page={page} data-app={app ? "" : undefined}>
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-head">
       <div class="wrap">
@@ -95,6 +96,10 @@ const nav = [
         <div class="wrap"><span>© 2026 coded.design · MIT</span><span>Created by Chris Cooley</span></div>
       </div>
     </footer>
+    {app && <script is:inline>
+      // App pages on phones: no pinch or double-tap zoom (iOS ignores user-scalable=no).
+      for (const t of ["gesturestart", "gesturechange", "dblclick"]) document.addEventListener(t, function (e) { if (matchMedia("(pointer: coarse)").matches) e.preventDefault(); }, { passive: false });
+    </script>}
     <script>
       const html = document.documentElement;
       document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {

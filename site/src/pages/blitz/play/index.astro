@@ -4,7 +4,7 @@
 import Base from '../../../layouts/Base.astro';
 import { base } from '../../../site';
 ---
-<Base title="Play Battlefield Blitz" description="Battlefield Blitz: free-for-all tank chaos. Parachute in, grab the blinking power tiles, call airstrikes. Most kills in three minutes wins." page="blitz">
+<Base title="Play Battlefield Blitz" description="Battlefield Blitz: free-for-all tank chaos. Parachute in, grab the blinking power tiles, call airstrikes. Most kills in three minutes wins." page="blitz" app>
   <section class="blitz-stage" aria-label="Battlefield Blitz arena">
     <div id="blitz" class="blitz-host"></div>
   </section>
@@ -50,6 +50,28 @@ import { base } from '../../../site';
   }
   .blitz-bar a {
     color: var(--k-sys-ink);
+  }
+  /* Phones: the game is the whole screen, like the Battlefield app. No header, footer, scroll or zoom. */
+  @media (pointer: coarse), (max-width: 760px) {
+    :global(html:has(body[data-app])),
+    :global(body[data-app]) {
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      -webkit-text-size-adjust: 100%;
+    }
+    :global(body[data-app] :is(.site-head, .site-foot, .skip)),
+    .blitz-bar {
+      display: none;
+    }
+    .blitz-stage {
+      position: fixed;
+      inset: 0;
+      height: auto;
+      min-height: 0;
+      border: 0;
+    }
   }
   kbd {
     padding: 1px 6px;
