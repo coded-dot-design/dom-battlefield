@@ -230,7 +230,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
         <div class="bui-sticker"><span>BATTLE PAUSED</span><b>GIVE UP?</b></div>
         <div class="bui-overlay-keys">
           <button class="bui-sticker-key" type="button" data-close-overlay><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>KEEP FIGHTING</b></button>
-          <button class="bui-sticker-key bui-second bui-surrender" type="button" data-surrender><svg viewBox="0 0 64 64" shape-rendering="crispEdges"><g class="bui-cells">{cells.map((c) => <rect x={c.x} y={c.y} width="16" height="16" style={`--i:${c.i}`}/>)}</g><path d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64" fill="none" stroke="#07060f" stroke-opacity=".3"/><path d="M17 9h4v46h-4Z" fill="#f6f3ff" stroke="#07060f" stroke-width="2"/><path class="bui-cloth" d="M21 12h24l-6 9 6 9H21Z" fill="#f6f3ff" stroke="#07060f" stroke-width="2"/></svg><b>SURRENDER</b></button>
+          <button class="bui-sticker-key bui-second bui-surrender" type="button" data-surrender><svg viewBox="0 0 64 64" shape-rendering="crispEdges"><g class="bui-cells">{cells.map((c) => <rect x={c.x} y={c.y} width="16" height="16" style={`--i:${c.i}`}/>)}</g><path class="bui-grid" d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64"/><rect class="bui-frame" x="1" y="1" width="62" height="62"/><path class="bui-pole" d="M17 9h4v46h-4Z"/><path class="bui-cloth" d="M21 12h24l-6 9 6 9H21Z"/></svg><b>SURRENDER</b></button>
         </div>
       </div>
     </div>
