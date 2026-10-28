@@ -105,11 +105,13 @@ try {
       if (mobile) {
         // Phones: one intro card about installing (shown once), and portrait waits for a turn.
         assert.equal(await page.evaluate(() => window.battlefield.install), "menu", "the intro card offers the browser's install");
-        await page.locator("#bf-install-later").click();
-        assert.equal(await page.evaluate(() => window.battlefield.install), null);
         assert.equal(await page.evaluate(() => window.battlefield.gate), "rotate", "setup is landscape-only on a phone");
         assert.equal(await page.locator("#bf-gate-exit").isVisible(), false, "no Back to setup before a battle");
+        // Upright, the rotate gate carries the install tip; the card waits for landscape.
+        assert.equal(await page.locator("#bf-install").isVisible(), false, "the install card never covers the rotate gate");
         await page.setViewportSize({ width: 844, height: 390 });
+        await page.locator("#bf-install-later").click();
+        assert.equal(await page.evaluate(() => window.battlefield.install), null);
         await page.waitForFunction(() => window.battlefield.gate === null);
         assert.equal(await page.locator("#battlefield").getAttribute("data-ui"), "touch");
       } else assert.equal(await page.locator("#battlefield").getAttribute("data-ui"), "desk");
