@@ -133,8 +133,8 @@ try {
   await bp.mouse.up();
   // A short match ends with the result sticker and the standings.
   await bp.waitForFunction(() => window.blitz.state === "end", null, { timeout: 12000 });
-  const over = await bp.evaluate(() => document.querySelector("#blitz").shadowRoot.querySelector("[data-over]").textContent);
-  assert.match(over, /MATCH OVER/);
+  const over = await bp.evaluate(() => document.querySelector("#blitz").shadowRoot.querySelector("[data-ov]").textContent);
+  assert.match(over, /(STAGE CLEAR|INSERT COIN).*REMATCH/s);
   assert.match(over, /REMATCH/);
   assert.deepEqual(berr, []);
   await bp.close();
