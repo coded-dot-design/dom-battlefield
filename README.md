@@ -87,6 +87,12 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.6 — Planning keys
+
+- The first planning step is three keys, not cards: no grip, and they don't drag. The cards they open still do.
+- Step keys: on phones the icon and its PREV / NEXT caption sit together; on desktop they take the rounded-square shape of the other icon keys instead of a circle.
+- Full screen planning: the waiting platoon card sits in the top corner on your team's side (it covered the Loadout card on the far side), and follows a side change.
+
 ### 0.18.5 — Readable install card
 
 - The install card never drops below one pixel a unit, so it reads on an upright phone too (the rest of the layout keeps its landscape scale).

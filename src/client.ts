@@ -468,6 +468,8 @@ function preview(resized = false) {
   syncUi();
   view.resize();
   view.center();
+  // A side change moves the waiting platoon card to your team's corner (full screen planning).
+  requestAnimationFrame(placePlatoon);
   mapTools();
   $("#bf-operation").textContent = picked || playing ? MISSIONS[mission]!.name : "Pick a location";
   const cost = loadoutCost(roles),
@@ -1751,7 +1753,8 @@ function undrag() {
     c.style.left = c.style.top = c.style.right = c.style.bottom = c.style.height = "";
   }
 }
-for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-card-row, .bf-pcard, #bf-cmd")) dragCard(c);
+// The first planning step is just three keys: only the cards they open can be dragged.
+for (const c of document.querySelectorAll<HTMLElement>(".bf-loc, .bf-pcard, #bf-cmd")) dragCard(c);
 // Desktop full screen: the bar's cards on the map drag too.
 for (const c of document.querySelectorAll<HTMLElement>(".bf-dock, #bf-tactics"))
   dragCard(c, () => root.dataset.full === "true" || (c.id === "bf-tactics" && root.classList.contains("platoon-floating")));
@@ -1805,13 +1808,14 @@ const fullHome = $("#bf-fullscreen").parentElement!,
 function placePlatoon() {
   if (railLayout.matches || (root.dataset.full !== "true" && !root.classList.contains("platoon-floating")) || tactics.dataset.moved !== undefined) return;
   const m = $(".bf-mini").getBoundingClientRect();
-  // No sector map yet (setup, planning): the card waits in the map's top-right corner, where the
-  // sector map will be, clear of the planning cards and START BATTLE.
+  // No sector map yet (setup, planning): the card waits in the map's top corner on your team's
+  // side, clear of the planning cards (they sit on the far side) and START BATTLE.
   if (!m.width) {
-    const st = $(".bf-stage").getBoundingClientRect();
+    const st = $(".bf-stage").getBoundingClientRect(),
+      left = root.dataset.side !== "1";
     tactics.style.top = `${Math.round(st.top + 12)}px`;
-    tactics.style.left = "auto";
-    tactics.style.right = `${Math.round(innerWidth - st.right + 12)}px`;
+    tactics.style.left = left ? `${Math.round(st.left + 12)}px` : "auto";
+    tactics.style.right = left ? "auto" : `${Math.round(innerWidth - st.right + 12)}px`;
     return;
   }
   tactics.style.top = `${Math.round(m.bottom + 10)}px`;

@@ -2842,8 +2842,9 @@ canvas.bf-ico {
   font: 800 calc(14 * var(--u)) / 1 system-ui, sans-serif;
   letter-spacing: calc(0.6 * var(--u));
 }
+/* The three step keys are keys, not cards: no grip (they don't drag). */
 .bf-home-card .bf-card-grip {
-  pointer-events: auto;
+  display: none;
 }
 
 /* Platoon + Loadout cards: the corner away from your team; the other cards orbit beside. */
@@ -5759,4 +5760,16 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
 }
 .bf-install p b {
   font-size: inherit;
+}
+
+/* Phone step keys: the icon and its PREV / NEXT caption sit together in the middle. */
+[data-ui="touch"] .bf-orb:has(.bf-orb-caption) canvas.bf-ico {
+  transform: translateY(calc(-4 * var(--u)));
+}
+[data-ui="touch"] .bf-orb-caption {
+  bottom: calc(14 * var(--u));
+}
+/* Desktop step keys: the rounded-square shape of the other icon keys, not a circle. */
+[data-ui="desk"] .bf-orb {
+  border-radius: calc(14 * var(--u));
 }
