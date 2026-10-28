@@ -567,7 +567,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   }
   @media (max-width: 860px) {
     .step {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
     .step.flip .step-text {
       order: 0;
@@ -616,12 +616,14 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   }
   .radio-toast {
     position: static;
+    width: auto;
+    max-width: 100%;
     margin: 0;
     transform: none;
   }
   @media (max-width: 860px) {
     .radio-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
@@ -743,7 +745,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   }
   @media (max-width: 760px) {
     .roles {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
@@ -799,7 +801,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   }
   @media (max-width: 860px) {
     .any-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
@@ -955,12 +957,12 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   }
   @media (max-width: 960px) {
     .family-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   @media (max-width: 560px) {
     .cart-card {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       justify-items: center;
       text-align: center;
       padding: 26px 20px;

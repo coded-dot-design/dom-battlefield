@@ -246,6 +246,28 @@ html.bui[data-theme="light"] .panel.lit {
     margin-left: auto;
   }
 }
+@media (max-width: 380px) {
+  .site-head .wrap {
+    gap: 10px;
+  }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+  .brand-mark svg {
+    width: 34px;
+    height: 34px;
+  }
+  .brand-text b {
+    font-size: 16px;
+  }
+  .head-keys {
+    gap: 8px;
+  }
+  .play-key {
+    padding-inline: 10px;
+  }
+}
 @media (max-width: 520px) {
   :root {
     --gutter: 18px;

@@ -79,12 +79,14 @@ try {
   await page.locator("[data-theme-toggle]").click();
 
   where = "phone";
-  for (const path of ["", "style-guide/"]) {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(base + path);
-    await page.waitForTimeout(300);
-    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${path || "home"} never scrolls sideways on a phone`);
-  }
+  for (const width of [390, 360])
+    for (const path of ["", "style-guide/"]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(base + path);
+      await page.waitForTimeout(300);
+      const wide = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert.ok(wide <= width + 1, `${path || "home"} never scrolls sideways at ${width}px (${wide}px)`);
+    }
   await page.setViewportSize({ width: 1440, height: 900 });
 
   where = "style-guide";
