@@ -831,6 +831,16 @@ try {
       assert.equal(await page.locator("#bf-tactics").isVisible(), false, "the planning footer hides a big platoon");
       const tops = await page.locator("#bf-controls button:visible").evaluateAll((nodes) => new Set(nodes.map((n) => Math.round(n.getBoundingClientRect().top))).size);
       assert.equal(tops, 1, "the planning footer stays on one row");
+      // ...and no key runs under the next one, at this width or narrower.
+      for (const width of [1100, 900, 1100]) {
+        await page.setViewportSize({ width, height: 800 });
+        await page.waitForTimeout(150);
+        const overlaps = await page.locator("#bf-controls button:visible").evaluateAll((nodes) => {
+          const r = nodes.map((n) => n.getBoundingClientRect());
+          return r.filter((b, i) => i && b.left < r[i - 1].right - 1 && Math.abs(b.top - r[i - 1].top) < 5).length;
+        });
+        assert.equal(overlaps, 0, `planning footer keys don't overlap at ${width}px`);
+      }
     }
     await page.locator("#bf-start").click();
     await page.waitForFunction(() => document.querySelector("#battlefield").dataset.stage === "battle");

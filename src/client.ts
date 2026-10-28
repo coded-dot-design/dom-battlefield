@@ -1894,9 +1894,8 @@ function barIcons() {
   const tucked = desktop && !full && planning && (width < 1180 || (big && vw < 1160) || needed + roster > width);
   root.classList.toggle("platoon-tucked", tucked);
   if (!desktop || full) return;
-  if (tucked) icons = docksWidth() > width;
-  // With the platoon on the map the bar may have room for labels again.
-  if (floating && icons) {
+  // With the platoon off the bar (on the map, or dropped while planning) labels may fit again.
+  if ((floating || tucked) && icons) {
     root.classList.remove("bar-icons");
     icons = docksWidth() + 32 > width;
   }

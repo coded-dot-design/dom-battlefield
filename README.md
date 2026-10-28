@@ -87,6 +87,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.10 — Planning footer matches battle
+
+- On a compact desktop the planning footer uses the same key logic as battle: with the platoon off the bar, keys switch to icons when their labels don't fit, so the AIM keys no longer sit on top of Attack.
+
 ### 0.18.9 — Planning footer stays on one row
 
 - Planning on a compact desktop (below 1160px with more than four tanks, or whenever the platoon can't fit): the footer drops the PLATOON · RADIOS keys instead of wrapping, and the other keys get their labels back. You pick tanks on the plan card and the map; in battle the platoon card goes under the map as before.
