@@ -21,6 +21,7 @@ const tiles = [
 ];
 const rules = [
   ['SOLO OR PLATOON', 'Every tank, or every platoon', 'Solo: eight tanks, every tank for itself. Platoon: you and three wingmen in your colour against two other platoons. Your wingmen cover you.'],
+  ['PRACTICE', 'Learn the keys first', 'Targets that stand still, movers that never shoot back, and a coach that walks you through every key, reward and trick.'],
   ['PARACHUTE IN', 'Die, drop back in', 'Every tank respawns by parachute, invulnerable on the way down. Nobody is ever out.'],
   ['THE GRID BLINKS', 'Slot-machine squares', 'A lit square rolls through colours, then settles: a power-up, or a mine. Get there first.'],
   ['TWO GUNS', 'Spray, or snipe', 'The cannon fires fast and overheats. The LONG gun locks on and wrecks in one hit from across the field. Three to start.'],
@@ -68,7 +69,7 @@ const rules = [
         <ul class="tiles">
           {tiles.map(([icon, c, ink, name, what]) => <li><i style={`--c:${c};${ink ? `--t:${ink}` : ''}`}>{icon}</i><span><b>{name}</b> {what}</span></li>)}
         </ul>
-        <p class="keys-line"><kbd>WASD</kbd> drive · <kbd>mouse</kbd> aim · <kbd>click</kbd> / <kbd>space</kbd> fire · <kbd>E</kbd> long shot · <kbd>F</kbd> airstrike, then click the spot · <kbd>Q</kbd> auto-aim · <kbd>T</kbd> aim lock · <kbd>Esc</kbd> pause. Phones: drag on the left to drive and use the round arcade keys: FIRE, LONG, STRIKE, AUTO, LOCK.</p>
+        <p class="keys-line"><kbd>WASD</kbd> drive · <kbd>mouse</kbd> aim · <kbd>click</kbd> / <kbd>space</kbd> fire · <kbd>E</kbd> long shot · <kbd>F</kbd> airstrike, then click the spot · <kbd>Q</kbd> auto-aim · <kbd>T</kbd> aim lock · <kbd>Esc</kbd> pause. Phones: drag on the left to drive; AUTO and LOCK ride on FIRE, LONG and STRIKE sit above, and the grab bar moves the keys.</p>
       </div>
       <a class="panel lit shot" href={base('blitz/play/')} aria-label="Play Battlefield Blitz">
         <img src={base('shots/blitz.webp')} alt="Battlefield Blitz: eight tanks in a free-for-all, an airstrike exploding, a parachute dropping a tank in, the kill feed on the right." width="1440" height="820" loading="lazy" decoding="async" />
