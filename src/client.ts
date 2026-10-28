@@ -647,7 +647,7 @@ function setCommand(on: boolean, pick = true) {
     if (selected < 0 && pick) nextTank();
     say(
       planning
-        ? "Plan your attack: tap a tank, then the map. Check locks the route; the arrow moves on."
+        ? "Time is frozen. Plan your attack: tap a tank, then the map. Check locks the route; the arrow moves on."
         : railLayout.matches
           ? "Command mode: half speed, gun off. Tap a tank to direct it. Tap Fire (x) to fight."
           : "Command mode: half speed, gun off. Direct a tank. Space or right-click to fight.",
@@ -818,6 +818,13 @@ function showPanel(next: Panel, pick = true) {
     view.render(selected, paused, reduced.matches);
   }
 }
+/** Order icons for the plan card's pill (the same glyphs as the order keys). */
+const ORDER_ICON: Record<string, string> = {
+  attack: "M5 18V3M5 4h10l-3 3.5 3 3.5H5",
+  follow: "M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6",
+  command: "M4 8.5 10 4l6 4.5M4 13.5 10 9l6 4.5",
+  repair: "M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4",
+};
 /** The plan card (info, Move HQ / Move Tanks) and the buttons that ride beside the tank. */
 function cmdPanel() {
   if (root.dataset.plan !== String(planning)) root.dataset.plan = String(planning);
@@ -862,26 +869,33 @@ function cmdPanel() {
                   : "Pick an order beside the tank: Attack HQ, Follow, or Command.",
   );
   text("#bf-cmd-tank", alive ? `${tankName(u!.id).toUpperCase()} · ${u!.role.toUpperCase()}` : "NO TANK SELECTED");
-  text(
-    "#bf-cmd-state",
-    !alive
-      ? ""
+  // The order pill (top right): the order's colour and icon, the same as its key beside the tank.
+  const route = u?.order === "hold" && u.route.length,
+    [kind, label] = !alive
+      ? ["", ""]
       : dirty()
-        ? "DRAFT"
+        ? ["command", "DRAFT"]
         : on?.hq
-          ? "ATTACKING HQ"
-          : u!.order === "hold" && u!.route.length
-            ? `EN ROUTE · ${u!.route.length} STOP${u!.route.length > 1 ? "S" : ""}`
+          ? ["attack", "ATTACKING HQ"]
+          : route
+            ? ["command", `COMMAND · ${u!.route.length} STOP${u!.route.length > 1 ? "S" : ""}`]
             : u!.order === "hold"
-              ? "HOLDING"
+              ? ["command", "HOLDING"]
               : u!.order === "follow"
-                ? "FOLLOWING YOU"
+                ? ["follow", "FOLLOWING YOU"]
                 : u!.order === "attack"
-                  ? "ATTACKING"
+                  ? ["attack", "ATTACKING"]
                   : u!.order === "retreat"
-                    ? "REPAIRING"
-                    : "ON ITS OWN",
-  );
+                    ? ["repair", "REPAIRING"]
+                    : ["none", "ON ITS OWN"],
+    pill = $("#bf-cmd-state"),
+    pillKey = `${kind}|${label}`;
+  if (pill.dataset.key !== pillKey) {
+    pill.dataset.key = pillKey;
+    pill.dataset.kind = kind;
+    const d = ORDER_ICON[kind];
+    pill.innerHTML = label ? `${d ? `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="${d}"/></svg>` : ""}${label}` : "";
+  }
   for (const [id, onMode] of [["#bf-mode-hq", hqPick], ["#bf-mode-tanks", !hqPick]] as const)
     $(id).setAttribute("aria-checked", String(onMode));
   $(".bf-mode").dataset.on = hqPick ? "hq" : "tanks";
@@ -1672,8 +1686,13 @@ for (const h of document.querySelectorAll<HTMLElement>(".bf-card-size")) {
   listen(h, "pointerdown", ((e: PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const host = card.offsetParent as HTMLElement | null;
-    from = { y: e.clientY, h: card.offsetHeight, max: (host?.clientHeight ?? innerHeight) - card.offsetTop - 12 };
+    const host = card.offsetParent as HTMLElement | null,
+      set = card.style.height;
+    // Never taller than the content needs: measure the card at its natural height once.
+    card.style.height = "";
+    const natural = card.offsetHeight;
+    card.style.height = set;
+    from = { y: e.clientY, h: card.offsetHeight, max: Math.min(natural, (host?.clientHeight ?? innerHeight) - card.offsetTop - 12) };
     try {
       h.setPointerCapture(e.pointerId);
     } catch {}

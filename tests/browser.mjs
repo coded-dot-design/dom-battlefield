@@ -405,7 +405,8 @@ try {
       const locked = await page.evaluate(() => window.battlefield.snapshot().units[1]);
       assert.deepEqual(locked.route, drafted, "the check sends the route to the tank");
       assert.equal(locked.order, "hold");
-      assert.match(await page.locator("#bf-cmd-state").textContent(), /^EN ROUTE/);
+      assert.match(await page.locator("#bf-cmd-state").textContent(), /^COMMAND · \d STOP/);
+      assert.equal(await page.locator("#bf-cmd-state").getAttribute("data-kind"), "command", "the order pill takes the order's colour");
       assert.equal(await page.locator("#bf-check").getAttribute("data-state"), "locked", "the check stays lit by the flag");
       await page.waitForFunction(() => !document.querySelector(".bf-route.draft"), null, { timeout: 2000 });
       // A resize while planning (address bar, full screen) keeps the plan and the ground.

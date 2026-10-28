@@ -5773,3 +5773,57 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
 [data-ui="desk"] .bf-orb {
   border-radius: calc(14 * var(--u));
 }
+
+/* Planning cards fit their content (up to the old cap): the Next / Previous footer closes up
+   instead of leaving empty card over the map. */
+#battlefield .bf-pcard {
+  height: auto;
+}
+
+/* Plan card: no PLAN · TIME FROZEN line (the comms bar says it). The order pill sits top right in
+   the order's own colour with its icon; Move HQ hides it. The top edge keeps room for the
+   LOADOUT tab. */
+#bf-cmd .bf-cmd-mode {
+  display: none;
+}
+#battlefield[data-plan="true"] #bf-cmd:not(.folded) {
+  padding-top: calc(22 * var(--u));
+}
+#bf-cmd #bf-cmd-state {
+  --pill: var(--raised);
+  position: absolute;
+  top: calc(10 * var(--u));
+  right: calc(14 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  padding: calc(3 * var(--u)) calc(7 * var(--u));
+  color: var(--rim);
+  background: var(--pill);
+  border: calc(1.5 * var(--u)) solid var(--rim);
+  border-radius: calc(5 * var(--u));
+  box-shadow: 0 calc(2 * var(--u)) 0 var(--rim);
+}
+#bf-cmd #bf-cmd-state svg {
+  width: calc(11 * var(--u));
+  height: calc(11 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#bf-cmd #bf-cmd-state[data-kind="attack"] { --pill: var(--k-attack); }
+#bf-cmd #bf-cmd-state[data-kind="follow"] { --pill: var(--k-fallin); }
+#bf-cmd #bf-cmd-state[data-kind="command"] { --pill: var(--k-cmd); color: #f6f3ff; }
+#bf-cmd #bf-cmd-state[data-kind="repair"] { --pill: var(--team); }
+#bf-cmd #bf-cmd-state[data-kind="none"] { color: var(--muted); }
+#bf-cmd .bf-cmd-info:has(.bf-mode[data-on="hq"]) #bf-cmd-state,
+#bf-cmd.folded #bf-cmd-state {
+  display: none;
+}
+/* The switch sits under the order pill. */
+#battlefield[data-plan="true"] #bf-cmd .bf-mode {
+  align-self: end;
+  margin-top: calc(26 * var(--u));
+}

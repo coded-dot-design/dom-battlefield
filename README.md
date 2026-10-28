@@ -87,6 +87,11 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.7 — Plan card order pill, cards that fit
+
+- Planning cards fit their content (up to the old height cap): the Next / Previous footer closes up instead of leaving an empty card over the map, and the resize handle can't stretch a card past its content.
+- Plan card: the PLAN · TIME FROZEN line is gone (the comms bar says "Time is frozen"). The tank's order is a pill in the top right in the order's own colour and icon: ATTACKING HQ (attack pink, flag), FOLLOWING YOU (fall-in lime), COMMAND · N STOPS / HOLDING / DRAFT (command violet, chevrons), REPAIRING (your team colour, home), or ON ITS OWN (grey). Move HQ hides it; the Move HQ / Move Tanks switch sits under it, and the card keeps room at the top for the LOADOUT tab.
+
 ### 0.18.6 — Planning keys
 
 - The first planning step is three keys, not cards: no grip, and they don't drag. The cards they open still do.
