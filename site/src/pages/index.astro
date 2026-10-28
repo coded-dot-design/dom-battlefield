@@ -81,6 +81,25 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     </div>
   </section>
 
+  <!-- NEW: BLITZ -->
+  <section class="section blitz-promo" aria-labelledby="blitz-title">
+    <div class="wrap blitz-grid">
+      <div>
+        <p class="eyebrow"><span class="dot"></span> NEW · <b>BATTLEFIELD BLITZ</b></p>
+        <h2 id="blitz-title">The hero, as a game.<br /><em>Free for all.</em></h2>
+        <p class="lead">Every tank for itself. Parachute in, grab the blinking power tiles, call airstrikes, dodge the mines. Die, drop back in. Most kills in three minutes wins. And it drops onto any website with one line.</p>
+        <div class="blitz-keys">
+          <a class="bui-key bui-arcade bui-attack" href={base('blitz/play/')}><Icon name="play" size={16} />Play Blitz</a>
+          <a class="bui-key bui-arcade bui-cmd" href={base('blitz/')}><Icon name="book" size={16} />About Blitz</a>
+          <a class="bui-key bui-arcade bui-sys" href={base('blitz/#drop')}><Icon name="out" size={16} />Put it on your site</a>
+        </div>
+      </div>
+      <a class="panel lit shot blitz-shot" href={base('blitz/')} aria-label="Play Battlefield Blitz">
+        <img src={base('shots/blitz.webp')} alt="Battlefield Blitz: eight tanks in a free-for-all, an airstrike exploding, a parachute dropping a tank in, the kill feed on the right." width="1440" height="820" loading="lazy" decoding="async" />
+      </a>
+    </div>
+  </section>
+
   <!-- HOW IT PLAYS -->
   <section id="how" class="section how" aria-labelledby="how-title">
     <div class="wrap">
@@ -574,6 +593,31 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     }
     .step.flip .step-text {
       order: 0;
+    }
+  }
+
+  /* ---------- Blitz ---------- */
+  .blitz-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(26px, 5vw, 60px);
+    align-items: center;
+  }
+  .blitz-grid .lead {
+    margin-top: 16px;
+  }
+  .blitz-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+  }
+  .blitz-shot {
+    display: block;
+  }
+  @media (max-width: 860px) {
+    .blitz-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 

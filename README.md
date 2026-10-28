@@ -19,10 +19,23 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 | `/` | Landing page; the hero is a live battle (game sprites, airstrikes, shootable headline) | `site/src/pages/index.astro`, `site/src/scripts/arena.ts` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
+| `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero | `site/src/pages/blitz/index.astro` |
+| `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
+| `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
 `npm run test:site` tests it; `npm run shots` retakes the landing-page screenshots from `dist/`.
 The Board UI kit and its spec live in `board-ui/` (`BOARD-UI.md`).
+
+**Battlefield Blitz** (the arcade version) is its own repo,
+[dom-battlefield-blitz](https://github.com/coded-dot-design/dom-battlefield-blitz), built on the
+[Fizlet](https://github.com/coded-dot-design/fizlet) engine. Its pages live here so they share the
+Battlefield brand and styling; `vendor/blitz/` pins its build (`node scripts/sync-blitz.mjs` after a
+Blitz release; `ORIGIN.json` records the version and commit).
+
+**Custom domain (dombattlefield.com):** set the repo variables `SITE_URL=https://dombattlefield.com`
+and `SITE_BASE=/` (Settings → Secrets and variables → Actions), add the domain under
+Settings → Pages, and point the DNS at GitHub Pages. Both the original and Blitz then live there.
 
 ## The game
 

@@ -70,7 +70,7 @@ try {
   assert.equal(await advance.getAttribute("aria-pressed"), "false", "one order at a time");
   await page.locator('[data-order="attack"]').click();
   assert.match(await page.locator("[data-radio-toast]").textContent(), /released/);
-  assert.equal(await page.locator("img[src$='.webp']").count(), 4, "four real screenshots");
+  assert.equal(await page.locator("img[src$='.webp']").count(), 5, "five real screenshots");
 
   where = "theme";
   await page.locator("[data-theme-toggle]").click();
@@ -116,6 +116,68 @@ try {
   await page.waitForFunction(() => window.battlefield || document.querySelector("#battlefield"));
   assert.deepEqual(errors, []);
 
+  where = "blitz-board";
+  const bp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const berr = [];
+  bp.on("pageerror", (e) => berr.push(e.message));
+  await bp.goto(base + "blitz/play/?seconds=6");
+  assert.equal(await bp.evaluate(() => window.blitz.state), "intro");
+  await bp.evaluate(() => window.blitz.start());
+  await bp.waitForFunction(() => window.blitz.state === "play", null, { timeout: 5000 });
+  await bp.waitForFunction(() => window.blitz.world.tanks.filter((t) => t.alive && t.drop >= 1).length >= 6, null, { timeout: 6000 });
+  await bp.mouse.move(700, 400);
+  await bp.mouse.down();
+  await bp.keyboard.press("KeyQ");
+  await bp.waitForTimeout(400);
+  assert.ok(await bp.evaluate(() => window.blitz.world.shells.some((s) => s.on) || window.blitz.world.tanks[0].strikes === 0), "you can fire and call a strike");
+  await bp.mouse.up();
+  // A short match ends with the result sticker and the standings.
+  await bp.waitForFunction(() => window.blitz.state === "end", null, { timeout: 12000 });
+  const over = await bp.evaluate(() => document.querySelector("#blitz").shadowRoot.querySelector("[data-over]").textContent);
+  assert.match(over, /MATCH OVER/);
+  assert.match(over, /REMATCH/);
+  assert.deepEqual(berr, []);
+  await bp.close();
+
+  where = "blitz-landing";
+  const lp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const lerr = [];
+  lp.on("pageerror", (e) => lerr.push(e.message));
+  await lp.goto(base + "blitz/");
+  assert.match(await lp.locator("h1").textContent(), /Battlefield Blitz/);
+  assert.match(await lp.locator(".bz-hero .eyebrow").textContent(), /BLITZ VERSION/);
+  await lp.waitForFunction(() => window.blitzDemo?.world.tanks.filter((t) => t.alive).length >= 5, null, { timeout: 8000 });
+  assert.equal(await lp.evaluate(() => window.blitzDemo.world.tanks.some((t) => t.you)), false, "the hero battle is all bots");
+  assert.equal(new URL(await lp.locator(".start-key").getAttribute("href"), base).pathname, "/dom-battlefield/blitz/play/");
+  assert.ok(await lp.locator('a[href="/dom-battlefield/"]').count() > 0, "links back to the original");
+  assert.match(await lp.locator("#drop pre").first().textContent(), /blitz\/blitz\.js/);
+  await lp.setViewportSize({ width: 390, height: 844 });
+  await lp.waitForTimeout(300);
+  assert.ok(await lp.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "Blitz landing never scrolls sideways on a phone");
+  assert.deepEqual(lerr, []);
+  await lp.close();
+
+  where = "blitz-drop-in";
+  const dp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const derr = [];
+  dp.on("pageerror", (e) => derr.push(e.message));
+  await dp.goto(base + "style-guide/");
+  const snap = () => dp.evaluate(() => [...document.body.querySelectorAll("*")].filter((n) => !n.closest("[data-fizlet-host],[data-blitz-ignore]")).map((n) => n.tagName + [...n.attributes].map((a) => a.name + "=" + a.value).sort().join("|")).join("\n"));
+  await dp.addScriptTag({ url: base + "blitz/blitz.js" });
+  const before = await snap();
+  const playKey = dp.locator("[data-blitz-ignore]").locator("button");
+  assert.match(await playKey.textContent(), /PLAY BLITZ/i, "a PLAY BLITZ key waits on the page");
+  await playKey.click();
+  await dp.waitForSelector("[data-fizlet-host=blitz]", { state: "attached" });
+  await dp.waitForTimeout(3500);
+  assert.ok(await dp.evaluate(() => !!document.querySelector("[data-fizlet-host=blitz]").shadowRoot.querySelector("canvas")), "the page becomes the arena");
+  await dp.keyboard.press("Escape");
+  await dp.waitForTimeout(200);
+  assert.equal(await dp.locator("[data-fizlet-host=blitz]").count(), 0, "Escape closes");
+  assert.equal(await snap(), before, "the page is exactly as it was");
+  assert.deepEqual(derr, []);
+  await dp.close();
+
   where = "reduced-motion";
   const still = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
   const sp = await still.newPage();
@@ -130,7 +192,7 @@ try {
   });
   assert.equal(frames, true, "reduced motion: the arena is a still frame");
   await still.close();
-  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link and reduced motion passed.");
+  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + drop-in, reduced motion passed.");
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;

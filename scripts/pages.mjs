@@ -3,7 +3,7 @@
 //   /                landing page        (site/src/pages/index.astro)
 //   /style-guide/    Board UI guide      (site/src/pages/style-guide/index.astro)
 //   /play/           the game            (dist, the same bytes the DOM VIRUS hub ships)
-import { cpSync, existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, readdirSync, statSync, mkdirSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 
 const out = resolve("artifacts/pages");
@@ -11,8 +11,14 @@ if (!existsSync(join(out, "index.html"))) throw Error("Run astro build first (np
 if (!existsSync("dist/index.html")) throw Error("Build the game first (npm run build).");
 cpSync("dist", join(out, "play"), { recursive: true });
 
+// Battlefield Blitz drop-in: the pinned build from vendor/blitz (repo dom-battlefield-blitz).
+mkdirSync(join(out, "blitz"), { recursive: true });
+cpSync("vendor/blitz/blitz.js", join(out, "blitz/blitz.js"));
+const blitzPin = JSON.parse(readFileSync("vendor/blitz/ORIGIN.json", "utf8"));
+console.log(`Blitz ${blitzPin.version}: /blitz/ (about), /blitz/play/ (game), /blitz/blitz.js (drop-in)`);
+
 // Every local href/src in the built pages must resolve to a file.
-const BASE = "/dom-battlefield/";
+const BASE = `${(process.env.SITE_BASE || "/dom-battlefield").replace(/\/$/, "")}/`;
 const pages = [];
 const walk = (dir) => readdirSync(dir).forEach((n) => {
   const f = join(dir, n);
