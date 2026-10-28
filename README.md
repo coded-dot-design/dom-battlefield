@@ -87,6 +87,11 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.5 — Readable install card
+
+- The phone scale now measures the long edge against 844 and the short edge against 390, so an upright phone (the rotate gate, the install card) reads at the same size as landscape instead of shrinking to the minimum.
+- The "Best as an app" card is bigger (12u body, 14u title, 44u keys) and waits for landscape: while the phone is upright the rotate gate already carries the Add to Home Screen tip, so the card no longer covers it.
+
 ### 0.18.4 — The platoon row never wraps
 
 - The desktop bar measures the platoon row (one 44px key and gap per tank) before choosing a layout: labels when everything fits on one line, icon keys when it doesn't (and always with more than four tanks below 1750px), and in battle the platoon moves to its card on the map (always with more than four tanks below 1160px). Eight or twelve keys no longer wrap to a second row.
