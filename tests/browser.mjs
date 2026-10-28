@@ -824,6 +824,14 @@ try {
     await page.waitForFunction(() => window.battlefield);
     await plan(page, mobile);
     if (!mobile) {
+      // Your own tank on the plan card: you drive it, it is never "on its own".
+      await page.locator('.bf-home-card[data-open="plan"]').click();
+      await page.keyboard.press("y");
+      await page.waitForFunction(() => document.querySelector("#bf-cmd-state")?.textContent === "YOU'RE DRIVING");
+      assert.equal(await page.locator("#bf-cmd-state").getAttribute("data-kind"), "you");
+      await page.goto(`${URL}/?debug`);
+      await page.waitForFunction(() => window.battlefield);
+      await plan(page, mobile);
       await page.locator('.bf-home-card[data-open="platoon"]').click();
       await page.locator('#bf-size [data-size="12"]').click();
       // Planning on a compact desktop: the footer drops the platoon instead of wrapping.

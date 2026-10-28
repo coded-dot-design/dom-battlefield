@@ -828,6 +828,7 @@ const ORDER_ICON: Record<string, string> = {
   follow: "M10 3v6M6 6l4 4 4-4M4 13h12M7 17h6",
   command: "M4 8.5 10 4l6 4.5M4 13.5 10 9l6 4.5",
   repair: "M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4",
+  you: "M10 2.5l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.8l5-.7Z",
 };
 /** The plan card (info, Move HQ / Move Tanks) and the buttons that ride beside the tank. */
 function cmdPanel() {
@@ -892,7 +893,9 @@ function cmdPanel() {
                   ? ["attack", "ATTACKING"]
                   : u!.order === "retreat"
                     ? ["repair", "REPAIRING"]
-                    : ["none", "ON ITS OWN"],
+                    : u!.id === commander(state).id
+                      ? ["you", "YOU'RE DRIVING"]
+                      : ["none", "ON ITS OWN"],
     pill = $("#bf-cmd-state"),
     pillKey = `${kind}|${label}`;
   if (pill.dataset.key !== pillKey) {

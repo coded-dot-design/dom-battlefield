@@ -5837,6 +5837,8 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
 #bf-cmd #bf-cmd-state[data-kind="follow"] { --pill: var(--k-fallin); }
 #bf-cmd #bf-cmd-state[data-kind="command"] { --pill: var(--k-cmd); color: #f6f3ff; }
 #bf-cmd #bf-cmd-state[data-kind="repair"] { --pill: var(--team); }
+/* Your own tank with no order: you drive it (team colour, star). */
+#bf-cmd #bf-cmd-state[data-kind="you"] { --pill: var(--team); }
 #bf-cmd #bf-cmd-state[data-kind="none"] { color: var(--muted); }
 #bf-cmd .bf-cmd-info:has(.bf-mode[data-on="hq"]) #bf-cmd-state,
 #bf-cmd.folded #bf-cmd-state {

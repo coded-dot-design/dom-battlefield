@@ -104,6 +104,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 0.18.11 — Your tank on the plan card
+
+- Your own tank's plan-card pill no longer says ON ITS OWN. It shows the same orders as the squad (ATTACKING HQ, ROGER · GRID 0412, PLOTTING), and with no order it reads YOU'RE DRIVING in your team colour with a star.
+
 ### Site — landing page and style guide (no game change)
 
 - The repo's GitHub Pages is now the game's own site: a landing page at `/` (the hero is a live battle with the game's tank sprites: shells and treads knock the headline around, tap anywhere for an airstrike), the Board UI style guide at `/style-guide/` (moved here from DOM VIRUS with its kit and spec in `board-ui/`), and the game itself at `/play/`.
