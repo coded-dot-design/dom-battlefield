@@ -2454,9 +2454,7 @@ circle.bf-grab[data-stop] {
   --u: 1.5px;
 }
 #battlefield[data-ui="touch"] {
-  /* The phone's long edge against 844 and its short edge against 390, so a portrait phone (the
-     rotate gate, the install card) reads at the same size as landscape. */
-  --u: clamp(0.7px, min(calc(max(100dvh, 100dvw) / 844), calc(min(100dvh, 100dvw) / 390)), 1.3px);
+  --u: clamp(0.7px, min(calc(100dvh / 390), calc(100dvw / 844)), 1.3px);
   /* The setup / plan header: tall enough for full-size keys. */
   --th: calc(60 * var(--u));
   /* Left rail content starts after the notch; the right column centre sits this far in. */
@@ -3300,37 +3298,39 @@ canvas.bf-ico {
 }
 
 .bf-install {
+  /* Never below 1px a unit: the card must read on any phone, upright or not. */
+  --iu: max(var(--u, 1px), 1px);
   position: fixed;
   z-index: 52;
   left: 50%;
   top: 50%;
-  width: min(calc(380 * var(--u)), calc(100vw - 32px));
+  width: min(calc(380 * var(--iu)), calc(100vw - 32px));
   margin: 0;
-  gap: calc(10 * var(--u)) calc(14 * var(--u));
-  padding: calc(16 * var(--u));
+  gap: calc(10 * var(--iu)) calc(14 * var(--iu));
+  padding: calc(16 * var(--iu));
   transform: translate(-50%, -50%);
-  font-size: calc(12 * var(--u));
+  font-size: calc(12 * var(--iu));
   line-height: 1.5;
 }
 .bf-install b {
-  font-size: calc(14 * var(--u));
+  font-size: calc(14 * var(--iu));
 }
 .bf-install > svg {
-  width: calc(30 * var(--u));
-  height: calc(30 * var(--u));
+  width: calc(30 * var(--iu));
+  height: calc(30 * var(--iu));
 }
 .bf-install .bf-share {
-  width: calc(26 * var(--u));
-  height: calc(26 * var(--u));
-  vertical-align: calc(-8 * var(--u));
+  width: calc(26 * var(--iu));
+  height: calc(26 * var(--iu));
+  vertical-align: calc(-8 * var(--iu));
 }
 .bf-install .bf-share svg {
-  width: calc(16 * var(--u));
-  height: calc(16 * var(--u));
+  width: calc(16 * var(--iu));
+  height: calc(16 * var(--iu));
 }
 .bf-install-actions button {
-  min-height: calc(44 * var(--u));
-  font-size: calc(13 * var(--u));
+  min-height: calc(44 * var(--iu));
+  font-size: calc(13 * var(--iu));
 }
 /* While the phone is upright, the rotate gate says it all (including Add to Home Screen): the
    install card waits for landscape instead of covering it. */

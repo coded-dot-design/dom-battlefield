@@ -89,7 +89,7 @@ MIT · Chris Cooley / coded.design
 
 ### 0.18.5 — Readable install card
 
-- The phone scale now measures the long edge against 844 and the short edge against 390, so an upright phone (the rotate gate, the install card) reads at the same size as landscape instead of shrinking to the minimum.
+- The install card never drops below one pixel a unit, so it reads on an upright phone too (the rest of the layout keeps its landscape scale).
 - The "Best as an app" card is bigger (12u body, 14u title, 44u keys) and waits for landscape: while the phone is upright the rotate gate already carries the Add to Home Screen tip, so the card no longer covers it.
 
 ### 0.18.4 — The platoon row never wraps
