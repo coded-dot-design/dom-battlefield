@@ -535,14 +535,12 @@ export function startArena(hero: HTMLElement) {
   const easeBack = (t: number) => 1 + 2.7 * (t - 1) ** 3 + 1.7 * (t - 1) ** 2;
 
   // ---------- Loop ----------
-  let remeasure = 0;
   function frame(now: number, still = false) {
     // rAF stamps the frame start, which can be just before `last`: never step backwards.
     const dt = Math.max(0, Math.min(0.05, (now - last) / 1000 || 0));
     last = now;
     if (!still) {
       step(dt);
-      if ((remeasure -= dt) <= 0) (remeasure = 1), measure();
     }
     render();
     if (running) raf = requestAnimationFrame(frame);
@@ -562,7 +560,9 @@ export function startArena(hero: HTMLElement) {
   // ---------- Wiring ----------
   colours();
   resize();
+  // Layout is read on resize and once web fonts settle, never on a timer inside the loop.
   new ResizeObserver(() => resize()).observe(hero);
+  void document.fonts?.ready.then(() => measure());
   new MutationObserver(() => (colours(), running || frame(performance.now(), true))).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   new IntersectionObserver(([e]) => ((visible = !!e?.isIntersecting), visible ? start() : stop()), { threshold: 0.05 }).observe(hero);
   document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
