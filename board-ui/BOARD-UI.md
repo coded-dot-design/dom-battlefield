@@ -46,7 +46,7 @@ building, then section 16 (lessons: mistakes we already paid for) and section 17
 | File | What it is |
 |---|---|
 | `board-ui/board-ui.css` | Tokens and every component, scoped under `.bui` |
-| `board-ui/board-ui.ts` | `mount`, `applyPalette`, `press`, `slam`, `toast`, `launch` (≈2.4 KB gzip; the CSS is 3.7 KB gzip) |
+| `board-ui/board-ui.ts` | `mount`, `applyPalette`, `press`, `pressCue`, `slam`, `toast`, `launch` (≈2.4 KB gzip; the CSS is 3.7 KB gzip) |
 | `board-ui/tokens.json` | Machine-readable tokens, timings, breakpoints, z-layers, storage keys |
 | `board-ui/BOARD-UI.md` | This spec |
 | `/style-guide/` (Battlefield site) | Live guide built from the kit only |
@@ -174,11 +174,11 @@ applyPalette(root, { cmd: "#8573ee", teamA: "#4bce82" });   // returns restore()
 | State | Selector | Face | Base | Extra |
 |---|---|---|---|---|
 | rest | — | `transform: none` | `0 py 0 edge` | glow |
-| hover | `:hover` on `(hover: hover) and (pointer: fine)` only, not locked/disabled | `translateY(-hy)` | `0 (py+hy) 0 edge-hover` | border `--border-hover` |
-| press | `:active`, `.down` | `translateY(py)` | `0 0 0 edge` | 50ms |
+| hover | `:hover` on `(hover: hover) and (pointer: fine)` only, not locked/disabled/pressed | `translateY(-hy)` | `0 (py+hy) 0 edge-hover` | border `--border-hover` |
+| press | `:active`, `.down` (always beats hover) | `translateY(py)` | `0 0 0 edge` | 50ms; reduced motion: no tween, face `brightness(.82)` |
 | locked | `[aria-pressed=true]`, `[aria-expanded=true]`, `.active` | `translateY(py)` | `0 0 0` | background `--lock`; `breath` 1.8s |
 | call | `.bui-call` | up | normal | `::after` ring from the base bottom, 1.4s; never on a locked key |
-| disabled | `:disabled` | rest | rest | opacity .45, `not-allowed` |
+| disabled | `:disabled`; link keys `aria-disabled="true"` | rest | rest | opacity .45, `not-allowed`; a disabled link key takes no pointer (drop its `href` too) |
 | focus | `:focus-visible` | as state | as state | ring: 3u `--bg` gap + 6u `--k-sys-ink`, on face **and** base (two spread shadows, one at y=0, one at y=py); pressed keys get the face ring only |
 
 Transitions: `transform 120ms ease-out, box-shadow 120ms ease-out, background-color 140ms,
@@ -212,9 +212,24 @@ calm: `animation: none` on locked footer keys.
 ---
 
 
-**Link keys.** A key that navigates is an `<a>` with `bui-key` plus its family
-(`<a class="bui-key bui-arcade bui-go" href="play/">`). It gets the same face, base, hover lift,
-press and focus ring as a `<button>` key; no underline. Use it for Play, Read the spec and similar.
+**Page keys (links and buttons on a page).** Every key on a page, outside a game board, is the
+kit key plus `bui-key`: a link is `<a class="bui-key bui-arcade bui-go" href="play/">`, a button
+`<button class="bui-key bui-icon-key" type="button">`. Never a second key style in site CSS: a
+site class may only size or place a key (padding, width, `--py`, colours through the variables),
+never restate its states. `bui-key` gives, on top of the family:
+
+- **The whole key presses.** An invisible `::before` covers the face *and* its base and stays where
+  the key rests while the face travels, so a click or tap on the base, or just under the top edge
+  (which the dropping face leaves), lands on the key. (The base is a box-shadow, which never takes
+  a pointer.) Don't use `::before` on a page key for anything else.
+- **Press beats hover.** On a mouse, the face drops by `--py` on `:active` even while hovered.
+- **Keyboard and iOS.** Call `pressCue(document)` once per page (`board-ui/board-ui.ts`): Enter (and Space on
+  a button) shows the pressed face (`.down`) until release or blur, and a passive `touchstart`
+  listener lets iOS Safari apply `:active`. Activation stays native: links navigate, buttons click.
+- **Focus** rings face and base; **disabled** is `:disabled` (button) or `aria-disabled="true"`
+  (link, no pointer); **reduced motion** keeps the press as a darker face without a tween.
+
+Game board keys keep their own `press()` wiring (touchstart, hold keys); they need no `bui-key`.
 
 ## 6. Labels and voice
 

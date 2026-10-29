@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, extname, resolve } from "node:path";
 import { chromium } from "playwright";
+import { checkKeys, checkTaps } from "./keys.mjs";
 
 const root = resolve("artifacts/pages");
 if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: npm run site:build");
@@ -226,6 +227,20 @@ try {
   assert.deepEqual(derr, []);
   await dp.close();
 
+  // Page keys (BOARD-UI.md "Page keys"): every in-page key presses (face drops by its base) and
+  // clicks on its face, top edge and base; Enter shows the press; phones: a tap on the base clicks.
+  let keys = 0;
+  for (const path of ["", "style-guide/", "blitz/"]) {
+    where = `page keys ${path || "home"}`;
+    for (const [opts, check] of [[{ viewport: { width: 1440, height: 900 } }, checkKeys], [{ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, checkTaps]]) {
+      const kc = await browser.newContext(opts);
+      const kp = await kc.newPage();
+      await kp.goto(base + path);
+      keys += await check(kp, where, { skip: '[tabindex="-1"]' }); // style guide: frozen state specimens
+      await kc.close();
+    }
+  }
+
   where = "reduced-motion";
   const still = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
   const sp = await still.newPage();
@@ -240,7 +255,7 @@ try {
   });
   assert.equal(frames, true, "reduced motion: the arena is a still frame");
   await still.close();
-  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + drop-in, reduced motion, past builds passed.");
+  console.log(`Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + drop-in, reduced motion, past builds, ${keys} page keys passed.`);
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;

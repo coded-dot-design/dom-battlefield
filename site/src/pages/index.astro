@@ -52,7 +52,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       </h1>
       <p class="lead">Squad tactics in a browser tab. Pick the ground, freeze time to plan every route, then radio your platoon through a live firefight. No install. No account. One more battle.</p>
       <div class="hero-ctas">
-        <a class="start-key hero-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
+        <a class="bui-key bui-sticker-key bui-call start-key hero-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
         <div class="hero-side">
           <a class="bui-key bui-arcade bui-sys" href="#how"><Icon name="down" size={16} />How it plays</a>
           <a class="hero-hub" href={HUB_GAME}><Icon name="cart" size={16} />Play it inside DOM VIRUS ↗</a>
@@ -65,8 +65,8 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       <span><small>WRECKS</small><b data-wrecks>000</b></span>
       <span><small>FLATTENED</small><b data-flat>000</b></span>
       <span><small>STRIKES</small><b data-strikes>00</b></span>
-      <button class="bui-arcade bui-attack" type="button" data-airstrike><svg viewBox="0 0 20 20"><path d="M10 1v5M10 14v5M1 10h5M14 10h5" /><circle cx="10" cy="10" r="5" /></svg>Airstrike</button>
-      <button class="bui-icon-key" type="button" data-sound aria-pressed="false" aria-label="Sound"><span class="snd-off"><Icon name="mute" /></span><span class="snd-on"><Icon name="sound" /></span></button>
+      <button class="bui-key bui-arcade bui-attack" type="button" data-airstrike><svg viewBox="0 0 20 20"><path d="M10 1v5M10 14v5M1 10h5M14 10h5" /><circle cx="10" cy="10" r="5" /></svg>Airstrike</button>
+      <button class="bui-key bui-icon-key" type="button" data-sound aria-pressed="false" aria-label="Sound"><span class="snd-off"><Icon name="mute" /></span><span class="snd-on"><Icon name="sound" /></span></button>
     </div>
   </section>
 
@@ -139,7 +139,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
           <div class="radio-group">
             <span class="bui-label"><b>RADIO</b> · EACH TANK</span>
             {orders.filter((o) => o.id === 'cmd').map((o) => (
-              <button class={`bui-arcade bui-${o.id}`} type="button" aria-pressed="false" data-order={o.id} data-says={o.says}><svg viewBox="0 0 20 20"><path d={o.icon} /></svg>{o.label}<kbd>{o.key}</kbd></button>
+              <button class={`bui-key bui-arcade bui-${o.id}`} type="button" aria-pressed="false" data-order={o.id} data-says={o.says}><svg viewBox="0 0 20 20"><path d={o.icon} /></svg>{o.label}<kbd>{o.key}</kbd></button>
             ))}
           </div>
           <i class="radio-sep" aria-hidden="true"></i>
@@ -147,7 +147,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
             <span class="bui-label"><b>RADIO</b> · WHOLE SQUAD</span>
             <div class="radio-keys" role="group" aria-label="Squad orders">
               {orders.filter((o) => o.id !== 'cmd').map((o) => (
-                <button class={`bui-arcade bui-${o.id}`} type="button" aria-pressed="false" data-order={o.id} data-says={o.says}><svg viewBox="0 0 20 20"><path d={o.icon} /></svg>{o.label}<kbd>{o.key}</kbd></button>
+                <button class={`bui-key bui-arcade bui-${o.id}`} type="button" aria-pressed="false" data-order={o.id} data-says={o.says}><svg viewBox="0 0 20 20"><path d={o.icon} /></svg>{o.label}<kbd>{o.key}</kbd></button>
               ))}
             </div>
           </div>
@@ -243,7 +243,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     <div class="wrap final-inner">
       <p class="eyebrow">COMMS · ALL UNITS STANDING BY</p>
       <h2 id="final-title">The squad is waiting.</h2>
-      <a class="start-key final-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
+      <a class="bui-key bui-sticker-key bui-call start-key final-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
       {archive.length > 0 && (
         <div class="past-builds" data-past-builds>
           <label class="bui-label" for="past-build"><b>PAST BUILDS</b> · {archive.length}</label>
