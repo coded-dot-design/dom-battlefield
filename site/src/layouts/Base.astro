@@ -5,14 +5,15 @@ import '../../../board-ui/board-ui.css';
 import '../styles/site.css';
 import Icon from '../components/Icon.astro';
 import Skull from '../components/Skull.astro';
-import { VERSION, REPO, HUB, HUB_GAME, base } from '../site';
+import { VERSION, REPO, HUB, HUB_GAME, BLITZ, base } from '../site';
 // app: a game page. On phones it loads like the Battlefield app: no header or footer, no scroll, no zoom.
+// canonical: a page whose home is another host (the /blitz/ pages: battlefieldblitz.domvirus.com).
 const { title, description, page = 'home', app = false } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const canonical = Astro.props.canonical ? new URL(Astro.props.canonical) : new URL(Astro.url.pathname, Astro.site);
 const nav = [
   ['home', 'Game', base()],
   ['how', 'How it plays', base('#how')],
-  ['blitz', 'Blitz', base('blitz/')],
+  ['blitz', 'Blitz', BLITZ],
   ['style', 'Style guide', base('style-guide/')],
 ];
 ---
@@ -78,7 +79,7 @@ const nav = [
           <ul>
             <li><a href={base('play/')}>Play now</a></li>
             <li><a href={base('#how')}>How it plays</a></li>
-            <li><a href={base('blitz/')}>Battlefield Blitz</a></li>
+            <li><a href={BLITZ}>Battlefield Blitz</a></li>
             <li><a href={base('style-guide/')}>Board UI style guide</a></li>
             <li><a href={`${REPO}#readme`}>Release notes</a></li>
           </ul>
