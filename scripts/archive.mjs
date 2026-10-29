@@ -8,7 +8,8 @@ import { createHash } from "node:crypto";
 
 const REPO = "https://github.com/coded-dot-design/dom-battlefield.git";
 
-export function archiveBuilds(out, playUrl) {
+// head(html, version): the served page's <head> additions (scripts/pages.mjs: canonical to /play/, share tags, JSON-LD).
+export function archiveBuilds(out, head) {
   const archive = JSON.parse(readFileSync("site/archive.json", "utf8"));
   if (!archive.length) return 0;
   const git = resolve("artifacts/archive-src.git");
@@ -29,9 +30,7 @@ export function archiveBuilds(out, playUrl) {
     }
     // Search engines should send people to the current build, not an old one.
     const page = join(dest, "index.html");
-    const html = readFileSync(page, "utf8");
-    if (!html.includes('rel="canonical"'))
-      writeFileSync(page, html.replace("</head>", `  <link rel="canonical" href="${playUrl}">\n  </head>`));
+    writeFileSync(page, head(readFileSync(page, "utf8"), version));
   }
   return archive.length;
 }

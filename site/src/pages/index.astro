@@ -5,7 +5,8 @@ import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Skull from '../components/Skull.astro';
 import { MISSIONS, ROLES } from '../../../src/model';
-import { VERSION, REPO, HUB, HUB_GAME, base } from '../site';
+import { VERSION, REPO, HUB, HUB_GAME, base, abs } from '../site';
+import { gameLd } from '../schema.mjs';
 import archive from '../../archive.json';
 
 const title = 'DOM Battlefield · Squad tactics in a browser tab';
@@ -36,7 +37,7 @@ const roles = Object.entries(ROLES);
 const terrain = { hedge: 'Hedges, houses', sand: 'Ridges, fences', snow: 'Crossroads, HQ repair', river: 'Canal, bridges, towers' };
 const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold: 'Hold the crossroads' };
 ---
-<Base title={title} description={description} page="home">
+<Base title={title} description={description} page="home" jsonld={gameLd({ home: abs('', Astro.site), name: 'DOM Battlefield', description, image: abs('shots/og.png', Astro.site), version: VERSION, play: abs('play/', Astro.site) })}>
   <!-- HERO: a live battle across the whole hero. Tap the field to call an airstrike. -->
   <section class="hero" data-arena aria-labelledby="hero-title">
     <div class="hero-field" aria-hidden="true"></div>

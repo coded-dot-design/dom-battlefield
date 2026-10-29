@@ -7,3 +7,5 @@ export const HUB = "https://domvirus.com/";
 export const BLITZ = "https://battlefieldblitz.domvirus.com/";
 export const HUB_GAME = `${HUB}games/battlefield/`;
 export const base = (path = "") => `${import.meta.env.BASE_URL.replace(/\/$/, "")}/${path}`;
+// An absolute URL on this site (canonical, JSON-LD).
+export const abs = (path: string, site: URL | undefined) => new URL(base(path), site).href;
