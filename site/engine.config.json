@@ -3,13 +3,50 @@
   "brand": {
     "name": "DOM Battlefield",
     "siteUrl": "https://coded-dot-design.github.io/dom-battlefield",
-    "defaultImage": "/shots/og.png"
+    "defaultImage": "/shots/og.png",
+    "author": {
+      "name": "Chris Cooley",
+      "url": "https://coded.design/"
+    }
   },
-  "inputs": { "voice": "../brand/voice.md", "styleGuide": "../brand/style-guide.md" },
+  "inputs": {
+    "voice": "../brand/voice.md",
+    "styleGuide": "../brand/style-guide.md"
+  },
   "pageTypes": {
-    "home":        { "template": "marketing", "path": "/",                   "eyebrow": "Board game",  "schemaPageType": "VideoGame", "requires": ["hero"] },
-    "board":       { "template": "marketing", "path": "/{slug}",             "eyebrow": "Board game",  "schemaPageType": "VideoGame", "requires": ["hero"] },
-    "style-guide": { "template": "marketing", "path": "/style-guide",        "eyebrow": "Style guide", "schemaPageType": "WebPage",   "requires": ["hero"] },
-    "news":        { "template": "article",   "path": "/news/{slug}",        "eyebrow": "News",        "schemaPageType": "NewsArticle", "related": true }
+    "home": {
+      "template": "marketing",
+      "path": "/",
+      "eyebrow": "Board game",
+      "schemaPageType": "VideoGame",
+      "requires": [
+        "hero"
+      ]
+    },
+    "board": {
+      "template": "marketing",
+      "path": "/{slug}",
+      "eyebrow": "Board game",
+      "schemaPageType": "VideoGame",
+      "requires": [
+        "hero"
+      ]
+    },
+    "style-guide": {
+      "template": "marketing",
+      "path": "/style-guide",
+      "eyebrow": "Style guide",
+      "schemaPageType": "WebPage",
+      "requires": [
+        "hero"
+      ]
+    },
+    "news": {
+      "template": "article",
+      "path": "/news/{slug}",
+      "eyebrow": "News",
+      "schemaPageType": "NewsArticle",
+      "related": true
+    }
   }
 }
