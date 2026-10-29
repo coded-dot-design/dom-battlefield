@@ -1,5 +1,7 @@
 # DOM Battlefield: style guide
 
+Preset: cyberpunk-tron · flat colors in the game layer (hard, unblurred shadows; the shadow angle is a brand token). Read by astro-base-engine; the site renders its own look.
+
 The look of the DOM Battlefield brand (the landing page, the play page, the `/style-guide/` page
 and every marketing slot the engine fills on the Battlefield site). Battlefield Blitz inherits all
 of it and overrides only what [`blitz/style-guide.md`](blitz/style-guide.md) lists.
@@ -72,7 +74,7 @@ a board changes; everything else is derived (`BOARD-UI.md` §3.2).
     "cartridge": "site/src/pages/index.astro lines 890-1010",
     "kit": "board-ui/BOARD-UI.md sections 3-5, 9, 14"
   },
-  "colour": {
+  "color": {
     "controls": {
       "sys":     { "var": "--k-sys",     "value": "#19f0ff", "job": "navigation, focus ring, comms edge" },
       "cmd":     { "var": "--k-cmd",     "value": "#9a63ff", "job": "command, planning, cards, every locked order, tank identity" },

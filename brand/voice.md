@@ -116,8 +116,7 @@ does: "Add it to your home screen and it opens straight into the cockpit." (`ind
 
 ---
 
-## Avoid
-
+## What we never do
 - Install, embed or reuse directions for the board (rulebook §3).
 - Inventing numbers: map counts, tank counts and sizes come from the model, the size script or
   the changelog.
@@ -131,7 +130,7 @@ does: "Add it to your home screen and it opens straight into the cockpit." (`ind
 
 ---
 
-## Limits: claims we may and may not make
+## Claims: claims we may and may not make
 
 **May (with the source):**
 
@@ -219,6 +218,34 @@ game page has no credit. See open question 6.
 | **Board UI** | "its own board design system … Only the palette changes from game to game." (`index.astro:232-233`). |
 
 ---
+
+## Avoid
+
+<!-- Read by astro-base-engine (voice.avoid): one word or phrase per bullet, flagged wherever it
+appears in page copy. The reasons are in "Words we use / avoid" and "What we never do" above. -->
+
+- revolutionary
+- game-changing
+- cutting-edge
+- best-in-class
+- world-class
+- seamless
+- synergy
+- put it on your site
+- use it in your project
+- install it on your site
+- accurate reconstruction
+- authentic
+- invite a friend
+- zero load time
+- fastest
+
+## Limits
+
+<!-- Read by astro-base-engine (voice.maxSentenceWords, voice.maxExclamations). -->
+
+- max sentence words: 25
+- max exclamations: 1
 
 ## Open questions
 

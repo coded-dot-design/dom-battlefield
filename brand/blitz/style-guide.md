@@ -1,5 +1,7 @@
 # Battlefield Blitz: style guide
 
+Preset: cyberpunk-tron · flat colors in the game layer (hard, unblurred shadows; the shadow angle is a brand token). Read by astro-base-engine; the site renders its own look.
+
 Battlefield Blitz is part of the DOM Battlefield brand: its pages live on the Battlefield site
 (`/blitz/`, `/blitz/play/`) and "share its styling" (Blitz `README.md`). **Everything in
 [`../style-guide.md`](../style-guide.md) applies.** This file lists only what Blitz does
@@ -72,7 +74,7 @@ the same CSS as DOM Battlefield, so keys look and behave the same on both boards
     "landing": "site/src/pages/blitz/index.astro lines 13-21, 129-385",
     "play": "site/src/pages/blitz/play/index.astro lines 23-82"
   },
-  "colour": {
+  "color": {
     "accent": { "var": "--k-attack", "value": "#ff2e88", "use": "headline <em>, BLITZ label, badge bolt, STRIKE key, tip strip" },
     "stage": "#090818",
     "stageLight": "#e4e6f7",

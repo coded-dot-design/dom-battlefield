@@ -89,8 +89,7 @@ page**, **Put Blitz on your page** and the script snippets (`blitz/index.astro:4
 
 ---
 
-## Avoid
-
+## What we never do
 All of Battlefield's list, plus:
 - Battlefield's planning vocabulary (above).
 - Calling Blitz a demo, a mode or a mini-game. It's a game with three modes. `dom-virus/GAMES.md` once
@@ -100,7 +99,7 @@ All of Battlefield's list, plus:
 
 ---
 
-## Limits: claims we may and may not make
+## Claims: claims we may and may not make
 
 **May (with the source):**
 
@@ -179,6 +178,34 @@ Same as Battlefield: **By Chris Cooley · [coded.design](https://coded.design)**
 | **Both games together** | "TWO WAYS TO FIGHT" (`blitz/index.astro:92`): Battlefield = squad tactics, Blitz = arcade. Internally the original is the "OG" and Blitz its "arcade sibling" (`dom-virus/GAMES.md:21`). |
 
 ---
+
+## Avoid
+
+<!-- Read by astro-base-engine (voice.avoid): one word or phrase per bullet, flagged wherever it
+appears in page copy. The reasons are in "Words we use / avoid" and "What we never do" above. -->
+
+- revolutionary
+- game-changing
+- cutting-edge
+- best-in-class
+- world-class
+- seamless
+- synergy
+- put it on your site
+- use it in your project
+- install it on your site
+- accurate reconstruction
+- authentic
+- invite a friend
+- zero load time
+- fastest
+
+## Limits
+
+<!-- Read by astro-base-engine (voice.maxSentenceWords, voice.maxExclamations). -->
+
+- max sentence words: 25
+- max exclamations: 1
 
 ## Open questions
 
