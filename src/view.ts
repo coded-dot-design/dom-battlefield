@@ -51,7 +51,8 @@ export class View {
   effects = new Map<number, HTMLElement>();
   shotPool: HTMLElement[] = [];
   effectPool: HTMLElement[] = [];
-  kits = new Map<number, HTMLElement>();
+  /** Kit nodes keyed by where the kit lies (fizlet/rules drops have slots, not ids). */
+  kits = new Map<string, HTMLElement>();
   reticle: HTMLElement;
   reticleKey = "";
   tile = 36;
@@ -221,8 +222,10 @@ export class View {
     if (this.hqLineEl && this.hqLineX !== null) this.hqLineEl.style.left = `${this.hqLineX * this.tile}px`;
     this.world.style.gridTemplateColumns = `repeat(${cols},1fr)`;
     this.world.style.gridTemplateRows = `repeat(${rows},1fr)`;
-    for (const k of this.s.pickups)
-      this.kits.get(k.id)?.style.setProperty("transform", `translate(${k.x * this.tile}px,${k.y * this.tile}px)`);
+    for (const [at, n] of this.kits) {
+      const [x, y] = at.split(",").map(Number);
+      n.style.setProperty("transform", `translate(${x! * this.tile}px,${y! * this.tile}px)`);
+    }
     this.reticleKey = "";
     this.measure();
   }
@@ -353,14 +356,15 @@ export class View {
       }
     }
     const live = new Set<number>();
-    for (const p of s.shots) live.add(p.id);
+    for (let i = 0; i < s.shotCount; i++) live.add(s.shots[i]!.id);
     for (const [id, n] of this.shots)
       if (!live.has(id)) {
         n.remove();
         this.shots.delete(id);
         this.shotPool.push(n);
       }
-    for (const p of s.shots) {
+    for (let i = 0; i < s.shotCount; i++) {
+      const p = s.shots[i]!;
       let n = this.shots.get(p.id);
       if (!n) {
         n = this.shotPool.pop() ?? document.createElement("i");
@@ -374,14 +378,15 @@ export class View {
       n.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px) rotate(${Math.atan2(p.vy, p.vx)}rad)`;
     }
     live.clear();
-    for (const p of s.effects) live.add(p.id);
+    for (let i = 0; i < s.effectCount; i++) live.add(s.effects[i]!.id);
     for (const [id, n] of this.effects)
       if (!live.has(id)) {
         n.remove();
         this.effects.delete(id);
         this.effectPool.push(n);
       }
-    for (const p of s.effects) {
+    for (let i = 0; i < s.effectCount; i++) {
+      const p = s.effects[i]!;
       let n = this.effects.get(p.id);
       if (!n) {
         n = this.effectPool.pop() ?? document.createElement("i");
@@ -395,21 +400,23 @@ export class View {
       n.style.transform = `translate(${p.x * this.tile}px,${p.y * this.tile}px) scale(${0.5 + t * 1.8})`;
       n.style.opacity = String(p.life / 0.55);
     }
-    live.clear();
-    for (const k of s.pickups) live.add(k.id);
-    for (const [id, n] of this.kits)
-      if (!live.has(id)) {
+    const kits = s.kits,
+      at: string[] = [];
+    for (let i = 0; i < kits.count; i++) at.push(`${kits.x[i]},${kits.y[i]}`);
+    for (const [k, n] of this.kits)
+      if (!at.includes(k)) {
         n.remove();
-        this.kits.delete(id);
+        this.kits.delete(k);
       }
-    for (const k of s.pickups)
-      if (!this.kits.has(k.id)) {
+    for (const k of at)
+      if (!this.kits.has(k)) {
+        const [x, y] = k.split(",").map(Number);
         const n = document.createElement("i");
         n.className = "bf-kit";
         n.title = "Repair kit";
-        n.style.transform = `translate(${k.x * this.tile}px,${k.y * this.tile}px)`;
+        n.style.transform = `translate(${x! * this.tile}px,${y! * this.tile}px)`;
         this.world.append(n);
-        this.kits.set(k.id, n);
+        this.kits.set(k, n);
       }
     const t = this.tile,
       cam = `${((this.sl - this.ox) / t).toFixed(2)} ${((this.st - this.oy) / t).toFixed(2)} ${Math.min(b.cols, this.vw / t).toFixed(2)} ${Math.min(b.rows, this.vh / t).toFixed(2)}`;

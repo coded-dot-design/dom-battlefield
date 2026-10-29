@@ -21,5 +21,7 @@ console.log(`Total: ${total} gzip bytes`);
 // per-tank order bubble, the touch cockpit rails, intro card, touch tips); 54 KB in 0.15.0
 // (sprite-drawn icons, readable card type, dice, emblems, safe-area HQs); 57.5 KB in 0.16.1
 // (desktop controls, overlays and planning cards); 61.5 KB in 0.17.0 (accessible card navigation,
-// bounded launch effects, modal lifecycle and compact desktop platoon). No runtime dependencies.
-if (total > 68000) throw Error("68KB compressed app budget exceeded");
+// bounded launch effects, modal lifecycle and compact desktop platoon); 66 KB in 0.17.1 and 68 KB in 0.18.3. 72.5 KB in
+// 1.0.0: the battle runs on the Fizlet engine (vendored kernel + fizlet/rules drops, JavaScript +4,295 B gzip
+// over 0.18.13's 67,617; measured). No runtime dependencies (Fizlet is vendored source).
+if (total > 72500) throw Error("72.5KB compressed app budget exceeded");

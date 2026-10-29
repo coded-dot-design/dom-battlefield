@@ -14,7 +14,10 @@ import {
   moveBase,
   hqLimit,
   scatterHq,
+  pathOf,
+  snapshot,
 } from "./model";
+import { createEngine } from "../vendor/fizlet/kernel/engine";
 import { drawIcons, dieFace, rollDie } from "./icons";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
@@ -79,10 +82,7 @@ let state: Battle,
   paused = false,
   selected = -1,
   pan = false,
-  frame = 0,
-  last = 0,
   uiAt = 0,
-  accumulator = 0,
   hiddenPause = false,
   // Command mode: direct the squad (your gun is off, time runs at half speed). Planning is the
   // same tool before the battle starts, with time frozen.
@@ -132,6 +132,9 @@ const input: Input = { x: 0, y: 0, fire: false, aim: null },
   touch = new Map<number, string>(),
   lease = createMobileSelectionLock(document),
   abort = new AbortController();
+/** The Fizlet engine the battle runs on (systems below the HUD code). Stopped until a battle
+ *  starts; the game's own pause, planning and result screens stop and start it. */
+const engine = createEngine({ maxSteps: 3, signal: abort.signal });
 const coarse = matchMedia("(pointer: coarse)"),
   /** Phones and small tablets (and very narrow windows) get the touch layout. */
   railLayout = matchMedia("(pointer: coarse) and (max-width: 1400px), (max-width: 759px)"),
@@ -458,6 +461,7 @@ function preview(resized = false) {
     loadoutCost(roles) <= 12 ? roles : ["medium", "medium", "medium", "medium"],
     formation,
     per,
+    engine,
   );
   // Step 1 before a location is picked: an empty grid with the two HQs, nothing else.
   if (!picked && !playing) b.tiles.fill("ground"), b.health.fill(0), b.revision++;
@@ -991,7 +995,7 @@ function routeLines(): RouteLine[] {
       continue;
     }
     const stops = u.route.length ? u.route : u.order === "hold" && u.hold !== null ? [u.hold] : [];
-    const cells = stops.length ? (plot(state.board, own, stops) ?? [own, ...u.path]) : [own, ...u.path];
+    const cells = stops.length ? (plot(state.board, own, stops) ?? [own, ...pathOf(u)]) : [own, ...pathOf(u)];
     out.push({ id: u.id, cells: cells[0] === own ? cells : [own, ...cells], stops, n: tankNo(u.id), selected: sel, draft: false, bad: false, hq: stops.at(-1) === enemyHq });
   }
   return out;
@@ -1036,15 +1040,11 @@ function clearInput() {
 function setPause(value: boolean) {
   if (!playing || state.winner !== null || paused === value) return;
   paused = value;
-  accumulator = 0;
   clearInput();
   if (paused) {
     audio.silence();
-    cancelAnimationFrame(frame);
-  } else {
-    last = 0;
-    frame = requestAnimationFrame(loop);
-  }
+    engine.stop();
+  } else engine.start();
   lease.setActive(!paused);
   // Resuming closes the menu, and its key lets go with it.
   if (!paused) root.classList.remove("menu-open"), $("#bf-squad").setAttribute("aria-expanded", "false");
@@ -1247,8 +1247,6 @@ function deploy(quick = false) {
   $("#bf-controls").hidden = false;
   pauseButton();
   lease.setActive(true);
-  last = 0;
-  accumulator = 0;
   root.toggleAttribute("data-blank", false);
   undrag();
   syncUi();
@@ -1260,7 +1258,7 @@ function deploy(quick = false) {
       ? "Battle started. Tap Command any time to direct your squad."
       : "Plan your battle: set your Platoon and Loadout, then Plan each tank. Start battle when ready.",
   );
-  frame = requestAnimationFrame(loop);
+  engine.start();
   keepAwake(true);
   // Check the gate once the fullscreen/orientation request settles.
   void entering.then(() => requestAnimationFrame(checkGate));
@@ -1280,7 +1278,7 @@ function reset(keepBurst = false) {
   // Full screen stays on across games (surrender, rematch, a new operation): only you turn it off.
   overlays.set($("#bf-giveup"), false);
   keysPanel(false);
-  cancelAnimationFrame(frame);
+  engine.stop();
   audio.close();
   playing = false;
   gatePaused = false;
@@ -1389,11 +1387,16 @@ function updateHUD() {
     }
   });
 }
-function loop(now: number) {
-  if (!playing) return;
-  const dt = last ? Math.min(0.04, (now - last) / 1000) : 0;
-  last = now;
-  if (!paused) {
+/* The battle runs on the Fizlet kernel: one shared clock, fixed 60 Hz steps with a catch-up cap,
+   and the engine's seeded random (createBattle restarts it from the map's seed, so the same map
+   and orders replay the same battle). read samples input, step simulates, render draws. */
+let previousEvent: string | undefined,
+  firedAt = 0,
+  hpAt = 0,
+  slow = 0;
+engine.add({
+  read() {
+    if (!playing || paused) return;
     held.clear();
     for (const k of keys) held.add(k);
     for (const k of touch.values()) held.add(k);
@@ -1409,28 +1412,32 @@ function loop(now: number) {
           Number(held.has("KeyW") || held.has("ArrowUp"));
     input.fire = !commanding && (held.has("Space") || held.has("MouseFire"));
     if (planning) input.x = input.y = 0;
-    const previousEvents = state.events.at(-1),
-      shots = state.nextId,
-      hp = commander(state).hp;
+    previousEvent = state.events.at(-1);
+    firedAt = state.nextId;
+    hpAt = commander(state).hp;
     input.aim = resolveAim();
-    // Fixed simulation ticks; bounded catch-up prevents tab stalls from spiraling.
-    accumulator = planning ? 0 : Math.min(0.1, accumulator + dt * (commanding ? 0.5 : 1));
-    while (accumulator >= 1 / 60) {
-      step(state, 1 / 60, input);
-      accumulator -= 1 / 60;
-    }
-    if (state.nextId > shots && input.fire) {
+  },
+  step(_, dt) {
+    // Planning freezes time; Command runs it at half speed (every other step).
+    if (!playing || paused || planning || (commanding && (slow ^= 1))) return;
+    step(state, dt, input);
+  },
+  render() {
+    if (!playing || paused) return;
+    if (state.nextId > firedAt && input.fire) {
       audio.play("fire");
       buzz(8);
     }
-    if (commander(state).hp < hp) {
+    if (commander(state).hp < hpAt) {
       audio.play("hurt");
       buzz(28);
     }
-    if (state.events.at(-1) !== previousEvents && state.events.at(-1) === "Enemy tank destroyed.") buzz([12, 40, 12]);
-    if (state.events.at(-1) !== previousEvents) audio.play("kill");
-    if (state.events.at(-1) !== previousEvents && state.events.length)
-      say(state.events.at(-1)!);
+    const said = state.events.at(-1);
+    if (said !== previousEvent) {
+      if (said === "Enemy tank destroyed.") buzz([12, 40, 12]);
+      audio.play("kill");
+      if (state.events.length) say(said!);
+    }
     // Driving always brings the camera back to your tank (after a pan, a look round in Command).
     if ((input.x || input.y) && !pan) follow = true;
     if (follow && !drag && !pan && commander(state).hp > 0) view.follow(commander(state));
@@ -1444,12 +1451,14 @@ function loop(now: number) {
     const lead = commander(state),
       auto = state.units.find((u) => u.id === lead.target && u.hp > 0);
     view.aim(aim.mode, aim.mode === "auto" ? (auto ?? null) : aim.mode === "pointer" || aim.mode === "free" ? null : input.aim);
+    const now = performance.now();
     if (now - uiAt > 160) {
       updateHUD();
       cmdPanel();
       uiAt = now;
     }
     if (state.winner !== null) {
+      engine.stop();
       audio.play(state.winner === side ? "won" : "gameover");
       clearInput();
       lease.setActive(false);
@@ -1468,11 +1477,9 @@ function loop(now: number) {
       );
       $<HTMLButtonElement>("#bf-rematch").focus({ preventScroll: true });
       updateHUD();
-      return;
     }
-  }
-  frame = requestAnimationFrame(loop);
-}
+  },
+});
 function setPan(value: boolean) {
   pan = value;
   if (pan) follow = false;
@@ -2604,7 +2611,7 @@ listen(window, "resize", () => {
 listen(window, "pagehide", () => {
   coach(false);
   keepAwake(false);
-  cancelAnimationFrame(frame);
+  engine.destroy();
   audio.close();
   lease.setActive(false);
   clearInput();
@@ -2689,7 +2696,7 @@ document.addEventListener("visibilitychange", () => document.visibilityState ===
 // Small read-only diagnostic contract for lifecycle and command tests.
 Object.defineProperty(window, "battlefield", {
   value: {
-    snapshot: () => structuredClone(state),
+    snapshot: () => snapshot(state),
     get playing() {
       return playing;
     },
