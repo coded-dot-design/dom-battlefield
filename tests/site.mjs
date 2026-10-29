@@ -83,6 +83,18 @@ try {
   assert.match(await page.locator("[data-radio-toast]").textContent(), /released/);
   assert.equal(await page.locator("img[src$='.webp']").count(), 5, "five real screenshots");
 
+  where = "perf overlay";
+  // Off by default: nothing loaded, nothing on the page. The header key loads it and measures the
+  // page's frames; F9 hides it and the key follows; the choice is shared (dom-virus:perf).
+  assert.deepEqual(await page.evaluate(() => [!!document.querySelector(".fizlet-perf"), document.querySelector("[data-perf-toggle]").getAttribute("aria-pressed")]), [false, "false"]);
+  await page.locator("[data-perf-toggle]").click();
+  await page.waitForSelector(".fizlet-perf:not([hidden])");
+  await page.waitForTimeout(700);
+  const meter = await page.evaluate(() => ({ fps: +document.querySelector(".fizlet-perf b").textContent, stored: localStorage.getItem("dom-virus:perf"), pressed: document.querySelector("[data-perf-toggle]").getAttribute("aria-pressed") }));
+  assert.ok(meter.fps > 10 && meter.stored === "1" && meter.pressed === "true", `page meter on (${JSON.stringify(meter)})`);
+  await page.keyboard.press("F9");
+  assert.deepEqual(await page.evaluate(() => [document.querySelector(".fizlet-perf").hidden, localStorage.getItem("dom-virus:perf"), document.querySelector("[data-perf-toggle]").getAttribute("aria-pressed")]), [true, "0", "false"], "F9 hides it");
+
   where = "theme";
   await page.locator("[data-theme-toggle]").click();
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), "light");

@@ -5860,3 +5860,12 @@ button:focus-visible:not(.bf-fold-key):is(:active, .down, .active, [aria-pressed
 #battlefield[data-ui="desk"].platoon-tucked:not([data-full="true"]) #bf-tactics {
   display: none;
 }
+
+/* The performance overlay (fizlet/perf, off by default): bottom-left of the map. On touch the
+   stage has no box (the field is fixed full screen), so it sits just right of the left rail.
+   Its position is inline (the brick's), hence !important here. */
+[data-ui="touch"] .fizlet-perf {
+  position: fixed !important;
+  left: calc(var(--rl) + 14px) !important;
+  bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+}
