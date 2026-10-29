@@ -1,5 +1,5 @@
 {
-  "$comment": "astro-base-engine config for the DOM Battlefield site (DOM Battlefield + Battlefield Blitz). Run the engine with --site site (page JSON in site/src/content/pages). siteUrl is the live GitHub Pages address until battlefield.domvirus.com is pointed. Board pages never carry install copy (brand/README in dom-virus, §3). Play pages are the games (app mode) and stay outside the engine's page types.",
+  "$comment": "astro-base-engine config for the DOM Battlefield site (DOM Battlefield + Battlefield Blitz). Run the engine with --site site (page JSON in site/src/content/pages). siteUrl is the live GitHub Pages address until battlefield.domvirus.com is pointed. Board pages never carry install copy (brand/README in dom-virus, \u00a73). Play pages are the games (app mode) and stay outside the engine's page types.",
   "brand": {
     "name": "DOM Battlefield",
     "siteUrl": "https://coded-dot-design.github.io/dom-battlefield",
@@ -48,5 +48,12 @@
       "schemaPageType": "NewsArticle",
       "related": true
     }
+  },
+  "checks": {
+    "jsAllowed": [
+      "/play/*",
+      "/blitz/play/*",
+      "/v/*"
+    ]
   }
 }

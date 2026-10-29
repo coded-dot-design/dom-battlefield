@@ -4,7 +4,10 @@
 // drift from the kit. The palette switcher passes a palette in, exactly as a game or an embed would.
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
-import { REPO, base } from '../../site';
+import { REPO, base, abs } from '../../site';
+import { pageLd } from '../../schema.mjs';
+const title = 'Board UI · DOM Battlefield style guide';
+const description = 'The game board and controls design system behind DOM Battlefield: 3D keys, cards, overlays, launch bursts, layouts and motion, shown live. Only the palette changes from game to game.';
 const repo = `${REPO}/blob/main/board-ui`;
 const sections = [
   ['principles', 'Principles'], ['palette', 'Palette'], ['key', 'The 3D key'], ['families', 'Key families'], ['labels', 'Labels'],
@@ -62,7 +65,7 @@ const tank = '<rect x="0" y="6" width="3" height="14" fill="var(--rim)"/><rect x
 const skull = 'M19 6h26v6h7v6h6v6h5v22h-5v6h-8v12h-9v-8h-6v8h-8v-8h-6v8h-8V52H5v-6H0V24h5v-6h6v-6h8ZM11 29v14h15V29Zm26 0v14h15V29Z';
 const cells = Array.from({ length: 16 }, (_, i) => ({ x: (i % 4) * 16, y: Math.floor(i / 4) * 16, i: [0, 1, 4, 2, 5, 8, 3, 6, 9, 12, 7, 10, 13, 11, 14, 15].indexOf(i) }));
 ---
-<Base title="Board UI · DOM Battlefield style guide" description="The game board and controls design system behind DOM Battlefield: 3D keys, cards, overlays, launch bursts, layouts and motion, shown live. Only the palette changes from game to game." page="style">
+<Base title={title} description={description} page="style" jsonld={pageLd({ url: abs('style-guide/', Astro.site), name: title, description, home: abs('', Astro.site), site: 'DOM Battlefield', aboutGame: false, crumbs: [['DOM Battlefield', abs('', Astro.site)], ['Style guide', abs('style-guide/', Astro.site)]] })}>
 
 <section class="board-guide" aria-labelledby="bu-title">
   <header class="bu-hero">

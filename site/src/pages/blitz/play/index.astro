@@ -2,9 +2,12 @@
 // Battlefield Blitz, the game: the arena fills the screen under the Battlefield header.
 // The game code is the pinned build in vendor/blitz (repo dom-battlefield-blitz).
 import Base from '../../../layouts/Base.astro';
-import { base } from '../../../site';
+import { base, BLITZ } from '../../../site';
+import { pageLd } from '../../../schema.mjs';
+const title = 'Play Battlefield Blitz';
+const description = 'Battlefield Blitz: free-for-all tank chaos. Parachute in, grab the blinking power tiles, call airstrikes. Most kills in three minutes wins.';
 ---
-<Base title="Play Battlefield Blitz" description="Battlefield Blitz: free-for-all tank chaos. Parachute in, grab the blinking power tiles, call airstrikes. Most kills in three minutes wins." page="blitz" canonical="https://battlefieldblitz.domvirus.com/play/" app>
+<Base title={title} description={description} page="blitz" canonical={`${BLITZ}play/`} app jsonld={pageLd({ url: `${BLITZ}play/`, name: title, description, home: BLITZ, site: 'Battlefield Blitz', crumbs: [['Battlefield Blitz', BLITZ], ['Play', `${BLITZ}play/`]] })}>
   <section class="blitz-stage" aria-labelledby="blitz-play-title">
     <h1 id="blitz-play-title" class="blitz-title">Play Battlefield Blitz</h1>
     <div id="blitz" class="blitz-host"></div>

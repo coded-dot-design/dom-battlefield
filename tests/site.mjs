@@ -8,6 +8,13 @@ import { chromium } from "playwright";
 
 const root = resolve("artifacts/pages");
 if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: npm run site:build");
+// The served /play/ (dist's bytes plus the site's head): canonical, share tags and JSON-LD.
+{
+  const play = readFileSync(join(root, "play/index.html"), "utf8");
+  for (const tag of ['rel="canonical"', 'property="og:title"', 'property="og:image"']) assert.ok(play.includes(tag), `/play/ has ${tag}`);
+  const ld = JSON.parse(play.match(/<script type="application\/ld\+json">(.*?)<\/script>/)[1]);
+  assert.deepEqual(ld["@graph"].map((g) => g["@type"]), ["WebPage", "BreadcrumbList"]);
+}
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
@@ -36,6 +43,8 @@ try {
     assert.equal(await page.locator("h1").count(), 1, `${path || "home"} has one h1`);
     assert.match(await page.locator('meta[property="og:image"]').getAttribute("content"), /^https:\/\/.+\/dom-battlefield\/shots\/og\.png$/);
     assert.match(await page.locator('link[rel="canonical"]').getAttribute("href"), /^https:\/\/.+\/dom-battlefield\//);
+    const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+    assert.deepEqual(ld["@graph"].map((g) => g["@type"]), path ? ["WebPage", "BreadcrumbList"] : ["WebSite", "VideoGame"], `${path || "home"} structured data`);
     assert.equal(await page.locator('a[href="https://domvirus.com/"]').count() > 0, true, `${path || "home"} links back to DOM VIRUS`);
     assert.ok(await page.locator('a[href="https://battlefieldblitz.domvirus.com/"]').count() > 0, `${path || "home"} links to Blitz on its own host`);
   }
@@ -139,6 +148,8 @@ try {
   await page.waitForURL(new RegExp(`/v/${old.replaceAll(".", "\\.")}/$`));
   await page.waitForFunction(() => document.querySelector("#battlefield")?.children.length > 0);
   assert.match(await page.locator('link[rel="canonical"]').getAttribute("href"), /\/play\/$/, "past builds point search engines at /play/");
+  assert.match(await page.locator('meta[property="og:url"]').getAttribute("content"), /\/play\/$/, "and shares too");
+  assert.equal(JSON.parse(await page.locator('script[type="application/ld+json"]').textContent())["@graph"][0].version, old);
   page.off("response", watch);
   assert.deepEqual(failed, []);
   assert.deepEqual(errors.filter((e) => !/status of 404/.test(e)), [], "the old build runs without errors");
