@@ -1,0 +1,52 @@
+{
+  "$comment": "astro-base-engine config for the DOM Battlefield site (DOM Battlefield + Battlefield Blitz). Run the engine with --site site (page JSON in site/src/content/pages). siteUrl is the live GitHub Pages address until battlefield.domvirus.com is pointed. Board pages never carry install copy (brand/README in dom-virus, §3). Play pages are the games (app mode) and stay outside the engine's page types.",
+  "brand": {
+    "name": "DOM Battlefield",
+    "siteUrl": "https://coded-dot-design.github.io/dom-battlefield",
+    "defaultImage": "/shots/og.png",
+    "author": {
+      "name": "Chris Cooley",
+      "url": "https://coded.design/"
+    }
+  },
+  "inputs": {
+    "voice": "../brand/voice.md",
+    "styleGuide": "../brand/style-guide.md"
+  },
+  "pageTypes": {
+    "home": {
+      "template": "marketing",
+      "path": "/",
+      "eyebrow": "Board game",
+      "schemaPageType": "VideoGame",
+      "requires": [
+        "hero"
+      ]
+    },
+    "board": {
+      "template": "marketing",
+      "path": "/{slug}",
+      "eyebrow": "Board game",
+      "schemaPageType": "VideoGame",
+      "requires": [
+        "hero"
+      ]
+    },
+    "style-guide": {
+      "template": "marketing",
+      "path": "/style-guide",
+      "eyebrow": "Style guide",
+      "schemaPageType": "WebPage",
+      "requires": [
+        "hero"
+      ]
+    },
+    "news": {
+      "template": "article",
+      "path": "/news/{slug}",
+      "eyebrow": "News",
+      "schemaPageType": "NewsArticle",
+      "related": true
+    }
+  }
+}
