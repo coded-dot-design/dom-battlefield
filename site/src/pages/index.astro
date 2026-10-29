@@ -6,6 +6,7 @@ import Icon from '../components/Icon.astro';
 import Skull from '../components/Skull.astro';
 import { MISSIONS, ROLES } from '../../../src/model';
 import { VERSION, REPO, HUB, HUB_GAME, base } from '../site';
+import archive from '../../archive.json';
 
 const title = 'DOM Battlefield · Squad tactics in a browser tab';
 const description = 'Command a platoon of up to twelve tanks. Pick the ground, freeze time to plan every route, then radio your squad through a live firefight. No install, no account.';
@@ -243,6 +244,13 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       <p class="eyebrow">COMMS · ALL UNITS STANDING BY</p>
       <h2 id="final-title">The squad is waiting.</h2>
       <a class="start-key final-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
+      {archive.length > 0 && (
+        <div class="past-builds" data-past-builds>
+          <label class="bui-label" for="past-build"><b>PAST BUILDS</b> · {archive.length}</label>
+          <select id="past-build">{archive.map((b) => <option value={base(`v/${b.version}/`)}>{b.version}</option>)}</select>
+          <a class="bui-key bui-arcade bui-sys" href={base(`v/${archive[0].version}/`)}><Icon name="play" size={16} />Play build</a>
+        </div>
+      )}
       <p class="final-links"><a href={REPO}>Source on GitHub</a> · <a href={`${REPO}#readme`}>Release notes</a> · <a href={HUB}>DOM VIRUS</a></p>
     </div>
   </section>
@@ -261,6 +269,10 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       e.preventDefault();
       launch(a, () => {}, { reduced: reduced(), done: () => (location.href = a.href) });
     });
+  // Past builds: the key follows the picked version (without JS it opens the newest one).
+  const past = document.querySelector<HTMLElement>("[data-past-builds]");
+  const pick = past?.querySelector("select");
+  if (past && pick) pick.addEventListener("change", () => (past.querySelector("a")!.href = pick.value));
   // The radio: tap to lock, tap again to release; one order at a time, said in the comms line.
   const toast = document.querySelector<HTMLElement>("[data-radio-toast]");
   const keys = [...document.querySelectorAll<HTMLButtonElement>("[data-order]")];
@@ -1143,6 +1155,22 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   .final-inner h2 {
     margin: 0;
     font-size: clamp(40px, 7vw, 80px);
+  }
+  .past-builds {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 12px;
+  }
+  .past-builds select {
+    height: 40px;
+    padding: 0 10px;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    font: 700 12px var(--mono);
   }
   .final-links {
     margin: 10px 0 0;

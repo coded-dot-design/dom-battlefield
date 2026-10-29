@@ -24,12 +24,13 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 | `/` | Landing page; the hero is a live battle (game sprites, airstrikes, shootable headline) | `site/src/pages/index.astro`, `site/src/scripts/arena.ts` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
+| `/v/<version>/` | Past builds: each earlier release's own committed `dist/`, unchanged; the landing page's PAST BUILDS picker opens them | `site/archive.json`, `scripts/archive.mjs` |
 | `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero | `site/src/pages/blitz/index.astro` |
 | `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
 | `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
-`npm run test:site` tests it; `npm run shots` retakes the landing-page screenshots from `dist/`.
+`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag before the current version (run it after a release is tagged); `npm run shots` retakes the landing-page screenshots from `dist/`.
 The Board UI kit and its spec live in `board-ui/` (`BOARD-UI.md`).
 
 **Battlefield Blitz** (the arcade version) is its own repo,

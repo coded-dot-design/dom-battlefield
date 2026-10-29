@@ -3,8 +3,10 @@
 //   /                landing page        (site/src/pages/index.astro)
 //   /style-guide/    Board UI guide      (site/src/pages/style-guide/index.astro)
 //   /play/           the game            (dist, the same bytes the DOM VIRUS hub ships)
+//   /v/<version>/    past builds         (each release's own dist, pinned in site/archive.json)
 import { cpSync, existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
+import { archiveBuilds } from "./archive.mjs";
 
 const out = resolve("artifacts/pages");
 if (!existsSync(join(out, "index.html"))) throw Error("Run astro build first (npm run site:build).");
@@ -18,6 +20,9 @@ if (!playHtml.includes('rel="canonical"')) {
   if (!playHtml.includes("</head>")) throw Error("play/index.html has no </head>");
   writeFileSync(playPage, playHtml.replace("</head>", `  <link rel="canonical" href="${playUrl}">\n  </head>`));
 }
+
+const archived = archiveBuilds(out, playUrl);
+console.log(`Past builds: ${archived} at /v/<version>/`);
 
 // Battlefield Blitz drop-in: the pinned build from vendor/blitz (repo dom-battlefield-blitz).
 mkdirSync(join(out, "blitz"), { recursive: true });
@@ -36,7 +41,7 @@ const walk = (dir) => readdirSync(dir).forEach((n) => {
 walk(out);
 const missing = [];
 for (const page of pages) {
-  if (page.startsWith(join(out, "play"))) continue;
+  if (page.startsWith(join(out, "play")) || page.startsWith(join(out, "v") + "/")) continue;
   const html = readFileSync(page, "utf8");
   for (const [, url] of html.matchAll(/(?:href|src)="([^"#?]+)/g)) {
     if (/^(https?:|mailto:|data:)/.test(url)) continue;

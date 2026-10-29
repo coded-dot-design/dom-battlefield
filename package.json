@@ -16,6 +16,7 @@
     "site:dev": "astro dev --config site/astro.config.mjs",
     "site:build": "astro build --config site/astro.config.mjs && node scripts/pages.mjs",
     "test:site": "node tests/site.mjs",
+    "sync:archive": "node scripts/sync-archive.mjs",
     "shots": "node scripts/shots.mjs"
   },
   "devDependencies": {

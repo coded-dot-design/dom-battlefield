@@ -117,6 +117,33 @@ try {
   await page.waitForFunction(() => window.battlefield || document.querySelector("#battlefield"));
   assert.deepEqual(errors, []);
 
+  where = "past-builds";
+  // Every pinned past build is served from its own path; the picker's key follows the choice.
+  const archive = JSON.parse(readFileSync("site/archive.json", "utf8"));
+  await page.goto(base);
+  const pick = page.locator("[data-past-builds] select");
+  assert.equal(await pick.locator("option").count(), archive.length);
+  const old = archive.at(-1).version;
+  await pick.selectOption({ label: old });
+  assert.equal(new URL(await page.locator("[data-past-builds] a").getAttribute("href"), base).pathname, `/dom-battlefield/v/${old}/`);
+  for (const { version } of archive) {
+    const build = JSON.parse(readFileSync(join(root, "v", version, "build.json"), "utf8"));
+    assert.equal(`v${build.version}`, version, `${version} is its own build`);
+  }
+  assert.deepEqual(errors, []);
+  // Old builds predate the icon links, so the browser's own /favicon.ico probe may 404 here.
+  const failed = [];
+  const watch = (r) => r.status() >= 400 && !r.url().endsWith("/favicon.ico") && failed.push(r.url());
+  page.on("response", watch);
+  await page.locator("[data-past-builds] a").click();
+  await page.waitForURL(new RegExp(`/v/${old.replaceAll(".", "\\.")}/$`));
+  await page.waitForFunction(() => document.querySelector("#battlefield")?.children.length > 0);
+  assert.match(await page.locator('link[rel="canonical"]').getAttribute("href"), /\/play\/$/, "past builds point search engines at /play/");
+  page.off("response", watch);
+  assert.deepEqual(failed, []);
+  assert.deepEqual(errors.filter((e) => !/status of 404/.test(e)), [], "the old build runs without errors");
+  errors.length = 0;
+
   where = "blitz-board";
   const bp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const berr = [];
@@ -213,7 +240,7 @@ try {
   });
   assert.equal(frames, true, "reduced motion: the arena is a still frame");
   await still.close();
-  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + drop-in, reduced motion passed.");
+  console.log("Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + drop-in, reduced motion, past builds passed.");
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;
