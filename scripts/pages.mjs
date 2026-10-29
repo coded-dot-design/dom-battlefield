@@ -3,13 +3,21 @@
 //   /                landing page        (site/src/pages/index.astro)
 //   /style-guide/    Board UI guide      (site/src/pages/style-guide/index.astro)
 //   /play/           the game            (dist, the same bytes the DOM VIRUS hub ships)
-import { cpSync, existsSync, readFileSync, readdirSync, statSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 
 const out = resolve("artifacts/pages");
 if (!existsSync(join(out, "index.html"))) throw Error("Run astro build first (npm run site:build).");
 if (!existsSync("dist/index.html")) throw Error("Build the game first (npm run build).");
 cpSync("dist", join(out, "play"), { recursive: true });
+// The served /play/ page gets its canonical here; dist stays the bytes the hub ships.
+const playUrl = new URL(`${(process.env.SITE_BASE || "/dom-battlefield").replace(/\/?$/, "/")}play/`, process.env.SITE_URL || "https://coded-dot-design.github.io").href;
+const playPage = join(out, "play/index.html");
+const playHtml = readFileSync(playPage, "utf8");
+if (!playHtml.includes('rel="canonical"')) {
+  if (!playHtml.includes("</head>")) throw Error("play/index.html has no </head>");
+  writeFileSync(playPage, playHtml.replace("</head>", `  <link rel="canonical" href="${playUrl}">\n  </head>`));
+}
 
 // Battlefield Blitz drop-in: the pinned build from vendor/blitz (repo dom-battlefield-blitz).
 mkdirSync(join(out, "blitz"), { recursive: true });

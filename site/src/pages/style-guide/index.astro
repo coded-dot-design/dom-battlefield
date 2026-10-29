@@ -89,7 +89,7 @@ const cells = Array.from({ length: 16 }, (_, i) => ({ x: (i % 4) * 16, y: Math.f
     <span class="bu-strip-label">BOARD</span>
     <div class="bui-seg bu-chips"><button type="button" data-board-theme="dark" aria-pressed="true">Dark</button><button type="button" data-board-theme="light" aria-pressed="false">Light</button><button type="button" data-board-side aria-pressed="false">Side B</button></div>
     <div class="bu-custom" hidden>
-      {['sys', 'cmd', 'fire', 'teamA', 'teamB'].map((k) => <label><input type="color" data-custom={k}/><span>{k}</span></label>)}
+      {['sys', 'cmd', 'fire', 'teamA', 'teamB'].map((k) => <label><input type="color" data-custom={k} aria-label={`${k} colour`}/><span>{k}</span></label>)}
     </div>
   </div>
 
@@ -150,7 +150,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
           <button class="bui-arcade bui-aim" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button>
           <button class="bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
           <button class="bui-arcade bui-fire" type="button"><svg viewBox="0 0 20 20"><path d={icon.fire}/><circle cx="10" cy="10" r="5"/></svg>Fire<kbd>Space</kbd></button>
-          <button class="bui-arcade bui-sys" type="button"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
+          <button class="bui-arcade bui-sys" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
         </div></div>
       <div class="bu-row"><span class="bui-label"><b>PLATOON</b> · radios · health · lost</span>
         <div class="bu-keys">
@@ -264,7 +264,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
     <div class="bu-head"><span class="eyebrow"><span class="index">09</span> COMMS &amp; TIPS</span><h2>Say it once, where it reads.</h2><p>One comms line carries every explanation. It never sits under the header or slides under a card. Button tips dim the page and ring each group's keys.</p></div>
     <div class="bui bu-board bu-comms" data-bui>
       <p class="bui-toast">Tank 2: tap a square to send it, or Attack HQ.</p>
-      <div class="bu-tip"><button class="bui-tip-label" type="button">Squad: fall in · repair · advance · attack</button><span class="bui-tip-ring"><span class="bu-keys"><button class="bui-arcade bui-fallin" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg></button><button class="bui-arcade bui-retreat" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg></button><button class="bui-arcade bui-attack" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg></button></span></span></div>
+      <div class="bu-tip"><button class="bui-tip-label" type="button">Squad: fall in · repair · advance · attack</button><span class="bui-tip-ring"><span class="bu-keys"><button class="bui-arcade bui-fallin" type="button" tabindex="-1" aria-label="Fall in"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg></button><button class="bui-arcade bui-retreat" type="button" tabindex="-1" aria-label="Retreat"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg></button><button class="bui-arcade bui-attack" type="button" tabindex="-1" aria-label="Attack"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg></button></span></span></div>
     </div>
   </section>
 
