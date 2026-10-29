@@ -164,8 +164,8 @@ test("simulation stays bounded with finite projectiles, debris and event history
   const s = createBattle(generate(26, 20, 1, 8), 1, 0, roles);
   for (let i = 0; i < 5000; i++) {
     step(s, 0.02, { ...idle, fire: true });
-    assert.ok(s.shots.length <= 80);
-    assert.ok(s.effects.length <= 64);
+    assert.ok(s.shotCount <= 80);
+    assert.ok(s.effectCount <= 64);
     assert.ok(s.events.length <= 8);
     for (const u of s.units)
       assert.ok(
@@ -241,16 +241,16 @@ test("repair kits, HQ repair and kill salvage restore armor", () => {
   const s = createBattle(b, 1, 0, roles);
   const p = commander(s);
   p.hp = 20;
-  s.pickups.push({ id: 999, x: p.x, y: p.y });
+  s.kits.spawn(p.x, p.y);
   step(s, 0.02, idle);
   assert.ok(p.hp >= 20 + REPAIR.kit - 1, "kit heals");
-  assert.equal(s.pickups.length, 0);
+  assert.equal(s.kits.count, 0);
   p.hp = 10;
   const before = p.hp;
   for (let i = 0; i < 50; i++) step(s, 0.02, idle);
   assert.ok(p.hp > before + 5, "HQ repairs quickly");
   for (let i = 0; i < 2000; i++) step(s, 0.02, idle);
-  assert.ok(s.pickups.length <= 3 + s.per / 4 + 6);
+  assert.ok(s.kits.count <= 6);
 });
 test("attack order focuses a chosen enemy, then takes the next in sight or goes back to its plan", () => {
   const b = generate(26, 20, 1, 3);

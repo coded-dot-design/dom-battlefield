@@ -259,7 +259,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
 
 <script>
   import { startArena } from "../scripts/arena";
-  import { launch } from "../../../board-ui/board-ui";
+  import { launch } from "../../../vendor/fizlet/ui/board-ui";
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hero = document.querySelector<HTMLElement>("[data-arena]");
   if (hero) startArena(hero);

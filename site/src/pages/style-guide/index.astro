@@ -1,6 +1,6 @@
 ---
 // Board UI style guide: the game board and controls design system, shown live. Every demo is
-// built from board-ui/board-ui.css + board-ui.ts only (the kit new boards use), so this page can't
+// built from fizlet/ui (vendor/fizlet/ui: board-ui.css + board-ui.ts) only, the kit new boards use, so this page can't
 // drift from the kit. The palette switcher passes a palette in, exactly as a game or an embed would.
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
@@ -8,7 +8,7 @@ import { REPO, base, abs } from '../../site';
 import { pageLd } from '../../schema.mjs';
 const title = 'Board UI · DOM Battlefield style guide';
 const description = 'The game board and controls design system behind DOM Battlefield: 3D keys, cards, overlays, launch bursts, layouts and motion, shown live. Only the palette changes from game to game.';
-const repo = `${REPO}/blob/main/board-ui`;
+const repo = 'https://github.com/coded-dot-design/fizlet/blob/main/src/ui';
 const sections = [
   ['principles', 'Principles'], ['palette', 'Palette'], ['key', 'The 3D key'], ['families', 'Key families'], ['labels', 'Labels'],
   ['cards', 'Cards'], ['overlays', 'Overlays'], ['launch', 'Launch'], ['comms', 'Comms & tips'], ['layouts', 'Layouts'], ['motion', 'Motion & sound'], ['build', 'Build a board'],
@@ -108,7 +108,7 @@ const cells = Array.from({ length: 16 }, (_, i) => ({ x: (i % 4) * 16, y: Math.f
     <div class="bui bu-board" data-bui>
       <ul class="bu-roles">{roles.map(([key, name, job]) => <li><i style={`background:var(${name})`}></i><b>{key}</b><code>{name}</code><span>{job}</span><em data-hex={name}></em></li>)}</ul>
     </div>
-    <pre class="bu-code"><code>{`import { applyPalette } from "board-ui";
+    <pre class="bu-code"><code>{`import { applyPalette } from "fizlet/ui";
 applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", teamB: "#f4457a" });
 // or in an embed config: palette: { cmd: "#8573ee" }   (hex only; anything else is ignored)`}</code></pre>
   </section>
@@ -315,8 +315,8 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
 </Base>
 
 <script>
-  import { applyPalette, launch, slam, mount } from "../../../../board-ui/board-ui";
-  import kitCss from "../../../../board-ui/board-ui.css?raw";
+  import { applyPalette, launch, slam, mount } from "../../../../vendor/fizlet/ui/board-ui";
+  import kitCss from "../../../../vendor/fizlet/ui/board-ui.css?raw";
   const boards = [...document.querySelectorAll<HTMLElement>("[data-bui]")];
   const html = document.documentElement;
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;

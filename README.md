@@ -31,7 +31,8 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
 `npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag before the current version (run it after a release is tagged); `npm run shots` retakes the landing-page screenshots from `dist/`.
-The Board UI kit and its spec live in `board-ui/` (`BOARD-UI.md`).
+The site's Board UI is `fizlet/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
+[BOARD-UI.md](https://github.com/coded-dot-design/fizlet/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
 
 **Battlefield Blitz** (the arcade version) is its own repo,
 [dom-battlefield-blitz](https://github.com/coded-dot-design/dom-battlefield-blitz), built on the
@@ -99,19 +100,20 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm run size` checks the combined gzip size of JavaScript, styles and markup against **61,500 bytes**. Version 0.17.0 measures **60,672 bytes** (8,453 HTML + 33,061 JavaScript + 19,158 CSS), leaving 828 bytes of headroom. The allowance increases explicitly from 57,500 bytes for the requested navigation, launch feedback, overlay and responsive-control work; the measured increase over 0.16.2 is 3,353 bytes, with no new runtime dependency.
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm test` runs the model tests, the replay test and the zero-allocation test (one file at a time, `--expose-gc`). `npm run size` checks the combined gzip size of JavaScript, styles and markup against **72,500 bytes**. Version 1.0.0 measures **71,911 bytes** (9,488 HTML + 40,211 JavaScript + 22,212 CSS). The allowance rises from 68,000 bytes for the move onto the Fizlet engine: the vendored kernel and `fizlet/rules` drops add 4,295 bytes of JavaScript over 0.18.13 (67,617 bytes), measured, with no runtime dependency.
 
 ## Boundaries
 
 - `src/model.ts`: serializable map, units, commands, pathfinding, collision, objectives and combat. No DOM dependency.
 - `src/view.ts`: DOM grid/terrain and actor ownership, minimap, bounded projectiles and debris. Each tank is a DOM button carrying the original small cached Sherman canvas renderer; no fullscreen canvas board.
-- `src/client.ts`: input, camera, setup, UI, one animation loop and lifecycle.
+- `src/client.ts`: input, camera, setup, UI and lifecycle. The battle runs as one system on a Fizlet engine (`read` samples input, `step` simulates, `render` draws).
 - `src/planning-cards.ts`: native fold keys, card state, navigation focus and reset behaviour.
 - `src/battle-overlays.ts`: pause/result focus containment, saved background `inert` state, map-relative placement and repeatable sticker entry.
 - `src/launch-effects.ts` and `src/launch-effects.css`: bounded launch feedback cloned from the pressed button; transient animations and timers clean up on completion, reset or abort.
+- `vendor/fizlet/`: the [Fizlet](https://github.com/coded-dot-design/fizlet) engine's source, vendored with its version, commit and SHA-256 per file in `ORIGIN.json`. `node scripts/sync-fizlet.mjs` refreshes it from a sibling checkout (`../fizlet`, or `FIZLET_DIR`). Never edit it by hand.
 - `shared/`: generated snapshots from owning repositories, with source versions and SHA-256 provenance in `ORIGIN.json`. `node scripts/sync-shared.mjs` refreshes them from sibling checkouts. The tank artwork is not independently maintained here.
 
-Maps cap at 48×30 cells, with up to 24 tanks, 200 projectiles and 96 effects. One fixed 60Hz simulation clock uses bounded catch-up; pause cancels that loop until resume. Cosmetic launch feedback uses bounded Web Animations and short cleanup timers, without a second simulation loop. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
+Maps cap at 48×30 cells, with up to 24 tanks, 200 projectiles and 96 effects. The battle runs on the Fizlet kernel: one shared clock, fixed 60 Hz steps with bounded catch-up (3 steps a frame); pause stops the engine until resume. The step allocates nothing once warm (pooled shells and bursts, typed path buffers), and every random roll comes from the engine's seeded `random`, restarted from the map's seed, so a seed and the same orders replay the same battle. Repair kits are `fizlet/rules` drops. Cosmetic launch feedback uses bounded Web Animations and short cleanup timers, without a second simulation loop. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
 
 This is a **single-player** game. Multiplayer, friend invites, co-op/opposing players, extension overlays and cross-game mashups are future work. Command objects and DOM-independent state provide a boundary for a future authoritative transport; networking, synchronization, authentication and cheat prevention are not implemented or implied. A future entity adapter can add other games' actors without moving their assets into the map engine.
 
@@ -122,6 +124,16 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 MIT · Chris Cooley / coded.design
 
 ## Changelog
+
+### 1.0.0 — On the Fizlet engine
+
+- The battle runs on [Fizlet](https://github.com/coded-dot-design/fizlet) 0.15.0, vendored in `vendor/fizlet/` (`node scripts/sync-fizlet.mjs`): the game's own animation loop is gone, and one Fizlet engine reads input, steps the battle at a fixed 60 Hz and renders. Command mode's half speed is every other step; planning still freezes time.
+- Replayable: every random roll in a battle (repair kits, salvage) comes from the engine's seeded `random`, restarted from the map's seed. Same seed and orders, same battle, frame for frame; no `Math.random` in play (`tests/replay.test.mjs`).
+- Zero allocation once warm: shells and bursts are pooled, paths fill typed buffers, line-of-sight candidates sort in scratch arrays, tanks share one object shape, and `Math.hypot` is gone from the step. Twenty thousand busy steps (twelve a side, every system working) make no minor GC (`tests/zero-gc.test.mjs`).
+- Repair kits are `fizlet/rules` drops (they land where they spawn and stay until collected); the battle still times them (first at 4.2 s, then every 7 s) and caps them as before.
+- Gameplay is unchanged: the new step plays the same battles as 0.18.13's to six decimals over whole matches (all four operations, 4 to 12 a side, with steering and firing).
+- The site's Board UI is `fizlet/ui` (the vendored kit) instead of the hand-kept copy in `board-ui/`, which is gone; the style guide's spec and tokens links point at the Fizlet repo.
+- Size gate 68,000 → 72,500 bytes gzip: 1.0.0 measures 71,911 (JavaScript +4,295 for the kernel and drops).
 
 ### Site — page keys press right (no game change)
 

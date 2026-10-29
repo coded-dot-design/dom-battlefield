@@ -106,7 +106,7 @@ const rules = [
 
 <script>
   import { createBlitz, install } from "../../../../vendor/blitz/blitz.mjs";
-  import { launch } from "../../../../board-ui/board-ui";
+  import { launch } from "../../../../vendor/fizlet/ui/board-ui";
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   // The hero is a live bot battle (attract mode); it pauses itself when scrolled away.
   const demoHost = document.getElementById("bz-demo")!;

@@ -1,4 +1,11 @@
-/** Battlefield owns maps and rules. Positions are grid units; commands contain no DOM. */
+/** Battlefield owns maps and rules. Positions are grid units; commands contain no DOM.
+ *  The simulation runs on the Fizlet kernel: `step` is the game's fixed step (no allocation once
+ *  warm: pooled shots and effects, typed path buffers, scratch arrays), its random numbers come
+ *  from the engine's seeded `random` (same seed, same battle), and repair kits live in
+ *  `fizlet/rules` drops. */
+import { createEngine, type Engine } from "../vendor/fizlet/kernel/engine";
+import { seeded, type Random } from "../vendor/fizlet/kernel/random";
+import { drops } from "../vendor/fizlet/rules";
 export type Tile =
   | "ground"
   | "road"
@@ -19,7 +26,7 @@ export interface Unit extends Point {
   hp: number;
   maxHp: number;
   /** Seconds a driving tank has been blocked; past a moment it may pass through its own squad. */
-  jam?: number;
+  jam: number;
   angle: number;
   turret: number;
   tread: number;
@@ -28,7 +35,11 @@ export interface Unit extends Point {
   order: Order;
   /** The stop the tank is driving to now (route[0]), or null. */
   waypoint: number | null;
-  path: number[];
+  /** The squares to drive through to the current stop: path[pathAt] up to path[pathEnd - 1]
+   *  (a buffer the size of the board, refilled in place on every replan). */
+  path: Int16Array;
+  pathAt: number;
+  pathEnd: number;
   /** Planned stops, in order; the last one is the destination. Each leg is pathed on the way. */
   route: number[];
   /** The square a "hold" order keeps; it is the route's destination once arrived. */
@@ -41,7 +52,7 @@ export interface Unit extends Point {
   scan: number;
   /** The plan a squad order set aside (order, remaining route, held square). While it is set the
    *  squad order is "locked"; releasing it, or an attack running out of enemies, restores it. */
-  resume?: Resume | null;
+  resume: Resume | null;
 }
 export interface Resume {
   order: Order;
@@ -56,9 +67,6 @@ export interface Shot extends Point {
   life: number;
   damage: number;
   owner: number;
-}
-export interface Pickup extends Point {
-  id: number;
 }
 export interface Effect extends Point {
   id: number;
@@ -143,18 +151,28 @@ export type Command =
   | { type: "clear"; id: number };
 export const SQUAD_SIZES = [4, 8, 12] as const;
 export const REPAIR = { kit: 45, kill: 15, hq: 8, hqRadius: 2.2, every: 7 };
+/** Repair kits: fizlet/rules drops that land where they spawn and last until collected. */
+export type Kits = ReturnType<typeof drops<"kit">>;
+export const SHOTS = 200, EFFECTS = 96, KITS = 6;
 export interface Battle {
   board: Board;
   mission: number;
   side: number;
-  /** Tanks per side. Ids are side * per + index; index 0 is the command tank. */
+  /** Tanks per side. Ids are side * per + index; index 0 is the command tank (units[id]). */
   per: number;
   units: Unit[];
-  pickups: Pickup[];
+  kits: Kits;
+  /** Seconds to the next timed repair kit. */
   pickupAt: number;
-  rand: number;
+  /** The engine's seeded random: every roll in the battle comes from it. */
+  random: Random;
+  /** Pools: the live shells are shots[0 .. shotCount - 1], the live bursts effects[0 .. effectCount - 1]. */
   shots: Shot[];
+  shotCount: number;
   effects: Effect[];
+  effectCount: number;
+  /** Squares with a living tank on them, rebuilt each step (pathfinding steers round them). */
+  occ: Uint8Array;
   time: number;
   capture: number[];
   winner: number | null;
@@ -162,14 +180,22 @@ export interface Battle {
   events: string[];
 }
 export const commander = (s: Battle, side = s.side) => s.units[side * s.per]!;
+/** The unit with this id if it is alive (ids are indexes into units). */
+const live = (s: Battle, id: number | null) => {
+  const v = id === null ? undefined : s.units[id];
+  return v && v.hp > 0 ? v : undefined;
+};
+/** Math.hypot allocates in V8 even in optimized code (Fizlet lesson K5); this does not. */
+const dist = (x: number, y: number) => Math.sqrt(x * x + y * y);
 export const point = (b: Board, id: number): Point => ({
   x: (id % b.cols) + 0.5,
   y: Math.floor(id / b.cols) + 0.5,
 });
-export const cell = (b: Board, p: Point) =>
-  Math.max(0, Math.min(b.rows - 1, Math.floor(p.y))) * b.cols +
-  Math.max(0, Math.min(b.cols - 1, Math.floor(p.x)));
-export const solid = (t: Tile) => !["ground", "road", "rubble"].includes(t);
+const cellXY = (b: Board, x: number, y: number) =>
+  Math.max(0, Math.min(b.rows - 1, Math.floor(y))) * b.cols +
+  Math.max(0, Math.min(b.cols - 1, Math.floor(x)));
+export const cell = (b: Board, p: Point) => cellXY(b, p.x, p.y);
+export const solid = (t: Tile) => t !== "ground" && t !== "road" && t !== "rubble";
 export const shellSolid = (t: Tile) => solid(t) && t !== "fence";
 export const hitPoints = (t: Tile) =>
   ({
@@ -194,49 +220,56 @@ export function toughness(t: Tile, id: number, mission: number) {
   if (t === "hedge" && mission === 1) return 20; // dotted desert scrub
   return hitPoints(t);
 }
-export function rng(seed: number) {
-  return () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-}
-export function neighbors(b: Board, id: number) {
-  const x = id % b.cols,
-    y = Math.floor(id / b.cols);
-  return [
-    x > 0 ? id - 1 : -1,
-    x < b.cols - 1 ? id + 1 : -1,
-    y > 0 ? id - b.cols : -1,
-    y < b.rows - 1 ? id + b.cols : -1,
-  ].filter((i) => i >= 0 && !solid(b.tiles[i]!));
-}
-/** Breadth-first routes are short on a capped grid, and replan only on orders/terrain changes. */
-export function route(
-  b: Board,
-  start: number,
-  end: number,
-  occupied: Set<number> = new Set(),
-) {
-  if (start === end) return [];
-  if (solid(b.tiles[end]!)) return [];
-  const prev = new Int16Array(b.tiles.length).fill(-1),
-    queue = [start];
+/** The map generator's random stream: Fizlet's seeded LCG (the DOM VIRUS core sequence). */
+export const rng = (seed: number) => seeded(seed);
+// Pathfinding scratch, shared and grown only for a bigger board: a step never allocates.
+let prev = new Int16Array(48 * 30),
+  queue = new Int16Array(48 * 30),
+  scratch = new Int16Array(48 * 30);
+const grow = (size: number) => {
+  if (prev.length < size) (prev = new Int16Array(size)), (queue = new Int16Array(size)), (scratch = new Int16Array(size));
+};
+/** Breadth-first search from start to end (neighbours left, right, up, down; occupied squares are
+ *  skipped unless they are the end). Writes the squares after start, up to end, into out and
+ *  returns how many; 0 if there is no way. */
+function trace(b: Board, start: number, end: number, occ: Uint8Array | null, out: Int16Array) {
+  const size = b.tiles.length,
+    cols = b.cols;
+  if (start === end || solid(b.tiles[end]!)) return 0;
+  grow(size);
+  prev.fill(-1, 0, size);
   prev[start] = start;
-  for (let n = 0; n < queue.length; n++) {
-    const id = queue[n]!;
-    for (const next of neighbors(b, id)) {
-      if (prev[next] !== -1 || (next !== end && occupied.has(next)))
-        continue;
+  queue[0] = start;
+  for (let n = 0, len = 1; n < len; n++) {
+    const id = queue[n]!,
+      x = id % cols;
+    for (let k = 0; k < 4; k++) {
+      const next = k === 0 ? (x > 0 ? id - 1 : -1) : k === 1 ? (x < cols - 1 ? id + 1 : -1) : k === 2 ? id - cols : id + cols;
+      if (next < 0 || next >= size || solid(b.tiles[next]!)) continue;
+      if (prev[next] !== -1 || (next !== end && occ !== null && occ[next])) continue;
       prev[next] = id;
-      queue.push(next);
+      queue[len++] = next;
       if (next === end) {
-        const path = [end];
-        while (prev[path[0]!] !== start) path.unshift(prev[path[0]!]!);
-        return path;
+        let steps = 1;
+        for (let c = end; prev[c] !== start; c = prev[c]!) steps++;
+        for (let c = end, i = steps - 1; i >= 0; c = prev[c]!, i--) out[i] = c;
+        return steps;
       }
     }
   }
-  return [];
+  return 0;
+}
+/** Breadth-first routes are short on a capped grid, and replan only on orders/terrain changes. */
+export function route(b: Board, start: number, end: number) {
+  grow(b.tiles.length);
+  return Array.from(scratch.subarray(0, trace(b, start, end, null, scratch)));
+}
+/** A unit's remaining path, as a list (for drawing). */
+export const pathOf = (u: Unit) => Array.from(u.path.subarray(u.pathAt, u.pathEnd));
+/** Path a unit from its square to goal now (commands; the step replans through drive). */
+function repath(b: Board, u: Unit, goal: number) {
+  u.pathAt = 0;
+  u.pathEnd = trace(b, cell(b, u), goal, null, u.path);
 }
 export function generate(
   cols: number,
@@ -419,6 +452,8 @@ export function createBattle(
   roles: Role[],
   formation = "wedge",
   per = 4,
+  /** The engine the battle runs on (its seeded random and event ring); headless if left out. */
+  engine: Engine = createEngine(),
 ): Battle {
   if (roles.length !== 4 || loadoutCost(roles) > 12)
     throw Error("Choose four tanks within 12 points.");
@@ -462,46 +497,72 @@ export function createBattle(
       clearAround(board, want);
       const p = place(board, want, taken, units);
       clearAround(board, p);
-      units.push({
+      // One shape for every tank, its number fields doubles from the start (0.5 placeholders),
+      // so the step's property loads stay monomorphic and never box (no map changes mid-battle).
+      const u: Unit = {
         id: team * per + i,
         side: team,
         role,
-        ...p,
-        hp: ROLES[role].hp,
+        x: 0.5,
+        y: 0.5,
+        hp: 0.5,
         maxHp: ROLES[role].hp,
-        angle: team ? Math.PI : 0,
-        turret: team ? Math.PI : 0,
-        tread: 0,
-        recoil: 0,
-        cooldown: 0.4 + (i % 4) * 0.15 + rank * 0.1,
+        jam: 0.5,
+        angle: 0.5,
+        turret: 0.5,
+        tread: 0.5,
+        recoil: 0.5,
+        cooldown: 0.5,
         order: "advance",
         waypoint: null,
-        path: [],
+        path: new Int16Array(board.tiles.length),
+        pathAt: 0,
+        pathEnd: 0,
         route: [],
         hold: null,
-        plan: 0,
+        plan: 0.5,
         focus: null,
         target: null,
-        scan: (i % 5) * 0.04,
-      });
+        scan: 0.5,
+        resume: null,
+      };
+      u.x = p.x;
+      u.y = p.y;
+      u.hp = ROLES[role].hp;
+      u.jam = u.tread = u.recoil = u.plan = 0;
+      u.angle = u.turret = team ? Math.PI : 0;
+      u.cooldown = 0.4 + (i % 4) * 0.15 + rank * 0.1;
+      u.scan = (i % 5) * 0.04;
+      units.push(u);
     }
-  return {
+  // Same board, same battle: the engine's random restarts from the board's seed.
+  engine.random.state = (board.seed ^ 0x9e3779b9) >>> 0;
+  // Kits land where they spawn (no fall) and stay until collected; the battle times them itself
+  // (first after 4.2s, then every 7s), so the brick's own clock is not needed.
+  const kits = drops(engine, { kinds: ["kit"], cap: KITS, fall: 0, life: Infinity });
+  engine.remove(kits.system);
+  const s: Battle = {
     board,
     mission,
     side,
     per,
     units,
-    shots: [],
-    effects: [],
-    pickups: [],
+    shots: Array.from({ length: SHOTS }, () => ({ id: 0, x: 0.5, y: 0.5, vx: 0.5, vy: 0.5, side: 0, life: 0.5, damage: 0, owner: 0 })),
+    shotCount: 0,
+    effects: Array.from({ length: EFFECTS }, () => ({ id: 0, x: 0.5, y: 0.5, life: 0.5, color: "" })),
+    effectCount: 0,
+    kits,
     pickupAt: REPAIR.every * 0.6,
-    rand: board.seed ^ 0x9e3779b9,
-    time: 0,
-    capture: [0, 0],
+    random: engine.random,
+    occ: new Uint8Array(board.tiles.length),
+    time: 0.5,
+    capture: [0.5, 0.5],
     winner: null,
     nextId: 1000,
     events: [],
   };
+  s.time = s.capture[0] = s.capture[1] = 0; // doubles from the start (see the units above)
+  return s;
 }
 /** Use the formation point when it is open; otherwise the nearest free open cell. */
 /** Nearest free spot to `want`: open ground, not a cell another tank took, and at least
@@ -548,6 +609,26 @@ function clearAround(b: Board, p: Point) {
       if (solid(b.tiles[id]!) && b.tiles[id] !== "water") (b.tiles[id] = "ground"), (b.health[id] = 0);
     }
 }
+/** A plain, cloneable copy of the battle (tests, replays): the random stream as its state, the
+ *  kits as lists, live shots and effects only. */
+export function snapshot(s: Battle) {
+  const { random, kits, occ: _, ...rest } = s,
+    n = kits.count;
+  return structuredClone({
+    ...rest,
+    shots: s.shots.slice(0, s.shotCount),
+    effects: s.effects.slice(0, s.effectCount),
+    random: random.state,
+    kits: { count: n, x: Array.from(kits.x.subarray(0, n)), y: Array.from(kits.y.subarray(0, n)) },
+  });
+}
+/** A line on the comms log: the last 8 are kept, shifted in place (no allocation). */
+function say(s: Battle, line: string) {
+  const e = s.events;
+  if (e.length < 8) return void e.push(line);
+  for (let i = 0; i < 7; i++) e[i] = e[i + 1]!;
+  e[7] = line;
+}
 export function command(s: Battle, c: Command) {
   if (s.winner !== null) return false;
   const lead = s.side * s.per;
@@ -558,7 +639,7 @@ export function command(s: Battle, c: Command) {
         routes += u.resume.route.length ? 1 : 0;
         release(u);
       }
-    s.events.push(routes ? "Back on the plan: routes resumed." : "Back on their own: advancing.");
+    say(s, routes ? "Back on the plan: routes resumed." : "Back on their own: advancing.");
     return true;
   }
   if (c.type === "focus") {
@@ -569,13 +650,14 @@ export function command(s: Battle, c: Command) {
         // A hunt still names its prey (the nearest enemy), so the attack ends when it falls.
         u.focus = t ? t.id : c.plan ? null : (nearestEnemy(s, u)?.id ?? null);
       }
-    s.events.push(t ? "Squad attacking your target." : "Squad hunting the nearest enemy.");
+    say(s, t ? "Squad attacking your target." : "Squad hunting the nearest enemy.");
     return true;
   }
   if (c.type === "order") {
     for (const u of s.units)
       if (c.ids.includes(u.id) && u.side === s.side && u.id !== lead) override(u, c.order, c.plan);
-    s.events.push(
+    say(
+      s,
       c.order === "follow"
         ? "Squad falling in."
         : c.order === "retreat"
@@ -593,9 +675,9 @@ export function command(s: Battle, c: Command) {
     u.route = [];
     u.resume = null;
     u.waypoint = u.hold = null;
-    u.path = [];
+    u.pathAt = u.pathEnd = 0;
     if (u.id !== lead) (u.order = "advance"), (u.focus = null);
-    s.events.push(u.id === lead ? "Route cleared. Your tank is all yours." : "Route cleared, back to squad orders.");
+    say(s, u.id === lead ? "Route cleared. Your tank is all yours." : "Route cleared, back to squad orders.");
     return true;
   }
   const cells = c.type === "move" ? [c.cell] : c.cells;
@@ -609,9 +691,10 @@ export function command(s: Battle, c: Command) {
   // Your own tank drives the route only while you're not steering; it keeps its order.
   if (u.id !== lead) u.order = "hold";
   u.focus = null;
-  u.path = route(s.board, cell(s.board, u), u.waypoint);
+  repath(s.board, u, u.waypoint);
   u.plan = 0.7;
-  s.events.push(
+  say(
+    s,
     u.id === lead
       ? "Your tank has a route. Steer any time to take over; let go and it drives on to the flag."
       : u.hold === s.board.bases[1 - u.side]
@@ -629,7 +712,7 @@ function override(u: Unit, order: Order, plan = false) {
   u.focus = null;
   u.waypoint = u.hold = null;
   u.route = [];
-  u.path = [];
+  u.pathAt = u.pathEnd = 0;
   u.plan = 0;
 }
 /** Back to the plan the squad order set aside. */
@@ -642,7 +725,7 @@ function release(u: Unit) {
   u.hold = r.hold;
   u.waypoint = u.route[0] ?? null;
   u.focus = null;
-  u.path = [];
+  u.pathAt = u.pathEnd = 0;
   u.plan = 0;
 }
 /** The full square-by-square path from start through every stop, or null if a leg is blocked. */
@@ -665,126 +748,170 @@ function arrive(u: Unit) {
   u.plan = 0;
 }
 export function clearShot(b: Board, a: Point, z: Point) {
-  const d = Math.hypot(z.x - a.x, z.y - a.y);
+  const dx = z.x - a.x,
+    dy = z.y - a.y,
+    d = dist(dx, dy);
   for (let n = 0.35; n < d - 0.3; n += 0.2)
-    if (
-      shellSolid(
-        b.tiles[
-          cell(b, {
-            x: a.x + ((z.x - a.x) * n) / d,
-            y: a.y + ((z.y - a.y) * n) / d,
-          })
-        ]!,
-      )
-    )
-      return false;
+    if (shellSolid(b.tiles[cellXY(b, a.x + (dx * n) / d, a.y + (dy * n) / d)]!)) return false;
   return true;
 }
-export function canMove(b: Board, p: Point) {
-  return (
-    p.x >= 0.32 &&
-    p.y >= 0.32 &&
-    p.x < b.cols - 0.32 &&
-    p.y < b.rows - 0.32 &&
-    [-0.27, 0.27].every((dx) =>
-      [-0.27, 0.27].every(
-        (dy) => !solid(b.tiles[cell(b, { x: p.x + dx, y: p.y + dy })]!),
-      ),
-    )
-  );
+function canMoveXY(b: Board, x: number, y: number) {
+  if (x < 0.32 || y < 0.32 || x >= b.cols - 0.32 || y >= b.rows - 0.32) return false;
+  for (let i = 0; i < 4; i++)
+    if (solid(b.tiles[cellXY(b, x + (i & 1 ? 0.27 : -0.27), y + (i & 2 ? 0.27 : -0.27))]!)) return false;
+  return true;
 }
+export const canMove = (b: Board, p: Point) => canMoveXY(b, p.x, p.y);
+// Numbers handed to helpers the step calls go through this array, not as arguments: a double
+// passed to (or returned from) a call V8 doesn't inline is boxed, and the step is too big for
+// everything to inline (Fizlet lesson K4). [0] dt, [1] dx, [2] dy of a move.
+const F = new Float64Array(3);
+/** A scratch point for effects at a square or a kit (written in place, never allocated). */
+const at: Point = { x: 0.5, y: 0.5 };
 export function moveUnit(s: Battle, u: Unit, dx: number, dy: number) {
-  const p = { x: u.x + dx, y: u.y + dy };
+  F[1] = dx;
+  F[2] = dy;
+  return move(s, u);
+}
+/** Move u by (F[1], F[2]) if the ground is open and it keeps clear of other tanks. */
+function move(s: Battle, u: Unit) {
+  const dx = F[1]!,
+    dy = F[2]!,
+    px = u.x + dx,
+    py = u.y + dy;
+  if (!canMoveXY(s.board, px, py)) return false;
   // Tanks keep 0.55 apart, but a tank that is already too close may always move away
   // (otherwise two overlapping tanks could never separate).
-  if (
-    canMove(s.board, p) &&
-    !s.units.some((v) => {
-      if (v === u || v.hp <= 0) return false;
-      // A tank jammed behind its own squad for a moment squeezes past (no stuck pile-ups).
-      if ((u.jam ?? 0) > 0.6 && v.side === u.side) return false;
-      const after = Math.hypot(v.x - p.x, v.y - p.y);
-      return after < 0.55 && after <= Math.hypot(v.x - u.x, v.y - u.y);
-    })
-  ) {
-    u.x = p.x;
-    u.y = p.y;
-    u.angle = Math.atan2(dy, dx);
-    u.tread += Math.hypot(dx, dy) * 5;
-    return true;
+  // A tank jammed behind its own squad for a moment squeezes past (no stuck pile-ups).
+  const squeeze = u.jam > 0.6;
+  for (let i = 0; i < s.units.length; i++) {
+    const v = s.units[i]!;
+    if (v === u || v.hp <= 0 || (squeeze && v.side === u.side)) continue;
+    const after = dist(v.x - px, v.y - py);
+    if (after < 0.55 && after <= dist(v.x - u.x, v.y - u.y)) return false;
   }
-  return false;
+  u.x = px;
+  u.y = py;
+  u.angle = Math.atan2(dy, dx);
+  u.tread += dist(dx, dy) * 5;
+  return true;
 }
-function effect(s: Battle, p: Point, color = "#f0bd68") {
-  if (s.effects.length < 96)
-    s.effects.push({ ...p, id: s.nextId++, life: 0.55, color });
+/** Remove item i of a pool's live run [0, n) keeping the order; the freed object goes to the end. */
+function cut<T>(a: T[], i: number, n: number) {
+  const t = a[i]!;
+  for (let j = i; j < n - 1; j++) a[j] = a[j + 1]!;
+  a[n - 1] = t;
+}
+function effect(s: Battle, p: Point, color: string) {
+  if (s.effectCount < EFFECTS) {
+    const e = s.effects[s.effectCount++]!;
+    e.id = s.nextId++;
+    e.x = p.x;
+    e.y = p.y;
+    e.life = 0.55;
+    e.color = color;
+  }
 }
 export function fire(s: Battle, u: Unit, angle: number) {
-  if (u.cooldown > 0 || s.shots.length >= 200) return;
+  u.turret = angle;
+  shoot(s, u);
+}
+/** Fire along the turret if the gun is loaded and the shell pool has room. */
+function shoot(s: Battle, u: Unit) {
+  if (u.cooldown > 0 || s.shotCount >= SHOTS) return;
+  const angle = u.turret;
   u.cooldown = ROLES[u.role].reload;
   u.recoil = 3;
-  u.turret = angle;
-  s.shots.push({
-    id: s.nextId++,
-    x: u.x + Math.cos(angle) * 0.35,
-    y: u.y + Math.sin(angle) * 0.35,
-    vx: Math.cos(angle) * 15,
-    vy: Math.sin(angle) * 15,
-    life: 2,
-    side: u.side,
-    damage: ROLES[u.role].damage,
-    owner: u.id,
-  });
+  const p = s.shots[s.shotCount++]!;
+  p.id = s.nextId++;
+  p.x = u.x + Math.cos(angle) * 0.35;
+  p.y = u.y + Math.sin(angle) * 0.35;
+  p.vx = Math.cos(angle) * 15;
+  p.vy = Math.sin(angle) * 15;
+  p.life = 2;
+  p.side = u.side;
+  p.damage = ROLES[u.role].damage;
+  p.owner = u.id;
 }
+// Nearest-visible scratch: candidates sorted by distance (stable insertion, like a stable sort).
+const nearD = new Float64Array(64),
+  nearI = new Int32Array(64);
 /** Nearest living enemy within 10 cells with a clear line of fire. */
 export function nearestVisible(s: Battle, u: Unit) {
-  const near: [number, Unit][] = [];
-  for (const v of s.units) {
+  let n = 0;
+  for (let i = 0; i < s.units.length && n < 64; i++) {
+    const v = s.units[i]!;
     if (v.side === u.side || v.hp <= 0) continue;
     const d = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
-    if (d < 100) near.push([d, v]);
+    if (d >= 100) continue;
+    let j = n++;
+    for (; j > 0 && nearD[j - 1]! > d; j--) (nearD[j] = nearD[j - 1]!), (nearI[j] = nearI[j - 1]!);
+    nearD[j] = d;
+    nearI[j] = i;
   }
-  near.sort((a, z) => a[0] - z[0]);
-  for (const [, v] of near) if (clearShot(s.board, u, v)) return v;
+  for (let k = 0; k < n; k++) {
+    const v = s.units[nearI[k]!]!;
+    if (clearShot(s.board, u, v)) return v;
+  }
   return undefined;
 }
 function nearestEnemy(s: Battle, u: Unit) {
   let best: Unit | undefined,
     d = Infinity;
-  for (const v of s.units) {
+  for (let i = 0; i < s.units.length; i++) {
+    const v = s.units[i]!;
     if (v.side === u.side || v.hp <= 0) continue;
     const e = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
     if (e < d) (d = e), (best = v);
   }
   return best;
 }
+/** Index of the nearest repair kit within range, or -1. */
 function nearestKit(s: Battle, u: Unit, range: number) {
-  let best: Pickup | undefined,
+  const k = s.kits;
+  let best = -1,
     d = range * range;
-  for (const k of s.pickups) {
-    const e = (k.x - u.x) ** 2 + (k.y - u.y) ** 2;
-    if (e < d) (d = e), (best = k);
+  for (let i = 0; i < k.count; i++) {
+    const e = (k.x[i]! - u.x) ** 2 + (k.y[i]! - u.y) ** 2;
+    if (e < d) (d = e), (best = i);
   }
   return best;
 }
-/** Deterministic per-battle random stream (replays and tests stay reproducible). */
-function roll(s: Battle) {
-  s.rand = (Math.imul(s.rand, 1664525) + 1013904223) >>> 0;
-  return s.rand / 4294967296;
+/** A kit on the board (fizlet/rules drops; the id counter still advances, as it always did). */
+function dropKit(s: Battle, p: Point) {
+  s.nextId++;
+  s.kits.spawn(p.x, p.y);
+}
+/** Salvage roll: a fallen house (30%) or a wreck (35%) leaves a kit if there is room. Small on
+ *  purpose, so the random draw and the drop inline here instead of boxing numbers in the step. */
+function salvage(s: Battle, p: Point, house: boolean) {
+  if (s.kits.count < KITS && s.random() < (house ? 0.3 : 0.35)) dropKit(s, p);
+}
+/** Kit k is collected: removed from the board (drops), with its burst. */
+function takeKit(s: Battle, k: number) {
+  const kits = s.kits;
+  at.x = kits.x[k]!;
+  at.y = kits.y[k]!;
+  kits.collect(at.x, at.y, 0.01);
+  effect(s, at, "#39ffb0");
 }
 function spawnPickup(s: Battle) {
-  const b = s.board;
-  if (s.pickups.length >= 3 + s.per / 4) return;
-  for (let tries = 0; tries < 30; tries++) {
-    const id = Math.floor(roll(s) * b.tiles.length),
-      p = point(b, id);
-    if (
-      b.tiles[id] !== "ground" ||
-      b.bases.some((h) => Math.hypot(point(b, h).x - p.x, point(b, h).y - p.y) < 4) ||
-      s.pickups.some((k) => Math.hypot(k.x - p.x, k.y - p.y) < 3)
-    )
-      continue;
-    s.pickups.push({ id: s.nextId++, ...p });
+  const b = s.board,
+    k = s.kits;
+  if (k.count >= 3 + s.per / 4) return;
+  next: for (let tries = 0; tries < 30; tries++) {
+    const id = Math.floor(s.random() * b.tiles.length),
+      x = (id % b.cols) + 0.5,
+      y = Math.floor(id / b.cols) + 0.5;
+    if (b.tiles[id] !== "ground") continue;
+    for (let h = 0; h < b.bases.length; h++) {
+      const base = b.bases[h]!;
+      if (dist((base % b.cols) + 0.5 - x, Math.floor(base / b.cols) + 0.5 - y) < 4) continue next;
+    }
+    for (let i = 0; i < k.count; i++) if (dist(k.x[i]! - x, k.y[i]! - y) < 3) continue next;
+    at.x = x;
+    at.y = y;
+    dropKit(s, at);
     return;
   }
 }
@@ -795,35 +922,43 @@ export interface Input {
   aim: Point | null;
 }
 /** Follow the planned path toward goal (replanning on a timer), arriving at route stops. */
-function drive(s: Battle, u: Unit, goal: number, occupied: Set<number>, dt: number) {
-  const b = s.board;
+function drive(s: Battle, u: Unit, goal: number) {
+  const b = s.board,
+    dt = F[0]!;
   if (u.plan <= 0) {
     const own = cell(b, u);
-    occupied.delete(own);
-    u.path = route(b, own, goal, occupied);
-    occupied.add(own);
+    s.occ[own] = 0;
+    u.pathAt = 0;
+    u.pathEnd = trace(b, own, goal, s.occ, u.path);
+    s.occ[own] = 1;
     u.plan = 0.65 + (u.id % 12) * 0.025;
   }
-  const next = u.path[0];
   // A replan from inside the waypoint cell yields no path: that is arrival.
-  if (next === undefined && u.waypoint !== null && cell(b, u) === u.waypoint) return arrive(u);
-  if (next === undefined) return;
-  const p = point(b, next),
-    d = Math.hypot(p.x - u.x, p.y - u.y);
+  if (u.pathAt >= u.pathEnd) {
+    if (u.waypoint !== null && cell(b, u) === u.waypoint) arrive(u);
+    return;
+  }
+  const next = u.path[u.pathAt]!,
+    px = (next % b.cols) + 0.5,
+    py = Math.floor(next / b.cols) + 0.5,
+    d = dist(px - u.x, py - u.y);
   const travel = Math.min(d, speedOf(u) * dt * 0.8);
   if (d < 0.08) {
-    u.path.shift();
-    if (!u.path.length && u.waypoint !== null) arrive(u);
-  } else if (!moveUnit(s, u, ((p.x - u.x) / d) * travel, ((p.y - u.y) / d) * travel)) {
+    u.pathAt++;
+    if (u.pathAt >= u.pathEnd && u.waypoint !== null) arrive(u);
+  } else if (((F[1] = ((px - u.x) / d) * travel), (F[2] = ((py - u.y) / d) * travel), !move(s, u))) {
     u.plan = Math.min(u.plan, 0.25);
-    u.jam = Math.min(2, (u.jam ?? 0) + dt);
-  } else u.jam = Math.max(0, (u.jam ?? 0) - dt / 2);
+    u.jam = Math.min(2, u.jam + dt);
+  } else u.jam = Math.max(0, u.jam - dt / 2);
 }
 export function step(s: Battle, dt: number, input: Input) {
   if (s.winner !== null) return;
   dt = Math.min(0.04, Math.max(0, dt));
+  F[0] = dt;
   s.time += dt;
   const b = s.board,
+    units = s.units,
+    kits = s.kits,
     player = commander(s);
   // Repair kits keep long battles going; a bounded number sit on open ground.
   s.pickupAt -= dt;
@@ -831,28 +966,27 @@ export function step(s: Battle, dt: number, input: Input) {
     s.pickupAt = REPAIR.every;
     spawnPickup(s);
   }
-  const occupied = new Set<number>();
-  for (const v of s.units) if (v.hp > 0) occupied.add(cell(b, v));
-  for (const u of s.units) {
+  s.occ.fill(0);
+  for (let i = 0; i < units.length; i++) if (units[i]!.hp > 0) s.occ[cell(b, units[i]!)] = 1;
+  for (let i = 0; i < units.length; i++) {
+    const u = units[i]!;
     if (u.hp <= 0) continue;
     u.cooldown -= dt;
     u.recoil = Math.max(0, u.recoil - dt * 16);
     u.plan -= dt;
     u.scan -= dt;
-    const home = point(b, b.bases[u.side]!);
-    if (Math.hypot(u.x - home.x, u.y - home.y) < REPAIR.hqRadius)
+    const home = b.bases[u.side]!;
+    if (dist(u.x - (home % b.cols) - 0.5, u.y - Math.floor(home / b.cols) - 0.5) < REPAIR.hqRadius)
       u.hp = Math.min(u.maxHp, u.hp + dt * REPAIR.hq);
-    for (let k = s.pickups.length - 1; k >= 0; k--) {
-      const kit = s.pickups[k]!;
-      if (Math.hypot(kit.x - u.x, kit.y - u.y) < 0.65 && u.hp < u.maxHp) {
+    for (let k = kits.count - 1; k >= 0; k--) {
+      if (dist(kits.x[k]! - u.x, kits.y[k]! - u.y) < 0.65 && u.hp < u.maxHp) {
         u.hp = Math.min(u.maxHp, u.hp + REPAIR.kit);
-        s.pickups.splice(k, 1);
-        effect(s, kit, "#39ffb0");
-        if (u.side === s.side) s.events.push("Repair kit collected.");
+        takeKit(s, k);
+        if (u.side === s.side) say(s, "Repair kit collected.");
       }
     }
     // Line-of-sight scans are the costliest check; refresh at 5Hz, not every tick.
-    let target = s.units.find((v) => v.id === u.target && v.hp > 0);
+    let target = live(s, u.target);
     if (u.scan <= 0 || !target) {
       u.scan = 0.2;
       target = nearestVisible(s, u);
@@ -860,22 +994,20 @@ export function step(s: Battle, dt: number, input: Input) {
     }
     if (u === player) {
       // Analog input: direction from the vector, speed from its length (keyboard/D-pad = full).
-      const length = Math.hypot(input.x, input.y),
+      const length = dist(input.x, input.y),
         throttle = Math.min(1, length);
       if (length) {
-        moveUnit(
-          s,
-          u,
-          (input.x / length) * speedOf(u) * throttle * dt,
-          (input.y / length) * speedOf(u) * throttle * dt,
-        );
+        const speed = ROLES[u.role].speed * (0.55 + 0.45 * Math.max(0, u.hp / u.maxHp)); // speedOf, inline
+        F[1] = (input.x / length) * speed * throttle * dt;
+        F[2] = (input.y / length) * speed * throttle * dt;
+        move(s, u);
         u.plan = 0; // steering overrides the route; let go and it replans to its flag
-      } else if (u.waypoint !== null) drive(s, u, u.waypoint, occupied, dt);
+      } else if (u.waypoint !== null) drive(s, u, u.waypoint);
       const aim = input.aim ?? target;
       if (aim) u.turret = Math.atan2(aim.y - u.y, aim.x - u.x);
-      if (input.fire) fire(s, u, u.turret);
+      if (input.fire) shoot(s, u);
     } else {
-      let focus = u.focus === null ? undefined : s.units.find((v) => v.id === u.focus && v.hp > 0);
+      let focus = live(s, u.focus);
       if (u.focus !== null && !focus) {
         u.focus = null;
         // A squad attack whose target fell takes on the next enemy in sight, or ends: back to plan.
@@ -884,17 +1016,17 @@ export function step(s: Battle, dt: number, input: Input) {
           if (next) (u.focus = next.id), (focus = next);
           else {
             release(u);
-            if (u.side === s.side) s.events.push(`Tank ${u.id % s.per}: target down, back on the plan.`);
+            if (u.side === s.side) say(s, `Tank ${u.id % s.per}: target down, back on the plan.`);
           }
         }
       }
       // Attack with no assigned target hunts the nearest living enemy anywhere.
       if (u.order === "attack" && !focus) focus = nearestEnemy(s, u);
-      const kit = u.hp < u.maxHp * 0.35 && u.waypoint === null ? nearestKit(s, u, 9) : undefined;
-      let goal =
+      const kit = u.hp < u.maxHp * 0.35 && u.waypoint === null ? nearestKit(s, u, 9) : -1;
+      const goal =
         u.waypoint ??
-        (kit
-          ? cell(b, kit)
+        (kit >= 0
+          ? cellXY(b, kits.x[kit]!, kits.y[kit]!)
           : u.order === "hold" && u.hold !== null
             ? u.hold
             : u.order === "retreat"
@@ -906,34 +1038,30 @@ export function step(s: Battle, dt: number, input: Input) {
                 : MISSIONS[s.mission]!.objective === "hold"
                   ? b.center
                   : b.bases[1 - u.side]!);
-      const objectivePoint = point(b, goal);
-      const focusVisible =
-        focus && Math.hypot(focus.x - u.x, focus.y - u.y) < 10 && clearShot(b, u, focus);
+      const gx = (goal % b.cols) + 0.5,
+        gy = Math.floor(goal / b.cols) + 0.5;
+      const focusVisible = !!focus && dist(focus.x - u.x, focus.y - u.y) < 10 && clearShot(b, u, focus);
       const stop =
-        !kit &&
-        ((u.waypoint === null &&
-          Math.hypot(u.x - objectivePoint.x, u.y - objectivePoint.y) < 1.2) ||
-          (u.order === "follow" &&
-            u.waypoint === null &&
-            Math.hypot(u.x - player.x, u.y - player.y) < 2) ||
+        kit < 0 &&
+        ((u.waypoint === null && dist(u.x - gx, u.y - gy) < 1.2) ||
+          (u.order === "follow" && u.waypoint === null && dist(u.x - player.x, u.y - player.y) < 2) ||
           (u.order === "attack" &&
             u.waypoint === null &&
-            focus &&
             focusVisible &&
-            Math.hypot(u.x - focus.x, u.y - focus.y) < 4.5) ||
-          (target &&
+            dist(u.x - focus!.x, u.y - focus!.y) < 4.5) ||
+          (!!target &&
             u.waypoint === null &&
             u.order === "advance" &&
-            Math.hypot(u.x - target.x, u.y - target.y) < 5));
-      if (!stop) drive(s, u, goal, occupied, dt);
-      const shoot = focusVisible ? focus : target;
-      if (shoot) {
-        u.turret = Math.atan2(shoot.y - u.y, shoot.x - u.x);
-        fire(s, u, u.turret);
+            dist(u.x - target.x, u.y - target.y) < 5));
+      if (!stop) drive(s, u, goal);
+      const aim = focusVisible ? focus : target;
+      if (aim) {
+        u.turret = Math.atan2(aim.y - u.y, aim.x - u.x);
+        shoot(s, u);
       }
     }
   }
-  for (let i = s.shots.length - 1; i >= 0; i--) {
+  for (let i = s.shotCount - 1; i >= 0; i--) {
     const p = s.shots[i]!;
     p.life -= dt;
     let hit = false;
@@ -945,75 +1073,70 @@ export function step(s: Battle, dt: number, input: Input) {
         hit = true;
         break;
       }
-      const id = cell(b, p),
+      const id = cellXY(b, p.x, p.y),
         tile = b.tiles[id]!;
       if (shellSolid(tile)) {
         hit = true;
         if (b.health[id]! > 0) {
           b.health[id] = b.health[id]! - p.damage;
           if (b.health[id]! <= 0) {
+            at.x = (id % b.cols) + 0.5;
+            at.y = Math.floor(id / b.cols) + 0.5;
             b.tiles[id] = "rubble";
             b.revision++;
-            effect(s, point(b, id), tile === "car" ? "#ee6875" : "#cfb68c");
-            s.events.push(
-              tile === "car" ? "Vehicle destroyed." : "Cover breached.",
-            );
-            for (const u of s.units) u.plan = 0;
-            if (tile === "house" && s.pickups.length < 6 && roll(s) < 0.3)
-              s.pickups.push({ id: s.nextId++, ...point(b, id) });
+            effect(s, at, tile === "car" ? "#ee6875" : "#cfb68c");
+            say(s, tile === "car" ? "Vehicle destroyed." : "Cover breached.");
+            for (let j = 0; j < units.length; j++) units[j]!.plan = 0;
+            if (tile === "house") salvage(s, at, true);
           }
         } else effect(s, p, "#8895ae");
       }
       if (!hit)
-        for (const u of s.units)
-          if (
-            u.side !== p.side &&
-            u.hp > 0 &&
-            Math.hypot(u.x - p.x, u.y - p.y) < 0.4
-          ) {
+        for (let j = 0; j < units.length; j++) {
+          const u = units[j]!;
+          if (u.side !== p.side && u.hp > 0 && dist(u.x - p.x, u.y - p.y) < 0.4) {
             u.hp = Math.max(0, u.hp - p.damage);
             effect(s, p, u.hp ? "#fff3bc" : "#ee6875");
             if (!u.hp) {
-              const killer = s.units.find((v) => v.id === p.owner && v.hp > 0);
+              const killer = live(s, p.owner);
               if (killer) killer.hp = Math.min(killer.maxHp, killer.hp + REPAIR.kill);
-              if (u.side !== s.side) s.events.push("Enemy tank destroyed.");
+              if (u.side !== s.side) say(s, "Enemy tank destroyed.");
               // Wrecks sometimes leave salvage behind.
-              if (s.pickups.length < 6 && roll(s) < 0.35) s.pickups.push({ id: s.nextId++, x: u.x, y: u.y });
+              salvage(s, u, false);
             }
             hit = true;
             break;
           }
+        }
     }
-    if (hit || p.life <= 0) s.shots.splice(i, 1);
+    if (hit || p.life <= 0) cut(s.shots, i, s.shotCount--);
   }
-  for (let i = s.effects.length - 1; i >= 0; i--) {
-    s.effects[i]!.life -= dt;
-    if (s.effects[i]!.life <= 0) s.effects.splice(i, 1);
+  for (let i = s.effectCount - 1; i >= 0; i--) {
+    const e = s.effects[i]!;
+    e.life -= dt;
+    if (e.life <= 0) cut(s.effects, i, s.effectCount--);
   }
   if (player.hp <= 0) s.winner = 1 - s.side;
-  for (const side of [0, 1]) {
-    const living = s.units.filter((u) => u.side === side && u.hp > 0);
-    if (!living.length) s.winner = 1 - side;
-    const mode = MISSIONS[s.mission]!.objective;
+  const mode = MISSIONS[s.mission]!.objective;
+  for (let side = 0; side < 2; side++) {
+    let living = 0,
+      occupying = false,
+      contested = false;
+    const goal = mode === "hold" ? b.center : b.bases[1 - side]!,
+      ox = (goal % b.cols) + 0.5,
+      oy = Math.floor(goal / b.cols) + 0.5;
+    for (let j = 0; j < units.length; j++) {
+      const u = units[j]!;
+      if (u.hp <= 0) continue;
+      const d = dist(u.x - ox, u.y - oy);
+      if (u.side === side) (living++, d < 1.8 && (occupying = true));
+      else if (d < 2.4) contested = true;
+    }
+    if (!living) s.winner = 1 - side;
     if (mode !== "eliminate") {
-      const objective = point(
-        b,
-        mode === "hold" ? b.center : b.bases[1 - side]!,
-      );
-      const occupying = living.some(
-          (u) => Math.hypot(u.x - objective.x, u.y - objective.y) < 1.8,
-        ),
-        contested = s.units.some(
-          (u) =>
-            u.side !== side &&
-            u.hp > 0 &&
-            Math.hypot(u.x - objective.x, u.y - objective.y) < 2.4,
-        );
       if (occupying && !contested) s.capture[side] = s.capture[side]! + dt;
-      else if (mode === "capture")
-        s.capture[side] = Math.max(0, s.capture[side]! - dt * 0.3);
+      else if (mode === "capture") s.capture[side] = Math.max(0, s.capture[side]! - dt * 0.3);
       if (s.capture[side]! >= (mode === "hold" ? 45 : 12)) s.winner = side;
     }
   }
-  if (s.events.length > 8) s.events.splice(0, s.events.length - 8);
 }
