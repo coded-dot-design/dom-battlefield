@@ -63,7 +63,9 @@ below. Colour is the job, paint is the budget. DOM Battlefield is the reference 
 - **Hard bases, straight down.** `box-shadow: 0 <depth> 0 <base>`. Never blurred, never diagonal,
   never to the side. Tilt is a rotation, not a shadow.
 - **Only Board UI keys.** Arcade, link, icon, sticker, round, platoon, pager, grip. No one-off
-  button CSS.
+  button CSS. Every key on a page (link or button) also wears `bui-key`: the whole key, face and
+  base, takes the click, press beats hover, Enter shows the press (`pressCue`). A site class only
+  sizes a key or sets its variables, never its states (Fizlet `BOARD-UI.md` "Page keys").
 - **Overlays are a ritual.** Grey dim, a white sticker tilted −4° that slams in, at most two
   sticker keys; explanations go to the comms toast.
 - **Surrender is the white flag** in your team colour; the face never turns red.
@@ -76,13 +78,16 @@ below. Colour is the job, paint is the budget. DOM Battlefield is the reference 
 
 - **Palette:** the root block in `src/style.css` lines 43–145 (dark), light overrides at
   lines 116–138. Kit copy: `board-ui/tokens.json`, identical to Fizlet's `src/ui/tokens.json`.
-- **Keys:** `board-ui/board-ui.css` — face on a hard base (line 98), hover lifts by `--hy`
-  (line 118), press drops the face flat in 50ms (line 126), focus is a 3u bg gap plus a 6u sys-ink
-  ring (line 150). Arcade key: 4u base in the face colour mixed 45% into the rim (lines 155–158).
+- **Keys:** `board-ui/board-ui.css` section 2 — face on a hard base, hover lifts by `--hy` (never
+  while pressed), press drops the face flat in 50ms, focus is a 3u bg gap plus a 6u sys-ink ring,
+  disabled at 45%; page keys (`.bui-key`) add a `::before` hit area over face and base. Arcade key:
+  4u base in the face colour mixed 45% into the rim.
 - **Site furniture:** `site/src/styles/site.css` — sans and mono stacks (lines 5–6), panels with a
   14px radius and a 6px hard base (lines 136–141), sticky header (lines 152–158).
-- **START BATTLE:** navy `#10233f` face, 4px white border, 8px white base straight below, 18px
-  radius, cyan skull icon (`site.css` lines 354–367); base turns ink `#1b1636` on light.
+- **START BATTLE:** the kit sticker key (`bui-key bui-sticker-key bui-call start-key`) at page
+  size: navy `#10233f` face, 4px white border, 8px white base straight below, 18px radius, cyan
+  skull icon; base turns ink `#1b1636` on light. `.start-key` in `site.css` only sizes it and sets
+  `--py`, `--hy` and `--glow*`; the states and the call ring are the kit's.
 - **Cartridge:** tilted −4°, base straight below, no side face (`site/src/pages/index.astro`
   lines 888–1010).
 - **Byline:** footer "Created by Chris Cooley" (`site/src/layouts/Base.astro` line 96).
@@ -95,7 +100,7 @@ Shipped and kept as they are; new pages use the flat tokens above.
   colour at 40% / 55% / 70%), off on light; the locked state breathes with it.
   <!-- src: board-ui/board-ui.css lines 161-163, 179-187; fizlet src/ui/tokens.json line 40 -->
 - **Lit panel halo:** `.panel.lit` adds a 28px violet halo on dark. <!-- src: site.css line 145 -->
-- **START BATTLE halo:** a 40px cyan halo, 56px on hover. <!-- src: site.css lines 367, 386, 391 -->
+- **START BATTLE halo:** a 40px cyan halo, 56px on hover, 30px pressed (`--glow*` on `.start-key`), off on light. <!-- src: site.css .start-key -->
 - **Header frost:** the sticky header uses a 10px backdrop blur. <!-- src: site.css line 157 -->
 - **Hero wash and grid:** a radial violet wash and a masked grid behind the landing hero.
   <!-- src: site/src/pages/index.astro lines 291, 302-304 -->

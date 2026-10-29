@@ -118,15 +118,15 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
     <div class="bu-head"><span class="eyebrow"><span class="index">03</span> THE 3D KEY</span><h2>A face over its own base.</h2><p>Families only set variables (<code>--c</code>, <code>--py</code>, <code>--lock</code>); the state rules do all the motion. Press them: they are the real thing.</p></div>
     <div class="bui bu-board" data-bui>
       <div class="bu-states">
-        <figure><button class="bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Rest</b>base --py below</figcaption></figure>
-        <figure><button class="bui-arcade bui-fallin bu-hover" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Hover</b>lift --hy (fine pointers)</figcaption></figure>
-        <figure><button class="bui-arcade bui-fallin down" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Press</b>face onto the base</figcaption></figure>
-        <figure><button class="bui-arcade bui-fallin" type="button" aria-pressed="true" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Locked</b>down, lock colour, breath</figcaption></figure>
-        <figure><button class="bui-arcade bui-go bui-call" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.next}/></svg>Next<kbd>N</kbd></button><figcaption><b>Call</b>ring from the base</figcaption></figure>
-        <figure><button class="bui-arcade bui-fallin" type="button" disabled><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Disabled</b>flat, 45%</figcaption></figure>
-        <figure><button class="bui-arcade bui-fallin bu-focus" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Focus</b>ring wraps the base</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Rest</b>base --py below</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-fallin bu-hover" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Hover</b>lift --hy (fine pointers)</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-fallin down" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Press</b>face onto the base</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-fallin" type="button" aria-pressed="true" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Locked</b>down, lock colour, breath</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-go bui-call" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.next}/></svg>Next<kbd>N</kbd></button><figcaption><b>Call</b>ring from the base</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-fallin" type="button" disabled><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Disabled</b>flat, 45%</figcaption></figure>
+        <figure><button class="bui-key bui-arcade bui-fallin bu-focus" type="button" tabindex="-1"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><figcaption><b>Focus</b>ring wraps the base</figcaption></figure>
       </div>
-      <div class="bu-try"><span class="bui-label"><b>TRY</b> · tap to lock, tap again to release</span><button class="bui-arcade bui-cmd" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button></div>
+      <div class="bu-try"><span class="bui-label"><b>TRY</b> · tap to lock, tap again to release</span><button class="bui-key bui-arcade bui-cmd" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button></div>
     </div>
     <div class="bu-table panel"><table><thead><tr><th>Variable</th><th>Base</th><th>Arcade</th><th>Sticker</th><th>Meaning</th></tr></thead><tbody>
       <tr><td><code>--py</code></td><td>3u</td><td>4u</td><td>5u</td><td>base height</td></tr>
@@ -142,32 +142,32 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
     <div class="bui bu-board" data-bui>
       <div class="bu-row"><span class="bui-label"><b>ORDERS</b> · fall in · retreat · advance · attack</span>
         <div class="bu-keys">
-          <button class="bui-arcade bui-fallin" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button>
-          <button class="bui-arcade bui-retreat" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg>Retreat<kbd>R</kbd></button>
-          <button class="bui-arcade bui-advance" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.advance}/></svg>Advance<kbd>E</kbd></button>
-          <button class="bui-arcade bui-attack" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg>Attack<kbd>G</kbd></button>
+          <button class="bui-key bui-arcade bui-fallin" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button>
+          <button class="bui-key bui-arcade bui-retreat" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg>Retreat<kbd>R</kbd></button>
+          <button class="bui-key bui-arcade bui-advance" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.advance}/></svg>Advance<kbd>E</kbd></button>
+          <button class="bui-key bui-arcade bui-attack" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg>Attack<kbd>G</kbd></button>
         </div></div>
       <div class="bu-row"><span class="bui-label"><b>AIM</b> · auto / lock · and the flag</span>
         <div class="bu-keys">
-          <button class="bui-arcade bui-aim" type="button" aria-pressed="true" data-toggle><svg viewBox="0 0 20 20"><path d={icon.auto}/></svg>Auto<kbd>Q</kbd></button>
-          <button class="bui-arcade bui-aim" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button>
-          <button class="bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
-          <button class="bui-arcade bui-fire" type="button"><svg viewBox="0 0 20 20"><path d={icon.fire}/><circle cx="10" cy="10" r="5"/></svg>Fire<kbd>Space</kbd></button>
-          <button class="bui-arcade bui-sys" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
+          <button class="bui-key bui-arcade bui-aim" type="button" aria-pressed="true" data-toggle><svg viewBox="0 0 20 20"><path d={icon.auto}/></svg>Auto<kbd>Q</kbd></button>
+          <button class="bui-key bui-arcade bui-aim" type="button" aria-pressed="false" data-toggle><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button>
+          <button class="bui-key bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
+          <button class="bui-key bui-arcade bui-fire" type="button"><svg viewBox="0 0 20 20"><path d={icon.fire}/><circle cx="10" cy="10" r="5"/></svg>Fire<kbd>Space</kbd></button>
+          <button class="bui-key bui-arcade bui-sys" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
         </div></div>
       <div class="bu-row"><span class="bui-label"><b>PLATOON</b> · radios · health · lost</span>
         <div class="bu-keys">
-          <button class="bui-arcade bui-unit active" type="button"><b>★</b><span class="bui-pips"><s></s><s></s></span></button>
-          <button class="bui-arcade bui-unit" type="button"><b>1</b><span class="bui-pips"><s></s><s></s><s></s></span></button>
-          <button class="bui-arcade bui-unit" type="button" data-hp="hurt"><b>2</b><span class="bui-pips"><s></s></span></button>
-          <button class="bui-arcade bui-unit" type="button" data-hp="critical"><b>3</b><span class="bui-pips"><s></s><s></s></span></button>
-          <button class="bui-arcade bui-unit" type="button" disabled><b>4</b><span class="bui-pips"><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit active" type="button"><b>★</b><span class="bui-pips"><s></s><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit" type="button"><b>1</b><span class="bui-pips"><s></s><s></s><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit" type="button" data-hp="hurt"><b>2</b><span class="bui-pips"><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit" type="button" data-hp="critical"><b>3</b><span class="bui-pips"><s></s><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit" type="button" disabled><b>4</b><span class="bui-pips"><s></s></span></button>
         </div></div>
       <div class="bu-row"><span class="bui-label"><b>NAVIGATION</b> · pager · segmented · icon keys</span>
         <div class="bu-keys">
-          <span class="bui-pager"><button class="bui-arcade" type="button" aria-label="Previous"><svg viewBox="0 0 20 20"><path d={icon.back}/></svg></button><button class="bui-arcade" type="button" aria-label="You" aria-pressed="true">★</button><button class="bui-arcade bui-call" type="button" aria-label="Next"><svg viewBox="0 0 20 20"><path d={icon.next}/></svg></button></span>
+          <span class="bui-pager"><button class="bui-key bui-arcade" type="button" aria-label="Previous"><svg viewBox="0 0 20 20"><path d={icon.back}/></svg></button><button class="bui-key bui-arcade" type="button" aria-label="You" aria-pressed="true">★</button><button class="bui-key bui-arcade bui-call" type="button" aria-label="Next"><svg viewBox="0 0 20 20"><path d={icon.next}/></svg></button></span>
           <span class="bui-seg" role="group" aria-label="Density" data-seg><button type="button" aria-pressed="true">Light</button><button type="button" aria-pressed="false">Normal</button><button type="button" aria-pressed="false">Heavy</button></span>
-          <button class="bui-icon-key" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
+          <button class="bui-key bui-icon-key" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d={icon.menu}/></svg></button>
         </div></div>
       <div class="bu-row"><span class="bui-label"><b>PLANNING</b> · round step keys · count badge · caption</span>
         <div class="bu-keys bu-orbs">
@@ -187,13 +187,13 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
       <tr><td>aim</td><td><b>AIM</b> · AUTO / LOCK</td><td><b>AIM</b></td><td>title AIM</td><td>rail keys</td></tr>
     </tbody></table></div>
     <div class="bui bu-board bu-bar" data-bui>
-      <div><span class="bui-label"><b>RADIO</b> · EACH TANK</span><button class="bui-arcade bui-cmd" type="button"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button></div>
+      <div><span class="bui-label"><b>RADIO</b> · EACH TANK</span><button class="bui-key bui-arcade bui-cmd" type="button"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button></div>
       <i class="bu-sep"></i>
-      <div><span class="bui-label"><b>RADIO</b> · WHOLE SQUAD</span><span class="bu-keys"><button class="bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><button class="bui-arcade bui-retreat" type="button"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg>Retreat<kbd>R</kbd></button></span></div>
-      <div class="bu-center"><span class="bui-label"><b>PLATOON</b> · RADIOS</span><span class="bu-keys"><button class="bui-arcade bui-unit" type="button"><b>★</b><span class="bui-pips"><s></s><s></s></span></button><button class="bui-arcade bui-unit" type="button"><b>1</b><span class="bui-pips"><s></s></span></button><button class="bui-arcade bui-unit" type="button"><b>2</b><span class="bui-pips"><s></s><s></s><s></s></span></button></span></div>
-      <div><span class="bui-label"><b>AIM</b> · AUTO / LOCK</span><span class="bu-keys"><button class="bui-arcade bui-aim" type="button" aria-pressed="true"><svg viewBox="0 0 20 20"><path d={icon.auto}/></svg>Auto<kbd>Q</kbd></button><button class="bui-arcade bui-aim" type="button"><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button></span></div>
+      <div><span class="bui-label"><b>RADIO</b> · WHOLE SQUAD</span><span class="bu-keys"><button class="bui-key bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button><button class="bui-key bui-arcade bui-retreat" type="button"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg>Retreat<kbd>R</kbd></button></span></div>
+      <div class="bu-center"><span class="bui-label"><b>PLATOON</b> · RADIOS</span><span class="bu-keys"><button class="bui-key bui-arcade bui-unit" type="button"><b>★</b><span class="bui-pips"><s></s><s></s></span></button><button class="bui-key bui-arcade bui-unit" type="button"><b>1</b><span class="bui-pips"><s></s></span></button><button class="bui-key bui-arcade bui-unit" type="button"><b>2</b><span class="bui-pips"><s></s><s></s><s></s></span></button></span></div>
+      <div><span class="bui-label"><b>AIM</b> · AUTO / LOCK</span><span class="bu-keys"><button class="bui-key bui-arcade bui-aim" type="button" aria-pressed="true"><svg viewBox="0 0 20 20"><path d={icon.auto}/></svg>Auto<kbd>Q</kbd></button><button class="bui-key bui-arcade bui-aim" type="button"><svg viewBox="0 0 20 20"><path d={icon.lock}/></svg>Lock<kbd>T</kbd></button></span></div>
       <i class="bu-sep"></i>
-      <button class="bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
+      <button class="bui-key bui-arcade bui-flag" type="button"><svg viewBox="0 0 20 20"><path d={icon.flag}/></svg>Surrender</button>
     </div>
   </section>
 
@@ -206,7 +206,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
         <button class="bui-back-tab" type="button"><svg viewBox="0 0 20 20"><path d={icon.back}/></svg>LOADOUT</button>
         <span class="bu-pill"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>ROGER · GRID 0412</span>
         <div class="bu-plan-body">
-          <button class="bui-arcade bui-unit bu-big" type="button" aria-label="Shrink plan card"><b>2</b><span class="bui-pips"><s></s><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit bu-big" type="button" aria-label="Shrink plan card"><b>2</b><span class="bui-pips"><s></s><s></s></span></button>
           <div><p class="bu-card-title">TANK 2 · MEDIUM</p><p class="bu-card-text">Pick an order beside the tank: Attack HQ, Follow, or Command.</p></div>
         </div>
       </div>
@@ -214,11 +214,11 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
         <span class="bui-dock-title">RADIO</span>
         <button class="bui-dock-switch" type="button" aria-label="Icons only"><svg viewBox="0 0 20 20"><path d={icon.list}/></svg></button>
         <span class="bui-label">EACH TANK</span>
-        <button class="bui-arcade bui-cmd" type="button"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button>
+        <button class="bui-key bui-arcade bui-cmd" type="button"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>Command<kbd>O</kbd></button>
         <i class="bui-divider"></i>
         <span class="bui-label">WHOLE SQUAD</span>
-        <button class="bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button>
-        <button class="bui-arcade bui-attack" type="button"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg>Attack<kbd>G</kbd></button>
+        <button class="bui-key bui-arcade bui-fallin" type="button"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg>Fall in<kbd>F</kbd></button>
+        <button class="bui-key bui-arcade bui-attack" type="button"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg>Attack<kbd>G</kbd></button>
       </div>
     </div>
   </section>
@@ -228,12 +228,12 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
     <div class="bu-head"><span class="eyebrow"><span class="index">07</span> OVERLAYS</span><h2>Dim. Slam. Two keys.</h2><p>Grey dim that blocks the board, a sticker that slams down and presses in a little above centre, at most two keys centred at the map’s bottom. The explanation goes to the toast. Try Surrender: the white flag whites out, waves, and blows up.</p></div>
     <div class="bui bu-board bu-stage" data-bui>
       <div class="bu-field" aria-hidden="true"></div>
-      <button class="bui-sticker-key bu-open" type="button" data-open-overlay><svg viewBox="0 0 64 64"><path d="M14 10h10v44H14zM40 10h10v44H40z"/></svg><b>PAUSE</b></button>
+      <button class="bui-key bui-sticker-key bu-open" type="button" data-open-overlay><svg viewBox="0 0 64 64"><path d="M14 10h10v44H14zM40 10h10v44H40z"/></svg><b>PAUSE</b></button>
       <div class="bui-overlay" hidden data-overlay role="dialog" aria-label="Battle paused">
         <div class="bui-sticker"><span>BATTLE PAUSED</span><b>GIVE UP?</b></div>
         <div class="bui-overlay-keys">
-          <button class="bui-sticker-key" type="button" data-close-overlay><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>KEEP FIGHTING</b></button>
-          <button class="bui-sticker-key bui-second bui-surrender" type="button" data-surrender><svg viewBox="0 0 64 64" shape-rendering="crispEdges"><g class="bui-cells">{cells.map((c) => <rect x={c.x} y={c.y} width="16" height="16" style={`--i:${c.i}`}/>)}</g><path class="bui-grid" d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64"/><rect class="bui-frame" x="1" y="1" width="62" height="62"/><path class="bui-pole" d="M17 9h4v46h-4Z"/><path class="bui-cloth" d="M21 12h24l-6 9 6 9H21Z"/></svg><b>SURRENDER</b></button>
+          <button class="bui-key bui-sticker-key" type="button" data-close-overlay><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>KEEP FIGHTING</b></button>
+          <button class="bui-key bui-sticker-key bui-second bui-surrender" type="button" data-surrender><svg viewBox="0 0 64 64" shape-rendering="crispEdges"><g class="bui-cells">{cells.map((c) => <rect x={c.x} y={c.y} width="16" height="16" style={`--i:${c.i}`}/>)}</g><path class="bui-grid" d="M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64"/><rect class="bui-frame" x="1" y="1" width="62" height="62"/><path class="bui-pole" d="M17 9h4v46h-4Z"/><path class="bui-cloth" d="M21 12h24l-6 9 6 9H21Z"/></svg><b>SURRENDER</b></button>
         </div>
       </div>
     </div>
@@ -249,9 +249,9 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
   <section id="launch" class="bu-block">
     <div class="bu-head"><span class="eyebrow"><span class="index">08</span> LAUNCH</span><h2>Press, invert, shatter.</h2><p>Every key that starts or ends a game presses into its base, flips to its inverse, then breaks into spinning chunks with a flash, a shock ring and falling square debris. The action runs in the click; the burst lives on the page body.</p></div>
     <div class="bui bu-board bu-launch" data-bui>
-      <button class="bui-sticker-key" type="button" data-launch><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>START BATTLE</b></button>
-      <button class="bui-sticker-key bui-plan" type="button" data-launch><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>PLAN BATTLE</b></button>
-      <button class="bui-sticker-key bui-second" type="button" data-launch><svg viewBox="0 0 64 64"><path d="m22 14 28 18-28 18Z"/></svg><b>PRESS START</b></button>
+      <button class="bui-key bui-sticker-key" type="button" data-launch><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>START BATTLE</b></button>
+      <button class="bui-key bui-sticker-key bui-plan" type="button" data-launch><svg viewBox="0 0 64 64"><g transform="translate(10 9) scale(.69)"><path fill-rule="evenodd" d={skull}/></g></svg><b>PLAN BATTLE</b></button>
+      <button class="bui-key bui-sticker-key bui-second" type="button" data-launch><svg viewBox="0 0 64 64"><path d="m22 14 28 18-28 18Z"/></svg><b>PRESS START</b></button>
     </div>
     <ol class="bu-steps">
       <li><b>0–90ms</b> an inert copy presses into its base and inverts (light for dark, same hues)</li>
@@ -267,7 +267,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
     <div class="bu-head"><span class="eyebrow"><span class="index">09</span> COMMS &amp; TIPS</span><h2>Say it once, where it reads.</h2><p>One comms line carries every explanation. It never sits under the header or slides under a card. Button tips dim the page and ring each group's keys.</p></div>
     <div class="bui bu-board bu-comms" data-bui>
       <p class="bui-toast">Tank 2: tap a square to send it, or Attack HQ.</p>
-      <div class="bu-tip"><button class="bui-tip-label" type="button">Squad: fall in · repair · advance · attack</button><span class="bui-tip-ring"><span class="bu-keys"><button class="bui-arcade bui-fallin" type="button" tabindex="-1" aria-label="Fall in"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg></button><button class="bui-arcade bui-retreat" type="button" tabindex="-1" aria-label="Retreat"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg></button><button class="bui-arcade bui-attack" type="button" tabindex="-1" aria-label="Attack"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg></button></span></span></div>
+      <div class="bu-tip"><button class="bui-tip-label" type="button">Squad: fall in · repair · advance · attack</button><span class="bui-tip-ring"><span class="bu-keys"><button class="bui-key bui-arcade bui-fallin" type="button" tabindex="-1" aria-label="Fall in"><svg viewBox="0 0 20 20"><path d={icon.fallin}/></svg></button><button class="bui-key bui-arcade bui-retreat" type="button" tabindex="-1" aria-label="Retreat"><svg viewBox="0 0 20 20"><path d={icon.retreat}/></svg></button><button class="bui-key bui-arcade bui-attack" type="button" tabindex="-1" aria-label="Attack"><svg viewBox="0 0 20 20"><path d={icon.attack}/></svg></button></span></span></div>
     </div>
   </section>
 
@@ -365,7 +365,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
   const isoHost = document.querySelector<HTMLElement>("[data-shadow-demo]")!;
   const iso = mount(isoHost, kitCss, { theme: boardTheme });
   iso.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:18px;background:var(--bg);border-radius:12px";
-  iso.innerHTML = `<button class="bui-arcade bui-fallin" type="button" aria-pressed="false">Fall in<kbd>F</kbd></button><button class="bui-arcade bui-attack" type="button" aria-pressed="false">Attack<kbd>G</kbd></button><button class="bui-arcade bui-cmd bui-call" type="button" aria-pressed="false">Command<kbd>O</kbd></button>`;
+  iso.innerHTML = `<button class="bui-key bui-arcade bui-fallin" type="button" aria-pressed="false">Fall in<kbd>F</kbd></button><button class="bui-key bui-arcade bui-attack" type="button" aria-pressed="false">Attack<kbd>G</kbd></button><button class="bui-key bui-arcade bui-cmd bui-call" type="button" aria-pressed="false">Command<kbd>O</kbd></button>`;
   for (const b of iso.querySelectorAll<HTMLElement>("button")) b.addEventListener("click", () => b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")));
   boards.push(iso);
   // Toggles: tap to lock, tap again to release (repaint in the handler: no bounce).

@@ -123,6 +123,11 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### Site — page keys press right (no game change)
+
+- Every key on the site pages, link or button, presses onto its base and clicks anywhere on face or base. On a mouse a link key used to stay lifted when pressed (the kit's hover rule outranked press), and a click on the base missed (the base is a box-shadow). `board-ui/` takes Fizlet 0.14.1's fix: press beats hover, a `.bui-key::before` hit area over face and base, `pressCue` (Enter shows the press; iOS `:active`), aria-disabled link keys, a darker face under reduced motion.
+- Every in-page key wears `bui-key`; START BATTLE and PLAY BLITZ are the kit sticker key (`bui-key bui-sticker-key bui-call`) at page size instead of their own `.start-key` states. `test:site` presses every page key (`tests/keys.mjs`: centre, top edge and base, Enter, taps at 390). `dist/` unchanged.
+
 ### 0.18.13 — Its own host: battlefield.domvirus.com
 
 - The site is ready for battlefield.domvirus.com: with the repo variables `SITE_URL` and `SITE_BASE=/` the Pages build writes its `CNAME` and every canonical and og URL moves to the new host. The game's and the site's DOM VIRUS links now go to domvirus.com.
