@@ -9,8 +9,8 @@ Play: https://coded-dot-design.github.io/dom-virus/battlefield/ (latest release,
 
 Custom domain (battlefield.domvirus.com): set the repo variables `SITE_URL=https://battlefield.domvirus.com`
 and `SITE_BASE=/`, then the Pages custom domain in the repo settings. The Pages build writes `CNAME` from
-`SITE_URL`. Blitz's own site is blitz.domvirus.com (repo dom-battlefield-blitz); `/blitz/` here stays
-for old links and embeds (`/blitz/blitz.js`), with its canonical on blitz.domvirus.com.
+`SITE_URL`. Blitz's own site is battlefieldblitz.domvirus.com (repo dom-battlefield-blitz); `/blitz/` here stays
+for old links and embeds (`/blitz/blitz.js`), with its canonical on battlefieldblitz.domvirus.com.
 
 Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the site deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
 
@@ -125,7 +125,7 @@ MIT · Chris Cooley / coded.design
 ### 0.18.13 — Its own host: battlefield.domvirus.com
 
 - The site is ready for battlefield.domvirus.com: with the repo variables `SITE_URL` and `SITE_BASE=/` the Pages build writes its `CNAME` and every canonical and og URL moves to the new host. The game's and the site's DOM VIRUS links now go to domvirus.com.
-- Blitz lives on its own site, blitz.domvirus.com: the nav and footer link there, and `/blitz/` here stays for old links and embeds with its canonical on the new host.
+- Blitz lives on its own site, battlefieldblitz.domvirus.com: the nav and footer link there, and `/blitz/` here stays for old links and embeds with its canonical on the new host.
 
 ### 0.18.12 — Your tank's orders on the plan card
 

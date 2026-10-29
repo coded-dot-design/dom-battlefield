@@ -37,7 +37,7 @@ try {
     assert.match(await page.locator('meta[property="og:image"]').getAttribute("content"), /^https:\/\/.+\/dom-battlefield\/shots\/og\.png$/);
     assert.match(await page.locator('link[rel="canonical"]').getAttribute("href"), /^https:\/\/.+\/dom-battlefield\//);
     assert.equal(await page.locator('a[href="https://domvirus.com/"]').count() > 0, true, `${path || "home"} links back to DOM VIRUS`);
-    assert.ok(await page.locator('a[href="https://blitz.domvirus.com/"]').count() > 0, `${path || "home"} links to Blitz on its own host`);
+    assert.ok(await page.locator('a[href="https://battlefieldblitz.domvirus.com/"]').count() > 0, `${path || "home"} links to Blitz on its own host`);
   }
   await page.goto(base);
   // The hero is a live battle: the canvas paints, the HUD counts, a tap calls an airstrike.
@@ -170,7 +170,7 @@ try {
   assert.equal(new URL(await lp.locator(".start-key").getAttribute("href"), base).pathname, "/dom-battlefield/blitz/play/");
   assert.ok(await lp.locator('a[href="/dom-battlefield/"]').count() > 0, "links back to the original");
   // Blitz's home is its own site: this copy stays for old links and points search engines there.
-  assert.equal(await lp.locator('link[rel="canonical"]').getAttribute("href"), "https://blitz.domvirus.com/");
+  assert.equal(await lp.locator('link[rel="canonical"]').getAttribute("href"), "https://battlefieldblitz.domvirus.com/");
   assert.match(await lp.locator("#drop pre").first().textContent(), /blitz\/blitz\.js/);
   await lp.setViewportSize({ width: 390, height: 844 });
   await lp.waitForTimeout(300);
