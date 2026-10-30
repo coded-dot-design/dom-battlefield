@@ -50,24 +50,74 @@ try {
     assert.equal(await page.locator('a[href="https://domvirus.com/"]').count() > 0, true, `${path || "home"} links back to DOM VIRUS`);
     assert.ok(await page.locator('a[href="https://battlefieldblitz.domvirus.com/"]').count() > 0, `${path || "home"} links to Blitz on its own host`);
   }
+  where = "hero";
+  {
+    // The hero is a live battle on Fizlet (site/src/scripts/arena): fizlet/slot mounts it, the canvas
+    // paints, the HUD counts, a tap calls an airstrike, the letters react, it rests and settles to no
+    // frames, it pauses offscreen, and Recall gives the hero back byte for byte.
+    const hp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const herr = [];
+    hp.on("pageerror", (e) => herr.push(e.message));
+    hp.on("console", (m) => m.type() === "error" && herr.push(m.text()));
+    await hp.addInitScript(() => document.addEventListener("DOMContentLoaded", () => (window.served = document.querySelector(".hero").outerHTML)));
+    await hp.goto(base + "?debug");
+    await hp.waitForFunction(() => window.arena && document.querySelector("[data-fizlet-slot] canvas.arena"), null, { timeout: 8000 });
+    assert.equal(await hp.locator(".arena-poster").isVisible(), false, "the poster is only for reduced motion");
+    await hp.waitForTimeout(1200);
+    const painted = await hp.locator("canvas.arena").evaluate((c) => {
+      const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 4 * 97) if (d[i]) n++;
+      return n;
+    });
+    assert.ok(painted > 50, "the arena draws");
+    const moved = await hp.evaluate(async () => {
+      const x = [...window.arena.arena.tx.slice(0, 10)];
+      await new Promise((r) => setTimeout(r, 300));
+      return window.arena.arena.tx.slice(0, 10).some((v, i) => v !== x[i]);
+    });
+    assert.ok(moved, "the tanks drive");
+    const hero = await hp.locator(".hero").boundingBox();
+    await hp.mouse.click(hero.x + hero.width * 0.8, hero.y + hero.height * 0.5);
+    await hp.waitForFunction(() => document.querySelector("[data-strikes]").textContent === "01");
+    await hp.locator("[data-airstrike]").click();
+    await hp.waitForFunction(() => document.querySelector("[data-strikes]").textContent === "02");
+    // Clicking a key in the hero never calls a strike.
+    await hp.locator(".hero a.bui-sys").hover();
+    assert.equal(await hp.locator("[data-strikes]").textContent(), "02");
+    // A strike on the headline knocks its letters (through the engine's ledger).
+    const letter = await hp.locator(".hx").nth(3).boundingBox();
+    await hp.mouse.click(letter.x + letter.width / 2, letter.y + letter.height / 2);
+    await hp.waitForFunction(() => [...document.querySelectorAll(".hx")].some((l) => l.style.transform.includes("rotate")), null, { timeout: 3000 });
+    await hp.locator("[data-sound]").click();
+    await hp.waitForFunction(() => document.querySelector("[data-sound]").getAttribute("aria-pressed") === "true");
+    await hp.waitForFunction(() => document.querySelector("[data-wrecks]").textContent !== "000", null, { timeout: 8000 });
+    const stats = await hp.evaluate(() => window.arena.engine.stats());
+    console.log(`hero: ${stats.frames} frames, ${stats.frameMs.avg.toFixed(2)} ms avg / ${stats.frameMs.max.toFixed(2)} ms max per frame, ${stats.dropped} steps dropped`);
+    // Left alone it rests: the last shots land, then no frames at all; a visitor wakes it.
+    await hp.evaluate(() => window.arena.rest());
+    await hp.waitForFunction(() => window.arena.engine.paused.includes("settled"), null, { timeout: 8000 });
+    const quiet = await hp.evaluate(async () => {
+      const f = window.arena.engine.stats().frames;
+      await new Promise((r) => setTimeout(r, 600));
+      return window.arena.engine.stats().frames - f;
+    });
+    assert.equal(quiet, 0, "settled: no frames");
+    await hp.mouse.move(hero.x + 300, hero.y + 300);
+    await hp.mouse.move(hero.x + 320, hero.y + 310);
+    await hp.waitForFunction(() => window.arena.engine.running);
+    // Offscreen: paused.
+    await hp.evaluate(() => scrollTo(0, document.querySelector(".hero").offsetHeight + 400));
+    await hp.waitForFunction(() => window.arena.engine.paused.includes("offscreen"));
+    await hp.evaluate(() => scrollTo(0, 0));
+    await hp.waitForFunction(() => window.arena.engine.running);
+    // Recall: the hero as it was served, byte for byte (letters, HUD, sound key, copy, poster).
+    const back = await hp.evaluate(() => (window.arenaSlot.destroy(), document.querySelector(".hero").outerHTML === window.served));
+    assert.equal(back, true, "Recall gives the hero back exactly");
+    assert.deepEqual(herr, []);
+    await hp.close();
+  }
   await page.goto(base);
-  // The hero is a live battle: the canvas paints, the HUD counts, a tap calls an airstrike.
-  await page.waitForTimeout(1200);
-  const painted = await page.locator("canvas.arena").evaluate((c) => {
-    const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
-    let n = 0;
-    for (let i = 3; i < d.length; i += 4 * 97) if (d[i]) n++;
-    return n;
-  });
-  assert.ok(painted > 50, "the arena draws");
-  const hero = await page.locator(".hero").boundingBox();
-  await page.mouse.click(hero.x + hero.width * 0.8, hero.y + hero.height * 0.5);
-  await page.waitForFunction(() => document.querySelector("[data-strikes]").textContent === "01");
-  await page.locator("[data-airstrike]").click();
-  await page.waitForFunction(() => document.querySelector("[data-strikes]").textContent === "02");
-  // Clicking a key in the hero never calls a strike.
-  await page.locator(".hero a.bui-sys").hover();
-  assert.equal(await page.locator("[data-strikes]").textContent(), "02");
   // Headline letters are targets but the h1 still reads as one name.
   assert.equal(await page.locator("h1").getAttribute("aria-label"), "Twelve tanks. One radio.");
   assert.ok((await page.locator("h1 .hx").count()) >= 18);
@@ -269,21 +319,50 @@ try {
     }
   }
 
+  where = "touch";
+  {
+    // Phones (390 x 844, touch): a double-tap, a pinch or a sideways swipe on the hero battle never
+    // zooms or pans the page; the page is touch-action: manipulation (no double-tap zoom) and stays
+    // 390 wide. Raw touch points: Chromium's synthesized touch pinch never zooms headless.
+    const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
+    const tp = await phone.newPage();
+    await tp.goto(base);
+    await tp.waitForTimeout(500);
+    const cdp = await phone.newCDPSession(tp);
+    const pts = (type, list) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: list.map(([x, y], id) => ({ x, y, id })) });
+    const state = () => tp.evaluate(() => ({ scale: visualViewport.scale, x: scrollX, w: document.documentElement.scrollWidth }));
+    const hero = await tp.locator("[data-touch-lock]").first().boundingBox();
+    const x = 195, y = Math.round(hero.y + hero.height * 0.55);
+    await pts("touchStart", [[x - 15, y], [x + 15, y]]);
+    for (let i = 1; i <= 10; i++) await pts("touchMove", [[x - 15 - i * 12, y], [x + 15 + i * 12, y]]);
+    await pts("touchEnd", []);
+    await tp.waitForTimeout(300);
+    assert.deepEqual(await state(), { scale: 1, x: 0, w: 390 }, "a pinch on the hero does not zoom the page");
+    await pts("touchStart", [[300, y]]);
+    for (let i = 1; i <= 10; i++) await pts("touchMove", [[300 - i * 25, y]]);
+    await pts("touchEnd", []);
+    await tp.waitForTimeout(300);
+    assert.deepEqual(await state(), { scale: 1, x: 0, w: 390 }, "a sideways swipe on the hero does not pan the page");
+    await cdp.send("Input.synthesizeTapGesture", { x, y, tapCount: 2, gestureSourceType: "touch" });
+    await tp.waitForTimeout(300);
+    assert.equal((await state()).scale, 1, "a double-tap on the hero does not zoom");
+    const ta = await tp.evaluate(() => [getComputedStyle(document.documentElement).touchAction, getComputedStyle(document.querySelector("[data-touch-lock]")).touchAction]);
+    assert.deepEqual(ta, ["manipulation", "pan-y"], "page touch-action manipulation, hero pan-y");
+    await phone.close();
+  }
+
   where = "reduced-motion";
   const still = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
   const sp = await still.newPage();
   await sp.goto(base);
   await sp.waitForTimeout(500);
   assert.equal(await sp.locator("[data-airstrike]").isVisible(), false, "no strike key without motion");
-  const frames = await sp.locator("canvas.arena").evaluate(async (c) => {
-    const grab = () => c.toDataURL().length;
-    const a = grab();
-    await new Promise((r) => setTimeout(r, 400));
-    return a === grab();
-  });
-  assert.equal(frames, true, "reduced motion: the arena is a still frame");
+  // Reduced motion: the hero keeps its still poster and the scene never loads.
+  await sp.waitForTimeout(1500);
+  assert.equal(await sp.locator(".arena-poster").isVisible(), true, "reduced motion: the still poster");
+  assert.equal(await sp.locator("[data-fizlet-slot]").count(), 0, "reduced motion: no scene");
   await still.close();
-  console.log(`Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + hero scrim in both themes + drop-in, reduced motion, past builds, ${keys} page keys passed.`);
+  console.log(`Site: landing arena (mount, strikes, letters, rest, offscreen, Recall), airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + hero scrim in both themes + drop-in, reduced motion, past builds, ${keys} page keys passed.`);
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;

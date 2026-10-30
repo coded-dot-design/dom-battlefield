@@ -1,6 +1,6 @@
 {
   "name": "@coded-design/dom-battlefield",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "A separate DOM battlefield and squad tactics app, powered by Sherman Bytes artwork.",
@@ -15,7 +15,7 @@
     "test:browser": "node tests/browser.mjs",
     "site:dev": "astro dev --config site/astro.config.mjs",
     "site:build": "astro build --config site/astro.config.mjs && node scripts/pages.mjs",
-    "test:site": "node tests/site.mjs",
+    "test:site": "node tests/site.mjs && node tests/archive.mjs",
     "sync:archive": "node scripts/sync-archive.mjs",
     "shots": "node scripts/shots.mjs"
   },

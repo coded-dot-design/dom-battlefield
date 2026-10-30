@@ -1,0 +1,130 @@
+---
+// The hero arena's still poster: the frame it shows under reduced motion (tanks parked mid-fight,
+// both HQs, shapes just landed), built here as one inline SVG from the same tank rects the live
+// scene's sprites use (site/src/scripts/arena/tank.ts). fizlet/slot hides it if the scene mounts.
+import { hull, turret, type Rect } from '../scripts/arena/tank';
+
+const paint = (p: string) => (p === 'team' ? 'currentColor' : p);
+const rects = (list: Rect[], dx = 0, dy = 0) => list.map(([x, y, w, h, p]) => `<rect x="${x + dx}" y="${y + dy}" width="${w}" height="${h}" fill="${paint(p)}"/>`).join('');
+// Tanks parked mid-fight as the still frame always parked them: anywhere on the field, hulls and
+// guns square to their own side (A faces right, B left). [x %, y %]; the 4th and 5th of a side
+// leave on narrower heroes (as live).
+const tanks = [
+  [[14, 30], [42, 46], [64, 80], [22, 88], [83, 52]],
+  [[70, 22], [34, 62], [88, 74], [56, 34], [12, 70]],
+];
+// Shapes just landed (popping in, as the still frame always caught them): [kind, x %, y %, size, tint].
+const props: [number, number, number, number, string][] = [
+  [0, 66, 12, 30, '--team-a'], [1, 94, 58, 26, '--k-sys'], [2, 58, 70, 34, '--hurt'], [3, 46, 96, 38, '--k-cmd'],
+  [1, 8, 84, 24, '--k-sys'], [2, 74, 92, 28, '--hurt'], [0, 96, 18, 36, '--team-a'], [3, 84, 70, 30, '--k-cmd'],
+  [2, 5, 40, 32, '--hurt'], [0, 4, 62, 28, '--team-a'], [1, 92, 6, 34, '--k-sys'], [3, 96, 36, 26, '--k-cmd'],
+  [0, 78, 34, 24, '--team-a'], [3, 60, 54, 30, '--k-cmd'], [1, 36, 4, 26, '--k-sys'], [2, 30, 96, 22, '--hurt'],
+];
+const shape = ([kind, , , s]: (typeof props)[number]) =>
+  kind === 0 ? `<rect x="${-s / 2}" y="${-s / 2}" width="${s}" height="${s}" rx="${s * 0.3}"/>`
+  : kind === 1 ? `<rect x="${-s / 2}" y="${-s / 2}" width="${s}" height="${s}"/><rect class="d" x="${-s * 0.18}" y="${-s * 0.18}" width="${s * 0.36}" height="${s * 0.36}"/>`
+  : kind === 2 ? `<circle r="${s / 2}"/><rect class="d" x="${s * 0.22}" y="${-s * 0.42}" width="${s * 0.2}" height="${s * 0.2}"/>`
+  : `<rect x="${-s * 0.7}" y="${-s * 0.28}" width="${s * 1.4}" height="${s * 0.56}" rx="${s * 0.28}"/>`;
+const hq = (label: string) => `<g class="k"><rect class="hq" x="-46" y="-46" width="92" height="92"/><rect class="hq-in" x="-20.7" y="-9.2" width="41.4" height="29.9"/><text y="-20.7">${label}</text></g>`;
+const svg =
+  `<defs><g id="bf-hull">${rects(hull(0), -16, -16)}</g><g id="bf-turret">${rects(turret(0))}</g></defs>` +
+  `<svg class="hq-a wide" x="42%" y="86%">${hq('HQ A')}</svg><svg class="hq-a narrow" x="84%" y="60%">${hq('HQ A')}</svg>` +
+  `<svg class="hq-b" x="88%" y="17%">${hq('HQ B')}</svg>` +
+  props.map((p) => `<svg x="${p[1]}%" y="${p[2]}%"><g class="p" style="color:var(${p[4]})">${shape(p)}</g></svg>`).join('') +
+  tanks.map((side, t) => side.map(([x, y], i) =>
+    `<svg class="t${i + 1}" x="${x}%" y="${y}%"><g class="sc" style="color:var(${t ? '--team-b' : '--team-a'})"><g${t ? ' transform="rotate(180)"' : ''}><use href="#bf-hull"/><use href="#bf-turret"/></g></g></svg>`).join('')).join('');
+---
+<svg class="arena-poster ae-slot__placeholder" aria-hidden="true" shape-rendering="crispEdges" set:html={svg} />
+
+<style>
+  .arena-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+    display: none;
+    overflow: hidden;
+    /* The live scene's scale (sim.ts resize): 1.6 wide, 1.3 mid, 1.05 narrow. */
+    --sc: 1.6;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arena-poster {
+      display: block;
+    }
+  }
+  @media (max-width: 899px) {
+    .arena-poster {
+      --sc: 1.3;
+    }
+    .arena-poster :global(.t5) {
+      display: none;
+    }
+  }
+  @media (max-width: 559px) {
+    .arena-poster {
+      --sc: 1.05;
+    }
+    .arena-poster :global(.t4) {
+      display: none;
+    }
+  }
+  .arena-poster :global(svg) {
+    overflow: visible;
+  }
+  .arena-poster :global(.sc) {
+    transform: scale(var(--sc));
+  }
+  .arena-poster :global(.k) {
+    transform: scale(calc(var(--sc) / 1.4));
+    font: 700 11px ui-monospace, monospace;
+    text-anchor: middle;
+  }
+  .arena-poster :global(.p) {
+    transform: scale(calc(var(--sc) / 1.4 * 0.4));
+    fill: rgba(7, 6, 15, 0.55);
+    stroke: currentColor;
+    stroke-width: 3;
+    shape-rendering: auto;
+  }
+  :global(html[data-theme="light"]) .arena-poster :global(.p) {
+    fill: rgba(255, 255, 255, 0.7);
+  }
+  .arena-poster :global(.p .d) {
+    fill: currentColor;
+    stroke: none;
+  }
+  .arena-poster :global(.hq-a) {
+    color: var(--team-a);
+  }
+  .arena-poster :global(.hq-b) {
+    color: var(--team-b);
+  }
+  .arena-poster :global(.hq) {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-dasharray: 8 6;
+    opacity: 0.75;
+  }
+  .arena-poster :global(.hq-in) {
+    fill: currentColor;
+    opacity: 0.18;
+  }
+  .arena-poster :global(text) {
+    fill: currentColor;
+    opacity: 0.9;
+    shape-rendering: auto;
+  }
+  @media (min-width: 700px) {
+    .arena-poster :global(.narrow) {
+      display: none;
+    }
+  }
+  @media (max-width: 699px) {
+    .arena-poster :global(.wide) {
+      display: none;
+    }
+  }
+</style>

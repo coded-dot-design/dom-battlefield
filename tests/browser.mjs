@@ -89,6 +89,37 @@ async function checkOverlay(page, id) {
 }
 let where = "start";
 try {
+  where = "hero tank art";
+  {
+    // The landing hero draws the game's Sherman as fizlet/sprite data (site/src/scripts/arena/tank.ts):
+    // pixel for pixel the shared drawing, every tread frame, recoil frame and the muzzle flash.
+    const page = await browser.newPage();
+    await page.goto(URL);
+    const diff = await page.evaluate(async () => {
+      const { tankSprites } = await import("/src/sherman-sprites.ts");
+      const { sprites } = await import("/vendor/fizlet/sprite.ts");
+      const { TANK, RECOIL } = await import("/site/src/scripts/arena/tank.ts");
+      const shared = tankSprites(document), art = sprites(TANK, { palettes: [{ team: "#39ffb0" }, { team: "#fff8d4" }] });
+      const pixels = (draw) => {
+        const c = document.createElement("canvas");
+        c.width = c.height = 80;
+        const g = c.getContext("2d");
+        draw(g);
+        return g.getImageData(0, 0, 80, 80).data;
+      };
+      let off = 0;
+      for (let tread = 0; tread < 2; tread++)
+        for (let recoil = 0; recoil < RECOIL; recoil++)
+          for (const flash of [false, true]) {
+            const a = pixels((g) => shared(g, 32, 40, 0, 0, "#39ffb0", tread, recoil, flash));
+            const b = pixels((g) => (art.draw(g, 0, tread, 32, 40, 0, 1, 0), art.draw(g, 1, recoil, 32, 40, 0, 1, flash ? 1 : 0)));
+            for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) off++;
+          }
+      return off;
+    });
+    assert.equal(diff, 0, "the hero's tank is the game's tank");
+    await page.close();
+  }
   for (const mobile of [false, true])
     for (const light of [false, true]) {
       where = `${mobile ? "mobile" : "desktop"}-${light ? "light" : "dark"}`;

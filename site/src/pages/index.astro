@@ -4,6 +4,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Skull from '../components/Skull.astro';
+import ArenaPoster from '../components/ArenaPoster.astro';
 import { MISSIONS, ROLES } from '../../../src/model';
 import { VERSION, REPO, HUB, HUB_GAME, base, abs } from '../site';
 import { gameLd } from '../schema.mjs';
@@ -39,7 +40,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
 ---
 <Base title={title} description={description} page="home" jsonld={gameLd({ home: abs('', Astro.site), name: 'DOM Battlefield', description, image: abs('shots/og.png', Astro.site), version: VERSION, play: abs('play/', Astro.site) })}>
   <!-- HERO: a live battle across the whole hero. Tap the field to call an airstrike. -->
-  <section class="hero" data-arena aria-labelledby="hero-title">
+  <section class="hero" data-arena data-touch-lock aria-labelledby="hero-title">
     <div class="hero-field" aria-hidden="true"></div>
     <div class="wrap hero-inner">
       <div class="hero-top">
@@ -61,7 +62,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       </div>
       <p class="hero-hint mono-caps"><span class="blink"></span>Tap the field · call an airstrike</p>
     </div>
-    <canvas class="arena" aria-hidden="true"></canvas>
+    <ArenaPoster />
     <div class="arena-hud" data-no-strike>
       <span><small>WRECKS</small><b data-wrecks>000</b></span>
       <span><small>FLATTENED</small><b data-flat>000</b></span>
@@ -247,8 +248,8 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       <a class="bui-key bui-sticker-key bui-call start-key final-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
       {archive.length > 0 && (
         <div class="past-builds" data-past-builds>
-          <label class="bui-label" for="past-build"><b>PAST BUILDS</b> · {archive.length}</label>
-          <select id="past-build">{archive.map((b) => <option value={base(`v/${b.version}/`)}>{b.version}</option>)}</select>
+          <label class="bui-label" for="past-build"><b>EVERY BUILD</b> · {archive.length}</label>
+          <select id="past-build">{archive.map((b) => <option value={base(`v/${b.version}/`)}>{b.version}{b.version === `v${VERSION}` && ' · current'}</option>)}</select>
           <a class="bui-key bui-arcade bui-sys" href={base(`v/${archive[0].version}/`)}><Icon name="play" size={16} />Play build</a>
         </div>
       )}
@@ -258,11 +259,14 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
 </Base>
 
 <script>
-  import { startArena } from "../scripts/arena";
+  import { slot } from "../../../vendor/fizlet/slot";
   import { launch } from "../../../vendor/fizlet/ui/board-ui";
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // The hero battle (Fizlet): loads once the hero is near and the page is idle; reduced motion keeps the poster.
   const hero = document.querySelector<HTMLElement>("[data-arena]");
-  if (hero) startArena(hero);
+  const arena = hero && slot(hero, () => import("../scripts/arena/scene").then((m) => m.mountArena));
+  // ?debug: the site test's handle on the slot (Recall: destroy() gives the hero back as served).
+  if (arena && location.search.includes("debug")) (window as unknown as { arenaSlot: typeof arena }).arenaSlot = arena;
   // Start keys launch like the game's: press, invert, shatter, then the game.
   for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-launch-link]"))
     a.addEventListener("click", (e) => {
@@ -270,7 +274,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       e.preventDefault();
       launch(a, () => {}, { reduced: reduced(), done: () => (location.href = a.href) });
     });
-  // Past builds: the key follows the picked version (without JS it opens the newest one).
+  // Every build: the key follows the picked version (without JS it opens the newest one).
   const past = document.querySelector<HTMLElement>("[data-past-builds]");
   const pick = past?.querySelector("select");
   if (past && pick) pick.addEventListener("change", () => (past.querySelector("a")!.href = pick.value));
@@ -305,7 +309,8 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     cursor: crosshair;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: manipulation;
+    touch-action: pan-y;
+    overscroll-behavior: none;
   }
   .hero-field {
     position: absolute;
@@ -315,14 +320,6 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 44px 44px,
       linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 44px 44px;
     mask-image: radial-gradient(ellipse 100% 90% at 60% 50%, #000 40%, transparent 100%);
-  }
-  .arena {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-    pointer-events: none;
   }
   .hero-inner {
     position: relative;

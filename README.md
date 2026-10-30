@@ -21,16 +21,16 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 
 | Path | What | Source |
 |---|---|---|
-| `/` | Landing page; the hero is a live battle (game sprites, airstrikes, shootable headline) | `site/src/pages/index.astro`, `site/src/scripts/arena.ts` |
+| `/` | Landing page; the hero is a live battle on Fizlet (game sprites, airstrikes, shootable headline; a still poster under reduced motion) | `site/src/pages/index.astro`, `site/src/scripts/arena/`, `site/src/components/ArenaPoster.astro` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
-| `/v/<version>/` | Past builds: each earlier release's own committed `dist/`, unchanged; the landing page's PAST BUILDS picker opens them | `site/archive.json`, `scripts/archive.mjs` |
+| `/v/<version>/` | Every release, the current one included: each release's own committed `dist/` at its tag, unchanged and `noindex`; the landing page's EVERY BUILD picker opens them | `site/archive.json`, `scripts/archive.mjs` |
 | `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero | `site/src/pages/blitz/index.astro` |
 | `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
 | `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
-`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag before the current version (run it after a release is tagged); `npm run shots` retakes the landing-page screenshots from `dist/`.
+`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag up to and including the current version (run it after a release is tagged; `tests/archive.mjs` fails while one is missing; every `/v/<version>/` page is `noindex`); `npm run shots` retakes the landing-page screenshots from `dist/`.
 The site's Board UI is `fizlet/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
 [BOARD-UI.md](https://github.com/coded-dot-design/fizlet/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
 
@@ -134,6 +134,15 @@ MIT · Chris Cooley / coded.design
   - `src/sherman-sprites.ts`: the tank art. Art stays with the game that draws it. `fizlet/sprite` bakes data sprites, and redrawing these tanks on it would change their pixels.
   - `src/audio.ts`: `fizlet/sound` has the same synth, but it plays only while an engine runs. Battlefield plays the start and white-flag cues outside a battle. The brick also has no saved mute switch and no `build` cue. The file stays here until the brick covers those.
   - `src/selection-lock.ts`: no Fizlet brick does this yet. Battlefield, Swarm Protocol and the DOM VIRUS core all use it, so a brick is proposed. The file stays here until that brick ships.
+- Site: every release is playable at `/v/<version>/`, the current one included (`/v/v1.0.1/`, the tagged 1.0.1 `dist/`); `site/archive.json` adds v0.18.13, v1.0.0 and v1.0.1 (68 builds, v0.1.0 to v1.0.1). Every `/v/<version>/` page is `noindex` (its canonical and `og:url` still point at `/play/`), so search engines list `/play/` only. `tests/archive.mjs` (in `npm run test:site`) fails while a released tag is missing from `site/archive.json`, checks every served build is `noindex` and boots v0.15.8 and the current release from the landing page's picker. The picker reads EVERY BUILD (was PAST BUILDS) and marks the current release. No game change.
+
+### 1.0.1 — Fizlet 0.19.0; the landing hero on Fizlet
+
+- Fizlet 0.19.0 in `vendor/fizlet/` (the release tag; main had vendored a commit between 0.18.0 and 0.19.0, so the files are identical and only `ORIGIN.json` moves). No gameplay change; `dist/` measures 72,745 B gzip (40,919 JS + 22,277 CSS + markup).
+- Site: the landing hero's battle runs on Fizlet bricks instead of its own loop. `fizlet/slot` mounts it once the hero is near and the page is idle (the landing page's own script drops from 7,821 to 1,730 B gzip); the kernel reads layout in its read phase only, steps the battle at a fixed 60 Hz and writes the page through its ledger (letters, HUD, the copy's shake), so Recall gives the hero back byte for byte. Explosions, scorch marks and pop words are `fizlet/fx`; the Sherman is `fizlet/sprite` data, pixel for pixel the game's tank (`test:browser` compares them). The battle steps without allocating (`tests/arena.test.mjs`: 20,000 busy steps, no minor GC).
+- Same battle, same look: platoons, AI, shells, airstrikes, flattened shapes, knocked and squashed letters (the same keyframes and easings, now on the engine's clock instead of Web Animations and timers).
+- New: 30 s after the last pointer move, tap or scroll, the battle rests (no new shots, the last ones land) and the engine settles to no frames until the visitor moves again. Reduced motion shows a still poster (`ArenaPoster.astro`: tanks parked mid-fight, both HQs) and never loads the scene. Sound still starts off; its synth loads with the first press of the sound key.
+- Measured (Chromium, 1440 × 900, 5 s of battle, median of 3): hero frame script p50 0.9 ms / p95 4.5 ms (was 1.2 / 9.7); at 4× CPU throttle 3.6 / 7.5 ms (was 4.1 / 11.0). The live chunk is 12.3 KB gzip (scene 9.8 + kernel 2.5), loaded once the page is idle; Fizlet's hero goal is 10 KB.
 
 ### 1.0.0 — On the Fizlet engine
 

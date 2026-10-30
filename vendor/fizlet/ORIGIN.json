@@ -1,8 +1,8 @@
 {
   "note": "Generated snapshot. Edit coded-dot-design/fizlet, then run node scripts/sync-fizlet.mjs.",
   "repository": "https://github.com/coded-dot-design/fizlet",
-  "version": "0.18.0",
-  "commit": "209508025f6919c20a37f7f5d946c9a033d81e86",
+  "version": "0.19.0",
+  "commit": "7408af47af2c5bdd42b1159421b3a4b42650d6ae",
   "files": [
     {
       "path": "arcade-parts.ts",
@@ -127,6 +127,10 @@
     {
       "path": "steer.ts",
       "sha256": "1f88f6b2ac51cf773fefed194edeb6ad38b65d5bba9c7c2c5d99a094d6633002"
+    },
+    {
+      "path": "timeline.ts",
+      "sha256": "8d4f7e4117363d16027d39c5774fff774066301dc70a82e4c872a73b970c0c04"
     },
     {
       "path": "ui/board-ui.css",
