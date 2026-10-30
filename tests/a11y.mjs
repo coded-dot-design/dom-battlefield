@@ -92,6 +92,14 @@ await page.waitForTimeout(1500);
 await page.keyboard.up("Space");
 assert.match(await said(), /Battle on/, "the battle is announced");
 
+// A click also focuses the map, but a mouse player's arrow keys keep driving: no cursor.
+await page.evaluate(() => document.activeElement?.blur());
+const box = await page.locator("#bf-viewport").boundingBox();
+await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+assert.equal(await focused(), "bf-viewport", "the click focused the map");
+await page.keyboard.press("ArrowRight");
+assert.equal(await page.locator(".bf-tile.cursor").count(), 0, "after a click, the arrow keys don't take a cursor");
+
 // Pause overlay: focus moves in, Tab stays in, Esc resumes and focus comes back out.
 await page.keyboard.press("KeyP");
 await page.waitForTimeout(200);
