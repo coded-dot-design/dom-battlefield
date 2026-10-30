@@ -24,13 +24,13 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 | `/` | Landing page; the hero is a live battle on Fizlet (game sprites, airstrikes, shootable headline; a still poster under reduced motion) | `site/src/pages/index.astro`, `site/src/scripts/arena/`, `site/src/components/ArenaPoster.astro` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
-| `/v/<version>/` | Past builds: each earlier release's own committed `dist/`, unchanged; the landing page's PAST BUILDS picker opens them | `site/archive.json`, `scripts/archive.mjs` |
+| `/v/<version>/` | Every release, the current one included: each release's own committed `dist/` at its tag, unchanged and `noindex`; the landing page's EVERY BUILD picker opens them | `site/archive.json`, `scripts/archive.mjs` |
 | `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero | `site/src/pages/blitz/index.astro` |
 | `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
 | `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
-`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag before the current version (run it after a release is tagged); `npm run shots` retakes the landing-page screenshots from `dist/`.
+`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag up to and including the current version (run it after a release is tagged; `tests/archive.mjs` fails while one is missing; every `/v/<version>/` page is `noindex`); `npm run shots` retakes the landing-page screenshots from `dist/`.
 The site's Board UI is `fizlet/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
 [BOARD-UI.md](https://github.com/coded-dot-design/fizlet/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
 
@@ -125,6 +125,10 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 MIT · Chris Cooley / coded.design
 
 ## Changelog
+
+### Unreleased
+
+- Site: every release is playable at `/v/<version>/`, the current one included (`/v/v1.0.1/`, the tagged 1.0.1 `dist/`); `site/archive.json` adds v0.18.13, v1.0.0 and v1.0.1 (68 builds, v0.1.0 to v1.0.1). Every `/v/<version>/` page is `noindex` (its canonical and `og:url` still point at `/play/`), so search engines list `/play/` only. `tests/archive.mjs` (in `npm run test:site`) fails while a released tag is missing from `site/archive.json`, checks every served build is `noindex` and boots v0.15.8 and the current release from the landing page's picker. The picker reads EVERY BUILD (was PAST BUILDS) and marks the current release. No game change.
 
 ### 1.0.1 — Fizlet 0.19.0; the landing hero on Fizlet
 

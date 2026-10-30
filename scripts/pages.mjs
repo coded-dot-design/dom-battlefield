@@ -42,10 +42,10 @@ function servedHead(html, { url, crumbs, version }) {
 const playPage = join(out, "play/index.html");
 writeFileSync(playPage, servedHead(readFileSync(playPage, "utf8"), { url: playUrl, crumbs: [["DOM Battlefield", home], ["Play", playUrl]] }));
 
-// Past builds point search engines and shares at /play/ (canonical, og:url).
+// Released builds (/v/<version>/, noindex) point search engines and shares at /play/ (canonical, og:url).
 const archived = archiveBuilds(out, (html, version) =>
   servedHead(html, { url: `${home}v/${version}/`, version, crumbs: [["DOM Battlefield", home], [version, `${home}v/${version}/`]] }));
-console.log(`Past builds: ${archived} at /v/<version>/`);
+console.log(`Released builds: ${archived} at /v/<version>/`);
 
 // Battlefield Blitz drop-in: the pinned build from vendor/blitz (repo dom-battlefield-blitz).
 mkdirSync(join(out, "blitz"), { recursive: true });
