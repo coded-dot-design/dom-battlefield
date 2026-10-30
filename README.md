@@ -126,9 +126,9 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
-### 1.0.1 — Fizlet 0.17.0; the landing hero on Fizlet
+### 1.0.1 — Fizlet 0.19.0; the landing hero on Fizlet
 
-- Fizlet 0.17.0 in `vendor/fizlet/` (was 0.15.0). The game changes by its Recall fix only (the ledger checks a style restore with the element's own document): no gameplay change, `dist/` +7 B gzip (72,727).
+- Fizlet 0.19.0 in `vendor/fizlet/` (the release tag; main had vendored a commit between 0.18.0 and 0.19.0, so the files are identical and only `ORIGIN.json` moves). No gameplay change; `dist/` measures 72,745 B gzip (40,919 JS + 22,277 CSS + markup).
 - Site: the landing hero's battle runs on Fizlet bricks instead of its own loop. `fizlet/slot` mounts it once the hero is near and the page is idle (the landing page's own script drops from 7,821 to 1,730 B gzip); the kernel reads layout in its read phase only, steps the battle at a fixed 60 Hz and writes the page through its ledger (letters, HUD, the copy's shake), so Recall gives the hero back byte for byte. Explosions, scorch marks and pop words are `fizlet/fx`; the Sherman is `fizlet/sprite` data, pixel for pixel the game's tank (`test:browser` compares them). The battle steps without allocating (`tests/arena.test.mjs`: 20,000 busy steps, no minor GC).
 - Same battle, same look: platoons, AI, shells, airstrikes, flattened shapes, knocked and squashed letters (the same keyframes and easings, now on the engine's clock instead of Web Animations and timers).
 - New: 30 s after the last pointer move, tap or scroll, the battle rests (no new shots, the last ones land) and the engine settles to no frames until the visitor moves again. Reduced motion shows a still poster (`ArenaPoster.astro`: tanks parked mid-fight, both HQs) and never loads the scene. Sound still starts off; its synth loads with the first press of the sound key.
