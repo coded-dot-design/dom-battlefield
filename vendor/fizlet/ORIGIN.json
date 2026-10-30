@@ -1,8 +1,8 @@
 {
   "note": "Generated snapshot. Edit coded-dot-design/fizlet, then run node scripts/sync-fizlet.mjs.",
   "repository": "https://github.com/coded-dot-design/fizlet",
-  "version": "0.15.0",
-  "commit": "652455e83844f80f8dc2a9e2b55b74cb2937f915",
+  "version": "0.16.0",
+  "commit": "525ebbb21f365a404b15c694583e71cd66df42b9",
   "files": [
     {
       "path": "arcade.ts",
@@ -10,7 +10,7 @@
     },
     {
       "path": "board-page.ts",
-      "sha256": "3a4dac7ede6c40682b3aaf7353466430c992fd9eee8e71fe7ec60a7875730321"
+      "sha256": "f04637e11b2e064a077be7b76e5b549a911132ccaca8fb963a7ce57aede8c025"
     },
     {
       "path": "camera.ts",
@@ -50,7 +50,7 @@
     },
     {
       "path": "kernel/engine.ts",
-      "sha256": "e993cb68a1944c562d082bf37a56aed91d0b7b03f7feb83bb5a20a90962c4462"
+      "sha256": "138776e7990bfb971778b94ea52b9c98e0ccfe7c9a987fdaf0f3fea54ba7d777"
     },
     {
       "path": "kernel/index.ts",
@@ -114,7 +114,7 @@
     },
     {
       "path": "ui/board-ui.css",
-      "sha256": "ea090badfa4a41cf7e1071d8e422a4f3d0169dbdc8f45e3d9b4e5ceadadabd55"
+      "sha256": "372dc92556f2fd073f594867fcce3ed72d09968b4a618ee0e97ce32fbb17897e"
     },
     {
       "path": "ui/board-ui.ts",
@@ -122,7 +122,7 @@
     },
     {
       "path": "ui/tokens.json",
-      "sha256": "a08d378c9f68986eedcc03c1da64691367718794eeb456043717fc4e76592e68"
+      "sha256": "c974b1fd82b80f611110f5936874ff6705a30f25e8f068795302adca241332ea"
     }
   ]
 }
