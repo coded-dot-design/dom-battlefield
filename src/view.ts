@@ -305,7 +305,6 @@ export class View {
               (c, k) => b.tiles[c] === "hedge" && (k > 1 || Math.floor(c / b.cols) === Math.floor(i / b.cols)),
             ),
         );
-        n.setAttribute("aria-label", b.tiles[i]!);
       });
     }
     for (const u of s.units) {
@@ -519,6 +518,14 @@ export class View {
       behavior: "instant",
     });
     this.scrolled();
+  }
+  /** The keyboard's square cursor (-1: none). */
+  cursorAt = -1;
+  cursor(id: number) {
+    if (id === this.cursorAt) return;
+    this.cells[this.cursorAt]?.classList.remove("cursor");
+    this.cells[id]?.classList.add("cursor");
+    this.cursorAt = id;
   }
   highlight(id: number) {
     if (id === this.target) return;
