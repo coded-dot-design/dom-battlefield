@@ -130,6 +130,10 @@ MIT · Chris Cooley / coded.design
 
 ### Unreleased
 
+- **Fizlet 0.20.0** in `vendor/fizlet/` (tag `v0.20.0`, `bf42a8c`; `node scripts/sync-fizlet.mjs`, no hand edits). No gameplay change.
+  - The kernel's fps-cap fix: a capped engine counts its slot from the frame's start, so the landing hero's `fps: 30` now really draws 30. `test:site` on a 390 × 844 phone: **30.0 rAF/s** battling (0 once settled); before, slow frames napped past their slot (23.1 rAF/s measured at 4× CPU in the 30 fps change above).
+  - Pinch lock: the site's own `site/src/scripts/touch.ts` is gone; `Base.astro` imports `lockTouch` from `vendor/fizlet/touch` (same rule, same surfaces). The page's touch CSS is the Board UI kit's now (`.bui`: `touch-action: manipulation`, `text-size-adjust`), so `site.css` drops its copy. The kit makes a bare `[data-touch-lock]` `touch-action: none`, so the hero is `data-touch-lock="y"` (the kit's `pan-y`): the page still scrolls through it, as `test:site` checks.
+  - `dist/` rebuilt: 72,750 B gzip (+5 B JavaScript: the kernel fixes), within the 73,000 budget.
 - **No `shared/` copies.** The three snapshots move into `src/`. `scripts/sync-shared.mjs` and `shared/ORIGIN.json` are removed. The code is the same, and the rebuilt `dist/` and the site's pages are byte-identical, so play, art and sound don't change.
   - `src/sherman-sprites.ts`: the tank art. Art stays with the game that draws it. `fizlet/sprite` bakes data sprites, and redrawing these tanks on it would change their pixels.
   - `src/audio.ts`: `fizlet/sound` has the same synth, but it plays only while an engine runs. Battlefield plays the start and white-flag cues outside a battle. The brick also has no saved mute switch and no `build` cue. The file stays here until the brick covers those.
