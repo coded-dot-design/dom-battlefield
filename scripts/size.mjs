@@ -24,7 +24,7 @@ console.log(`Total: ${total} gzip bytes`);
 // bounded launch effects, modal lifecycle and compact desktop platoon); 66 KB in 0.17.1 and 68 KB in 0.18.3. 72.5 KB in
 // 1.0.0: the battle runs on the Fizlet engine (vendored kernel + fizlet/rules drops, JavaScript +4,295 B gzip
 // over 0.18.13's 67,617; measured). No runtime dependencies (Fizlet is vendored source). 73 KB for
-// the performance overlay switch: 71,911 -> 72,705 B (+794: the kit's setting(), the header key,
+// the performance overlay switch: 71,911 -> 72,720 B (+809: the kit's setting(), the header key,
 // F9 and the lazy loader; measured). The overlay itself (fizlet/perf, 1.87 KB gzip) is a separate
 // chunk that loads only when a player turns it on, so it is not in this total.
 if (total > 73000) throw Error("73KB compressed app budget exceeded");
