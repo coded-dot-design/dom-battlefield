@@ -24,13 +24,13 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 | `/` | Landing page; the hero is a live battle on Fizlet (game sprites, airstrikes, shootable headline; a still poster under reduced motion) | `site/src/pages/index.astro`, `site/src/scripts/arena/`, `site/src/components/ArenaPoster.astro` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
-| `/v/<version>/` | Past builds: each earlier release's own committed `dist/`, unchanged; the landing page's PAST BUILDS picker opens them | `site/archive.json`, `scripts/archive.mjs` |
+| `/v/<version>/` | Every release, the current one included: each release's own committed `dist/` at its tag, unchanged and `noindex`; the landing page's EVERY BUILD picker opens them | `site/archive.json`, `scripts/archive.mjs` |
 | `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero | `site/src/pages/blitz/index.astro` |
 | `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
 | `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
-`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag before the current version (run it after a release is tagged); `npm run shots` retakes the landing-page screenshots from `dist/`.
+`npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag up to and including the current version (run it after a release is tagged; `tests/archive.mjs` fails while one is missing; every `/v/<version>/` page is `noindex`); `npm run shots` retakes the landing-page screenshots from `dist/`.
 The site's Board UI is `fizlet/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
 [BOARD-UI.md](https://github.com/coded-dot-design/fizlet/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
 
@@ -126,10 +126,12 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
-### Unreleased — Site: the hero battle at 30 fps (no game change)
+### Unreleased
 
-- The landing hero's engine takes `fps: 30`, the Fizlet default for ambient heroes (every other Fizlet hero runs capped). It had no cap, so on a phone it asked for a frame on every vsync and redrew its full-hero canvas (585 × 1,274 px at 390 wide) each time. That kept the main thread pegged until the battle rested 30 s later. The battle still steps at a fixed 60 Hz (two steps a frame), so it plays the same. Between frames the engine is off the clock on one timer. Settle, the offscreen pause, reduced motion and Recall are unchanged.
-- Measured (Chromium, 390 × 844 phone, 4× CPU, seconds 6–11 after load, median of 3, the hero-less page in the same run at 0.5 %): main thread busy 91.7 % → 49.4 %, 45.7 → 23.1 rAF/s. Once settled, 0.2–0.3 % with or without the change. `test:site` now holds the cap on a phone: ≤ 33 rAF calls a second while battling, 0 once settled. It fails on the old build (60.0).
+- Site: every release is playable at `/v/<version>/`, the current one included (`/v/v1.0.1/`, the tagged 1.0.1 `dist/`); `site/archive.json` adds v0.18.13, v1.0.0 and v1.0.1 (68 builds, v0.1.0 to v1.0.1). Every `/v/<version>/` page is `noindex` (its canonical and `og:url` still point at `/play/`), so search engines list `/play/` only. `tests/archive.mjs` (in `npm run test:site`) fails while a released tag is missing from `site/archive.json`, checks every served build is `noindex` and boots v0.15.8 and the current release from the landing page's picker. The picker reads EVERY BUILD (was PAST BUILDS) and marks the current release. No game change.
+- **Site: the hero battle at 30 fps (no game change)**
+  - The landing hero's engine takes `fps: 30`, the Fizlet default for ambient heroes (every other Fizlet hero runs capped). It had no cap, so on a phone it asked for a frame on every vsync and redrew its full-hero canvas (585 × 1,274 px at 390 wide) each time. That kept the main thread pegged until the battle rested 30 s later. The battle still steps at a fixed 60 Hz (two steps a frame), so it plays the same. Between frames the engine is off the clock on one timer. Settle, the offscreen pause, reduced motion and Recall are unchanged.
+  - Measured (Chromium, 390 × 844 phone, 4× CPU, seconds 6–11 after load, median of 3, the hero-less page in the same run at 0.5 %): main thread busy 91.7 % → 49.4 %, 45.7 → 23.1 rAF/s. Once settled, 0.2–0.3 % with or without the change. `test:site` now holds the cap on a phone: ≤ 33 rAF calls a second while battling, 0 once settled. It fails on the old build (60.0).
 
 ### 1.0.1 — Fizlet 0.19.0; the landing hero on Fizlet
 
