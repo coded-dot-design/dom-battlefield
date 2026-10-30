@@ -159,6 +159,34 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     </div>
   </section>
 
+  <!-- KEYS: the whole game from the keyboard -->
+  <section id="keys" class="section keys" aria-labelledby="keys-title">
+    <div class="wrap">
+      <p class="eyebrow">KEYS</p>
+      <h2 id="keys-title">Play it all from the keyboard.</h2>
+      <p class="lead">Every control, the map and the overlays take the keyboard. Screen readers hear the phase, both platoons' strength, capture time and the result.</p>
+      <table class="keys-table">
+        <caption>Keyboard controls</caption>
+        <thead><tr><th scope="col">Action</th><th scope="col">Keys</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Start, pick, confirm</th><td>Tab / Shift+Tab to a key, then Enter (Space while planning)</td></tr>
+          <tr><th scope="row">Select a tank</th><td>1–9, or Tab to the tank on the map and Enter</td></tr>
+          <tr><th scope="row">Square cursor on the map</th><td>Tab to the map, then ↑ ↓ ← →</td></tr>
+          <tr><th scope="row">Send a tank · plant a flag · lock aim · move HQ</th><td>Space on the cursor's square</td></tr>
+          <tr><th scope="row">Lock route · clear · prev / next · your tank · attack HQ</th><td>Enter · Backspace · B / N · Y · H</td></tr>
+          <tr><th scope="row">Command mode (half speed, gun off)</th><td>O</td></tr>
+          <tr><th scope="row">Drive your tank</th><td>W A S D (arrow keys when the map is not focused)</td></tr>
+          <tr><th scope="row">Fire · auto-aim · lock a target</th><td>Hold Space · Q · T</td></tr>
+          <tr><th scope="row">Fall in · retreat · advance · attack</th><td>F · R · E · G</td></tr>
+          <tr><th scope="row">Center camera · pan</th><td>C · M</td></tr>
+          <tr><th scope="row">Pause · resume · surrender</th><td>P · Esc · Tab to Surrender, Enter</td></tr>
+          <tr><th scope="row">Deselect · cancel · close the keys panel or tips</th><td>Esc</td></tr>
+          <tr><th scope="row">Performance overlay</th><td>F9</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- FRONTS -->
   <section id="fronts" class="section fronts" aria-labelledby="fronts-title">
     <div class="wrap">
@@ -629,6 +657,38 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     .blitz-grid {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+
+  /* ---------- Keys ---------- */
+  .keys-table {
+    width: 100%;
+    max-width: 60rem;
+    margin-top: 1.5rem;
+    border-collapse: collapse;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  .keys-table :is(th, td) {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    text-align: left;
+    vertical-align: top;
+  }
+  .keys-table thead th {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .keys-table tbody th {
+    font-weight: 600;
+  }
+  .keys-table caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* ---------- Radio ---------- */

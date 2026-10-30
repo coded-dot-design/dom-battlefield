@@ -84,6 +84,22 @@ When the desktop footer runs short of room, the platoon moves into its own dragg
 | Pan / recenter | M + drag / C | Pan + drag / Center |
 | Pause / deselect | P / Esc | Pause / select your tank |
 
+### Keyboard only
+
+The whole game plays from the keyboard: setup, planning, battle, pause, surrender, results and a rematch. Focus is always visible; overlays take focus and give it back; nothing traps it (pause and results keep Tab inside their two keys, as a dialog does, and Esc or either key leaves).
+
+| Action | Keys |
+|---|---|
+| Start, pick a place, Plan battle / Quick start, Start battle, any card key | Tab / Shift+Tab, then Enter (Space too while planning; in a live battle Space is Fire) |
+| Select a tank | 1–9, or Tab to the tank on the map, then Enter |
+| Square cursor | Tab to the map, then ↑ ↓ ← → (WASD still drives) |
+| Send a tank · plant a flag · lock aim on a square · move HQ | Space on the cursor's square (a tank there selects it; with nothing to act on, Space fires) |
+| Lock route · clear · prev / next · your tank · attack HQ | Enter · Backspace · B / N · Y · H |
+| Pause · resume · surrender | P · Esc or P · Tab to Surrender, Enter |
+| Close the keys panel or the button tips | Esc (focus returns to their header key) |
+
+**Screen readers** hear the game through one polite live region (`src/announce.ts`, at most one update a second): the phase (setup, planning, battle on, paused), both platoons' strength ("Friendly 3 of 4, hostile 2 of 4") when it changes, capture time in 10-second steps on HQ and crossroads maps, comms, the map cursor's square, and the result ("Mission complete: you win" / "Game over: you lose"), which goes out at once.
+
 Sound is gesture-activated, optional, synthesized and bounded. Reduced motion keeps gameplay while reducing cosmetic effects. Pause, tab visibility, restart and exit clean up input, audio and mobile text-selection ownership.
 
 **Quick start**, **Plan battle** and **Start battle** share a short press-and-pixel launch effect made from the actual button. The action starts on the same click; the cosmetic burst cleans up after 560ms, uses at most 16 square fragments, and adds no runtime dependency. Reduced motion uses a brief press without fragments.
@@ -101,7 +117,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm test` runs the model tests, the replay test and the zero-allocation test (one file at a time, `--expose-gc`). `npm run size` checks the combined gzip size of JavaScript, styles and markup against **72,500 bytes**. Version 1.0.0 measures **71,911 bytes** (9,488 HTML + 40,211 JavaScript + 22,212 CSS). The allowance rises from 68,000 bytes for the move onto the Fizlet engine: the vendored kernel and `fizlet/rules` drops add 4,295 bytes of JavaScript over 0.18.13 (67,617 bytes), measured, with no runtime dependency.
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm test` runs the model tests, the replay test and the zero-allocation test (one file at a time, `--expose-gc`). `npm run size` checks the combined gzip size of JavaScript, styles and markup against **74,350 bytes** (raised for accessible play; see the changelog). Version 1.0.0 measures **71,911 bytes** (9,488 HTML + 40,211 JavaScript + 22,212 CSS). The allowance rises from 68,000 bytes for the move onto the Fizlet engine: the vendored kernel and `fizlet/rules` drops add 4,295 bytes of JavaScript over 0.18.13 (67,617 bytes), measured, with no runtime dependency.
 
 ## Boundaries
 
@@ -130,6 +146,12 @@ MIT · Chris Cooley / coded.design
 
 ### Unreleased
 
+- **Accessible play (E14).** No gameplay change: same rules, same battles (`npm test`'s replay and zero-allocation tests unchanged and green).
+  - Keyboard only, a whole match: the map takes focus (`role="application"`); the arrow keys move a square cursor and Space acts on that square through the same code a tap runs (send a tank, plant a flag, lock aim, move HQ, or select the tank there). Tanks show a focus ring; Esc closes the keys panel and the button tips and returns focus to their key; the tips' key takes focus when they open. The in-game keys panel and the README list the keys; the landing page has a keys table (`#keys`). `tests/a11y.mjs` (in `npm run test:browser`) plays boot → Plan battle → a routed tank → battle → pause → result → rematch → surrender with the keyboard alone and checks every Tab stop shows focus.
+  - Screen readers: one polite live region, `src/announce.ts` (the contract of Fizlet's coming `fizlet/announce` brick, so a later Fizlet sync swaps the import): `[data-fz-announce]`, `role="status"`, created on first write, at most one write a second, pending texts per key coalesced. The game says the phase, both platoons' strength, capture time (10 s steps), comms and the result (flushed at once), change-only from the HUD pass, never from the model. The four other live roles (boot status, cost error, comms footer, result section) are gone: their text goes through the one region. `tests/announce.test.mjs` covers the region, coalescing, the rate limit and repeats.
+  - axe-core, serious + critical violations (Chromium, 1440 × 900): `/play/` 1 → 0 in setup, 3 → 0 planning and battle, 1 → 0 result (map tiles' prohibited `aria-label`, Auto / Lock label contrast 4.18:1 → over 4.5:1, key names that hid their visible label: a key's letter is now drawn from `data-k`); site `/` 1 → 0, `/style-guide/` 1 → 0, `/blitz/` 2 → 0 (focusable code blocks), `/blitz/play/` 1 → 0. The archived `/v/<version>/` builds are frozen and unchanged.
+  - Size: 72,750 → 74,100 B gzip (+1,350: HTML +108, JavaScript +1,197, CSS +45; measured); the budget rises by that delta, 73,000 → 74,350. The map cursor only for keyboard focus (a click keeps the arrow keys driving): +38 B, 74,138 B, within that budget.
+  - The map cursor turns on only when the map is reached from the keys (Tab). A click also focuses the map, and a mouse player's arrow keys keep driving as before; tested in tests/a11y.mjs.
 - **Fizlet 0.20.0** in `vendor/fizlet/` (tag `v0.20.0`, `bf42a8c`; `node scripts/sync-fizlet.mjs`, no hand edits). No gameplay change.
   - The kernel's fps-cap fix: a capped engine counts its slot from the frame's start, so the landing hero's `fps: 30` now really draws 30. `test:site` on a 390 × 844 phone: **30.0 rAF/s** battling (0 once settled); before, slow frames napped past their slot (23.1 rAF/s measured at 4× CPU in the 30 fps change above).
   - Pinch lock: the site's own `site/src/scripts/touch.ts` is gone; `Base.astro` imports `lockTouch` from `vendor/fizlet/touch` (same rule, same surfaces). The page's touch CSS is the Board UI kit's now (`.bui`: `touch-action: manipulation`, `text-size-adjust`), so `site.css` drops its copy. The kit makes a bare `[data-touch-lock]` `touch-action: none`, so the hero is `data-touch-lock="y"` (the kit's `pan-y`): the page still scrolls through it, as `test:site` checks.
