@@ -40,7 +40,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
 ---
 <Base title={title} description={description} page="home" jsonld={gameLd({ home: abs('', Astro.site), name: 'DOM Battlefield', description, image: abs('shots/og.png', Astro.site), version: VERSION, play: abs('play/', Astro.site) })}>
   <!-- HERO: a live battle across the whole hero. Tap the field to call an airstrike. -->
-  <section class="hero" data-arena aria-labelledby="hero-title">
+  <section class="hero" data-arena data-touch-lock aria-labelledby="hero-title">
     <div class="hero-field" aria-hidden="true"></div>
     <div class="wrap hero-inner">
       <div class="hero-top">
@@ -309,7 +309,8 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     cursor: crosshair;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: manipulation;
+    touch-action: pan-y;
+    overscroll-behavior: none;
   }
   .hero-field {
     position: absolute;
