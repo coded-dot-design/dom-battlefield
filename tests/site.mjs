@@ -17,6 +17,18 @@ if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: np
   const ld = JSON.parse(play.match(/<script type="application\/ld\+json">(.*?)<\/script>/)[1]);
   assert.deepEqual(ld["@graph"].map((g) => g["@type"]), ["WebPage", "BreadcrumbList"]);
 }
+// Discovery files (scripts/discovery.mjs): robots.txt names the sitemap; the sitemap and llms.txt list the
+// indexable pages (home, /play/, /style-guide/) and nothing that is noindex or canonical elsewhere.
+{
+  const home = readFileSync(join(root, "index.html"), "utf8").match(/<link rel="canonical" href="([^"]+)"/)[1];
+  assert.match(readFileSync(join(root, "robots.txt"), "utf8"), new RegExp(`^Sitemap: ${home}sitemap\\.xml$`, "m"));
+  const locs = [...readFileSync(join(root, "sitemap.xml"), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  assert.deepEqual(locs, [home, `${home}play/`, `${home}style-guide/`]);
+  const llms = readFileSync(join(root, "llms.txt"), "utf8");
+  assert.match(llms, /^# DOM Battlefield\n/);
+  assert.match(llms, /By Chris Cooley\./);
+  for (const url of locs) assert.ok(llms.includes(`](${url})`), `llms.txt links ${url}`);
+}
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
