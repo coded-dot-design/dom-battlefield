@@ -112,7 +112,9 @@ npm run test:browser
 - `src/battle-overlays.ts`: pause/result focus containment, saved background `inert` state, map-relative placement and repeatable sticker entry.
 - `src/launch-effects.ts` and `src/launch-effects.css`: bounded launch feedback cloned from the pressed button; transient animations and timers clean up on completion, reset or abort.
 - `vendor/fizlet/`: the [Fizlet](https://github.com/coded-dot-design/fizlet) engine's source, vendored with its version, commit and SHA-256 per file in `ORIGIN.json`. `node scripts/sync-fizlet.mjs` refreshes it from a sibling checkout (`../fizlet`, or `FIZLET_DIR`). Never edit it by hand.
-- `shared/`: generated snapshots from owning repositories, with source versions and SHA-256 provenance in `ORIGIN.json`. `node scripts/sync-shared.mjs` refreshes them from sibling checkouts. The tank artwork is not independently maintained here.
+- `src/sherman-sprites.ts`: the tank art (two cached tread frames, turret drawn separately), taken from Sherman Bytes 0.5.1. The game, its icons and the site's hero arena use it.
+- `src/audio.ts`: the event-driven synth (no assets), taken from the DOM VIRUS core 0.11.1. The game and the site's hero arena use it.
+- `src/selection-lock.ts`: the reversible mobile selection policy while a battle runs, taken from the DOM VIRUS core 0.11.1.
 
 Maps cap at 48×30 cells, with up to 24 tanks, 200 projectiles and 96 effects. The battle runs on the Fizlet kernel: one shared clock, fixed 60 Hz steps with bounded catch-up (3 steps a frame); pause stops the engine until resume. The step allocates nothing once warm (pooled shells and bursts, typed path buffers), and every random roll comes from the engine's seeded `random`, restarted from the map's seed, so a seed and the same orders replay the same battle. Repair kits are `fizlet/rules` drops. Cosmetic launch feedback uses bounded Web Animations and short cleanup timers, without a second simulation loop. Terrain is regenerated only during setup; destruction updates existing nodes. Geometry, presentation and command data stay separate.
 
@@ -128,6 +130,10 @@ MIT · Chris Cooley / coded.design
 
 ### Unreleased
 
+- **No `shared/` copies.** The three snapshots move into `src/`. `scripts/sync-shared.mjs` and `shared/ORIGIN.json` are removed. The code is the same, and the rebuilt `dist/` and the site's pages are byte-identical, so play, art and sound don't change.
+  - `src/sherman-sprites.ts`: the tank art. Art stays with the game that draws it. `fizlet/sprite` bakes data sprites, and redrawing these tanks on it would change their pixels.
+  - `src/audio.ts`: `fizlet/sound` has the same synth, but it plays only while an engine runs. Battlefield plays the start and white-flag cues outside a battle. The brick also has no saved mute switch and no `build` cue. The file stays here until the brick covers those.
+  - `src/selection-lock.ts`: no Fizlet brick does this yet. Battlefield, Swarm Protocol and the DOM VIRUS core all use it, so a brick is proposed. The file stays here until that brick ships.
 - Site: every release is playable at `/v/<version>/`, the current one included (`/v/v1.0.1/`, the tagged 1.0.1 `dist/`); `site/archive.json` adds v0.18.13, v1.0.0 and v1.0.1 (68 builds, v0.1.0 to v1.0.1). Every `/v/<version>/` page is `noindex` (its canonical and `og:url` still point at `/play/`), so search engines list `/play/` only. `tests/archive.mjs` (in `npm run test:site`) fails while a released tag is missing from `site/archive.json`, checks every served build is `noindex` and boots v0.15.8 and the current release from the landing page's picker. The picker reads EVERY BUILD (was PAST BUILDS) and marks the current release. No game change.
 
 ### 1.0.1 — Fizlet 0.19.0; the landing hero on Fizlet

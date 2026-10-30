@@ -17,7 +17,7 @@ import { createEngine } from "../../../../vendor/fizlet/kernel/engine";
 import { effects } from "../../../../vendor/fizlet/fx";
 import { sprites } from "../../../../vendor/fizlet/sprite";
 import type { SlotMount } from "../../../../vendor/fizlet/slot";
-import type { createGameAudio } from "../../../../shared/audio";
+import type { createGameAudio } from "../../../../src/audio";
 import { createArena, WORDS, KNOCK, LETTERS, KEEP, ATTACK, TEAM_A, TEAM_B, REST } from "./sim";
 import { TANK } from "./tank";
 
@@ -306,7 +306,7 @@ export const mountArena: SlotMount = (stage, hero, first) => {
   const sound = hero.querySelector<HTMLElement>("[data-sound]");
   let synth: Promise<Audio> | undefined;
   sound?.addEventListener("click", async (ev) => {
-    const a = await (synth ??= import("../../../../shared/audio").then((m) => (audio = m.createGameAudio(doc, "battlefield-site", false))));
+    const a = await (synth ??= import("../../../../src/audio").then((m) => (audio = m.createGameAudio(doc, "battlefield-site", false))));
     if (engine.signal.aborted) return;
     a.toggle();
     a.unlock(ev);

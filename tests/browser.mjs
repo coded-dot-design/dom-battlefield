@@ -96,7 +96,7 @@ try {
     const page = await browser.newPage();
     await page.goto(URL);
     const diff = await page.evaluate(async () => {
-      const { tankSprites } = await import("/shared/sherman-sprites.ts");
+      const { tankSprites } = await import("/src/sherman-sprites.ts");
       const { sprites } = await import("/vendor/fizlet/sprite.ts");
       const { TANK, RECOIL } = await import("/site/src/scripts/arena/tank.ts");
       const shared = tankSprites(document), art = sprites(TANK, { palettes: [{ team: "#39ffb0" }, { team: "#fff8d4" }] });
