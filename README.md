@@ -126,6 +126,11 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### Unreleased — Site: the hero battle at 30 fps (no game change)
+
+- The landing hero's engine takes `fps: 30`, the Fizlet default for ambient heroes (every other Fizlet hero runs capped). It had no cap, so on a phone it asked for a frame on every vsync and redrew its full-hero canvas (585 × 1,274 px at 390 wide) each time. That kept the main thread pegged until the battle rested 30 s later. The battle still steps at a fixed 60 Hz (two steps a frame), so it plays the same. Between frames the engine is off the clock on one timer. Settle, the offscreen pause, reduced motion and Recall are unchanged.
+- Measured (Chromium, 390 × 844 phone, 4× CPU, seconds 6–11 after load, median of 3, the hero-less page in the same run at 0.5 %): main thread busy 91.7 % → 49.4 %, 45.7 → 23.1 rAF/s. Once settled, 0.2–0.3 % with or without the change. `test:site` now holds the cap on a phone: ≤ 33 rAF calls a second while battling, 0 once settled. It fails on the old build (60.0).
+
 ### 1.0.1 — Fizlet 0.19.0; the landing hero on Fizlet
 
 - Fizlet 0.19.0 in `vendor/fizlet/` (the release tag; main had vendored a commit between 0.18.0 and 0.19.0, so the files are identical and only `ORIGIN.json` moves). No gameplay change; `dist/` measures 72,745 B gzip (40,919 JS + 22,277 CSS + markup).

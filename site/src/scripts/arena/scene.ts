@@ -47,7 +47,9 @@ const KNOCK_AT = [0, 0.3, 0.7, 1], SQUASH_AT = [0, 0.18, 0.6, 0.82, 1];
 
 export const mountArena: SlotMount = (stage, hero, first) => {
   const doc = hero.ownerDocument, win = doc.defaultView!;
-  const engine = createEngine({ root: stage, settle: 0.5 });
+  // Ambient hero: 30 fps like every Fizlet hero (two fixed 60 Hz steps a frame, same battle); the cap
+  // takes the engine off the shared clock between frames (one timer), so it costs ~30 rAF calls a second.
+  const engine = createEngine({ root: stage, settle: 0.5, fps: 30 });
   const L = engine.ledger, on = { signal: engine.signal };
   // The stage sits where the old canvas did: over the copy, under the HUD, never taking a tap.
   L.style(stage, "z-index", "2");
