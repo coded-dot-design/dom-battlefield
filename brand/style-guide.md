@@ -5,7 +5,7 @@ Preset: cyberpunk-tron · flat colors only (no gradients, blur or glow) · hard 
 Cyber Punk × Tron: flat neon faces on one ink rim, mono caps on every control, hard bases straight
 below. Colour is the job, paint is the budget. DOM Battlefield is the reference board for the shared
 3D key, which Fizlet's Board UI kit was extracted from (v0.18.4).
-<!-- src: fizlet src/ui/tokens.json "source"; dom-battlefield board-ui/BOARD-UI.md §2.1 -->
+<!-- src: fizlet src/ui/tokens.json "source"; fizlet src/ui/BOARD-UI.md §2.1 -->
 
 ```tokens
 {
@@ -51,7 +51,7 @@ below. Colour is the job, paint is the budget. DOM Battlefield is the reference 
   "byline": { "text": "by Chris Cooley", "url": "https://coded.design/" }
 }
 ```
-<!-- src: dom-battlefield src/style.css lines 45-53, 66-76, 89-101, 117-136; board-ui/board-ui.css lines 98, 155-158; site/src/styles/site.css lines 5-6, 136-141, 357-367; fizlet src/ui/tokens.json. Shadow colours here are the flat target; shipped bases mix the face colour into the rim. Sizes in u = 1px on desktop. -->
+<!-- src: dom-battlefield src/style.css lines 45-53, 66-76, 89-101, 117-136; fizlet src/ui/board-ui.css lines 98, 155-158; site/src/styles/site.css lines 5-6, 136-141, 357-367; fizlet src/ui/tokens.json. Shadow colours here are the flat target; shipped bases mix the face colour into the rim. Sizes in u = 1px on desktop. -->
 
 ## Rules
 
@@ -77,8 +77,8 @@ below. Colour is the job, paint is the budget. DOM Battlefield is the reference 
 ## Current styles (documented, Phase 2 lock)
 
 - **Palette:** the root block in `src/style.css` lines 43–145 (dark), light overrides at
-  lines 116–138. Kit copy: `board-ui/tokens.json`, identical to Fizlet's `src/ui/tokens.json`.
-- **Keys:** `board-ui/board-ui.css` section 2 — face on a hard base, hover lifts by `--hy` (never
+  lines 116–138. Kit copy: `vendor/fizlet/ui/tokens.json`, a Fizlet snapshot (`vendor/fizlet/ORIGIN.json`; never edited by hand).
+- **Keys:** Fizlet `src/ui/board-ui.css` section 2 (vendored as `vendor/fizlet/ui/board-ui.css`) — face on a hard base, hover lifts by `--hy` (never
   while pressed), press drops the face flat in 50ms, focus is a 3u bg gap plus a 6u sys-ink ring,
   disabled at 45%; page keys (`.bui-key`) add a `::before` hit area over face and base. Arcade key:
   4u base in the face colour mixed 45% into the rim.
@@ -98,11 +98,11 @@ Shipped and kept as they are; new pages use the flat tokens above.
 
 - **Arcade key glow on dark:** soft colour halo at rest, hover and press (14u / 18u / 22u, face
   colour at 40% / 55% / 70%), off on light; the locked state breathes with it.
-  <!-- src: board-ui/board-ui.css lines 161-163, 179-187; fizlet src/ui/tokens.json line 40 -->
+  <!-- src: fizlet src/ui/board-ui.css lines 181-205; fizlet src/ui/tokens.json line 40 -->
 - **Lit panel halo:** `.panel.lit` adds a 28px violet halo on dark. <!-- src: site.css line 145 -->
 - **START BATTLE halo:** a 40px cyan halo, 56px on hover, 30px pressed (`--glow*` on `.start-key`), off on light. <!-- src: site.css .start-key -->
 - **Header frost:** the sticky header uses a 10px backdrop blur. <!-- src: site.css line 157 -->
 - **Hero wash and grid:** a radial violet wash and a masked grid behind the landing hero.
   <!-- src: site/src/pages/index.astro lines 291, 302-304 -->
 - **Sticker drop shadow** while the overlay sticker falls (soft, then hard on landing).
-  <!-- src: board-ui/board-ui.css line 499 -->
+  <!-- src: fizlet src/ui/board-ui.css line 527 -->
