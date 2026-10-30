@@ -117,6 +117,34 @@ try {
     assert.deepEqual(herr, []);
     await hp.close();
   }
+  where = "hero frame cap (phone)";
+  {
+    // A phone left alone on the landing page: the battle is an ambient hero, so it asks for at most
+    // ~30 frames a second (fps: 30, the Fizlet hero default; uncapped it asked for one every vsync and
+    // kept the main thread ~90 % busy at 4× CPU), and none once it has settled. Counts every
+    // requestAnimationFrame call on the page, so a second loop can't hide.
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+    const pp = await ctx.newPage();
+    await pp.addInitScript(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      window.rafCalls = 0;
+      window.requestAnimationFrame = (cb) => (window.rafCalls++, raf(cb));
+    });
+    await pp.goto(base + "?debug");
+    await pp.waitForFunction(() => window.arena?.engine.running, null, { timeout: 8000 });
+    const rate = (ms) => pp.evaluate(async (ms) => {
+      const n = window.rafCalls, t = performance.now();
+      await new Promise((r) => setTimeout(r, ms));
+      return ((window.rafCalls - n) * 1000) / (performance.now() - t);
+    }, ms);
+    const battling = await rate(2000);
+    assert.ok(battling > 5 && battling <= 33, `the battle asks for at most ~30 frames a second (got ${battling.toFixed(1)})`);
+    await pp.evaluate(() => window.arena.rest());
+    await pp.waitForFunction(() => window.arena.engine.paused.includes("settled"), null, { timeout: 8000 });
+    assert.equal(await rate(1000), 0, "settled: no frames requested at all");
+    console.log(`hero on a phone: ${battling.toFixed(1)} rAF/s battling, 0 once settled`);
+    await ctx.close();
+  }
   await page.goto(base);
   // Headline letters are targets but the h1 still reads as one name.
   assert.equal(await page.locator("h1").getAttribute("aria-label"), "Twelve tanks. One radio.");
