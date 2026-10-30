@@ -5,8 +5,8 @@
  * call a strike. One canvas, one rAF loop, bounded pools; paused offscreen and in hidden tabs,
  * a still frame under reduced motion.
  */
-import { tankSprites } from "../../../shared/sherman-sprites";
-import { createGameAudio } from "../../../shared/audio";
+import { tankSprites } from "../../../src/sherman-sprites";
+import { createGameAudio } from "../../../src/audio";
 
 type Team = 0 | 1;
 type Tank = {
