@@ -69,7 +69,7 @@ const rules = [
         <p class="eyebrow"><span class="index">02</span> THE BLINKING GRID</p>
         <h2>Read the square. Then run.</h2>
         <ul class="tiles">
-          {tiles.map(([icon, c, ink, name, what]) => <li><i style={`--c:${c};${ink ? `--t:${ink}` : ''}`}>{icon}</i><span><b>{name}</b> {what}</span></li>)}
+          {tiles.map(([icon, c, ink, name, what]) => <li><i style={`--c:${c};${ink ? `--t:${ink};--a:65%` : ''}`}>{icon}</i><span><b>{name}</b> {what}</span></li>)}
         </ul>
         <p class="keys-line"><kbd>WASD</kbd> drive · <kbd>mouse</kbd> aim · <kbd>click</kbd> / <kbd>space</kbd> fire · <kbd>E</kbd> long shot · <kbd>F</kbd> airstrike, then click the spot · <kbd>Q</kbd> auto-aim · <kbd>T</kbd> aim lock · <kbd>Esc</kbd> pause. Phones: drag on the left to drive; AUTO and LOCK ride on FIRE, LONG and STRIKE sit above, and the grab bar moves the keys.</p>
       </div>
@@ -285,7 +285,8 @@ const rules = [
     font: 900 18px var(--mono);
     font-style: normal;
     color: var(--t, #f6f3ff);
-    background: color-mix(in srgb, var(--c) 45%, transparent);
+    /* Dark ink on a light tile: a stronger fill (--a) keeps the icon AA (4.5:1). */
+    background: color-mix(in srgb, var(--c) var(--a, 45%), transparent);
     border: 2.5px solid var(--c);
     border-radius: 4px;
   }
