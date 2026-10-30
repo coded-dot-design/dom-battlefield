@@ -39,6 +39,7 @@ jobs:
           SHA: ${{ inputs.sha }}
           MESSAGE: ${{ inputs.message }}
           EXTRA_TAGS: ${{ inputs.extra_tags }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           trap 'echo "::error::failed (line $LINENO): $BASH_COMMAND"' ERR
@@ -73,8 +74,9 @@ jobs:
               echo "::warning::$tag already points at $at; left as is."
               return 0
             fi
-            g tag -a "$tag" "$SHA" -m "$MESSAGE"
-            g push origin "refs/tags/$tag"
+            # REST: tag object, then ref (a git push is refused when the commit's workflow files differ from main's)
+            obj="$(gh api "repos/$GITHUB_REPOSITORY/git/tags" -f tag="$tag" -f message="$MESSAGE" -f object="$SHA" -f type=commit -f "tagger[name]=github-actions[bot]" -f "tagger[email]=41898282+github-actions[bot]@users.noreply.github.com" --jq .sha 2>&1)" || { echo "::error::git/tags failed: $obj"; return 1; }
+            out="$(gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$obj" 2>&1)" || { echo "::error::git/refs failed: $out"; return 1; }
             echo "Tagged $SHA as $tag."
           }
 
