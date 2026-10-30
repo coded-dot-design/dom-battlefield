@@ -21,7 +21,7 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 
 | Path | What | Source |
 |---|---|---|
-| `/` | Landing page; the hero is a live battle (game sprites, airstrikes, shootable headline) | `site/src/pages/index.astro`, `site/src/scripts/arena.ts` |
+| `/` | Landing page; the hero is a live battle on Fizlet (game sprites, airstrikes, shootable headline; a still poster under reduced motion) | `site/src/pages/index.astro`, `site/src/scripts/arena/`, `site/src/components/ArenaPoster.astro` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
 | `/v/<version>/` | Past builds: each earlier release's own committed `dist/`, unchanged; the landing page's PAST BUILDS picker opens them | `site/archive.json`, `scripts/archive.mjs` |
@@ -125,6 +125,14 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 MIT · Chris Cooley / coded.design
 
 ## Changelog
+
+### 1.0.1 — Fizlet 0.17.0; the landing hero on Fizlet
+
+- Fizlet 0.17.0 in `vendor/fizlet/` (was 0.15.0). The game changes by its Recall fix only (the ledger checks a style restore with the element's own document): no gameplay change, `dist/` +7 B gzip (72,727).
+- Site: the landing hero's battle runs on Fizlet bricks instead of its own loop. `fizlet/slot` mounts it once the hero is near and the page is idle (the landing page's own script drops from 7,821 to 1,730 B gzip); the kernel reads layout in its read phase only, steps the battle at a fixed 60 Hz and writes the page through its ledger (letters, HUD, the copy's shake), so Recall gives the hero back byte for byte. Explosions, scorch marks and pop words are `fizlet/fx`; the Sherman is `fizlet/sprite` data, pixel for pixel the game's tank (`test:browser` compares them). The battle steps without allocating (`tests/arena.test.mjs`: 20,000 busy steps, no minor GC).
+- Same battle, same look: platoons, AI, shells, airstrikes, flattened shapes, knocked and squashed letters (the same keyframes and easings, now on the engine's clock instead of Web Animations and timers).
+- New: 30 s after the last pointer move, tap or scroll, the battle rests (no new shots, the last ones land) and the engine settles to no frames until the visitor moves again. Reduced motion shows a still poster (`ArenaPoster.astro`: tanks parked mid-fight, both HQs) and never loads the scene. Sound still starts off; its synth loads with the first press of the sound key.
+- Measured (Chromium, 1440 × 900, 5 s of battle, median of 3): hero frame script p50 0.9 ms / p95 4.5 ms (was 1.2 / 9.7); at 4× CPU throttle 3.6 / 7.5 ms (was 4.1 / 11.0). The live chunk is 12.3 KB gzip (scene 9.8 + kernel 2.5), loaded once the page is idle; Fizlet's hero goal is 10 KB.
 
 ### 1.0.0 — On the Fizlet engine
 
