@@ -9,6 +9,11 @@ import { MISSIONS, ROLES } from '../../../src/model';
 import { VERSION, REPO, HUB, HUB_GAME, base, abs } from '../site';
 import { gameLd } from '../schema.mjs';
 import archive from '../../archive.json';
+import { readFileSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
+
+// The whole game's size, measured at build from the files npm run size counts (scripts/size.mjs), never typed.
+const gameKB = Math.round(['dist/index.html', 'dist/assets/battlefield.js', 'dist/assets/battlefield.css'].reduce((n, f) => n + gzipSync(readFileSync(f)).length, 0) / 1000);
 
 const title = 'DOM Battlefield · Squad tactics in a browser tab';
 const description = 'Command a platoon of up to twelve tanks. Pick the ground, freeze time to plan every route, then radio your squad through a live firefight. No install, no account.';
@@ -30,7 +35,7 @@ const features = [
   { icon: 'phone', title: 'A real phone cockpit', text: 'Landscape, full screen, notch-safe rails: stick on the left, orders and Fire on the right.' },
   { icon: 'full', title: 'Full screen command', text: 'The header steps aside; radio and aim float as dock cards over a bigger map.' },
   { icon: 'install', title: 'Install it like an app', text: 'Add it to your home screen and it opens straight into the cockpit.' },
-  { icon: 'bolt', title: 'Tiny on purpose', text: 'The whole game is about 68 KB gzipped. No engine download, no assets to wait for.' },
+  { icon: 'bolt', title: 'Tiny on purpose', text: `The whole game is about ${gameKB} KB gzipped. No engine download, no assets to wait for.` },
   { icon: 'grid', title: 'The grid is the DOM', text: 'Every square on the board is a real element. It is a web page, fighting back.' },
   { icon: 'sun', title: 'Dark and light', text: 'Neon on ink at night, crisp on paper by day. Same colours, same jobs.' },
 ];
@@ -78,7 +83,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       <span><b>12 v 12</b><small>TANKS A SIDE</small></span>
       <span><b>04</b><small>FRONTS</small></span>
       <span><b>03</b><small>TANK ROLES</small></span>
-      <span><b>~68 KB</b><small>THE WHOLE GAME</small></span>
+      <span><b>~{gameKB} KB</b><small>THE WHOLE GAME</small></span>
       <span><b>00</b><small>INSTALLS NEEDED</small></span>
       <span class="soon"><i></i><b>SOON</b><small>BATTLEFIELD MULTIPLAYER</small></span>
     </div>
