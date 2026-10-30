@@ -6,6 +6,7 @@ import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, extname, resolve } from "node:path";
 import { chromium } from "playwright";
 import { checkKeys, checkTaps } from "./keys.mjs";
+import { checkHeroScrim } from "./hero-scrim.mjs";
 
 const root = resolve("artifacts/pages");
 if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: npm run site:build");
@@ -229,6 +230,10 @@ try {
   assert.deepEqual(lerr, []);
   await lp.close();
 
+  // The Blitz hero scrim and its copy follow the theme (light: --surface, dark: --bg), AA in both.
+  where = "blitz hero scrim";
+  await checkHeroScrim(browser, base + "blitz/", "blitz landing");
+
   where = "blitz-drop-in";
   const dp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const derr = [];
@@ -278,7 +283,7 @@ try {
   });
   assert.equal(frames, true, "reduced motion: the arena is a still frame");
   await still.close();
-  console.log(`Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + drop-in, reduced motion, past builds, ${keys} page keys passed.`);
+  console.log(`Site: landing arena, airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + hero scrim in both themes + drop-in, reduced motion, past builds, ${keys} page keys passed.`);
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;
