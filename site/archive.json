@@ -1,5 +1,17 @@
 [
   {
+    "version": "v1.0.1",
+    "commit": "35884bc3d76d7426f413ea8b6ee2cc448c980eb6"
+  },
+  {
+    "version": "v1.0.0",
+    "commit": "8fd35955be04bb0a3ae5aa0316e91b29adf99ded"
+  },
+  {
+    "version": "v0.18.13",
+    "commit": "3a93447a2c5f46f7d37ff5c31348da1733f10b61"
+  },
+  {
     "version": "v0.18.12",
     "commit": "ef24d0124cd6223883e6c9d0f49cf64c3cc0b1db"
   },
