@@ -40,8 +40,10 @@ jobs:
           MESSAGE: ${{ inputs.message }}
           EXTRA_TAGS: ${{ inputs.extra_tags }}
         run: |
-          set -euo pipefail
-          git fetch origin --tags --force
+          set -Eeuo pipefail
+          trap 'echo "::error::failed (line $LINENO): $BASH_COMMAND"' ERR
+          g() { local out; if ! out="$(git "$@" 2>&1)"; then echo "::error::git $1 failed: ${out//$'\n'/ | }"; return 1; fi; [ -z "$out" ] || echo "$out"; }
+          g fetch origin --tags --force
           if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::sha must be a full 40-character commit SHA: $SHA"
             exit 1
@@ -71,8 +73,8 @@ jobs:
               echo "::warning::$tag already points at $at; left as is."
               return 0
             fi
-            git tag -a "$tag" "$SHA" -m "$MESSAGE"
-            git push origin "refs/tags/$tag"
+            g tag -a "$tag" "$SHA" -m "$MESSAGE"
+            g push origin "refs/tags/$tag"
             echo "Tagged $SHA as $tag."
           }
 
