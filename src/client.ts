@@ -2495,6 +2495,14 @@ function aimOrMove(id: number) {
    acts on that square exactly as a tap would (a tank there is its button; otherwise send, plant a
    flag, lock aim or move HQ). WASD still drives; with nothing to act on, Space still fires. */
 let cursorCell = -1;
+/* Only when the map was reached from the keys (Tab): a click also focuses it, and a mouse player's
+   arrow keys must keep driving as before. Any press on the map turns the cursor off again. */
+let mapKeys = false,
+  mapPointer = false;
+listen(viewport, "pointerdown", () => {
+  mapPointer = true;
+  if (mapKeys) (mapKeys = false), view?.cursor(-1);
+});
 const unitOn = (c: number) =>
   state.units.find((u) => u.hp > 0 && cell(state.board, u) === c);
 function sayCursor() {
@@ -2507,7 +2515,9 @@ function sayCursor() {
   );
 }
 listen(viewport, "focus", () => {
-  if (!view) return;
+  mapKeys = !mapPointer;
+  mapPointer = false;
+  if (!view || !mapKeys) return;
   if (cursorCell < 0 || cursorCell >= state.board.tiles.length) {
     const u = state.units[selected] ?? commander(state);
     cursorCell = cell(state.board, u);
@@ -2515,9 +2525,9 @@ listen(viewport, "focus", () => {
   view.cursor(cursorCell);
   sayCursor();
 });
-listen(viewport, "blur", () => view?.cursor(-1));
+listen(viewport, "blur", () => ((mapPointer = false), view?.cursor(-1)));
 listen(viewport, "keydown", ((e: KeyboardEvent) => {
-  if (e.target !== viewport || !playing || paused || overlays.active) return;
+  if (e.target !== viewport || !mapKeys || !playing || paused || overlays.active) return;
   const b = state.board,
     step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -b.cols, ArrowDown: b.cols }[e.code];
   if (step !== undefined) {
