@@ -73,6 +73,7 @@ When the desktop footer runs short of room, the platoon moves into its own dragg
 | Lock · clear · next · attack HQ | Enter · Backspace · N · H | Check · tap the lit order · arrow · flag |
 | Button tips | ? beside the battlefield title | First battle of a visit; Menu → ?; tap a label for details |
 | Keyboard controls | Keyboard icon beside the battlefield title (hover or click) | — |
+| Performance overlay (off by default) | Bar-chart key in the header, or F9: fps, frame times, dropped frames, engine work, heap over the map's corner (remembered, shared with DOM VIRUS) | Menu → bar-chart key |
 | Planning cards | Next / Previous footer keys or round shortcuts | Labeled round shortcuts |
 | Shrink / expand a card | Click its icon or Plan number; Enter / Space when focused | Tap its icon or Plan number |
 | Move a card | Drag its grip or any empty part | Same |

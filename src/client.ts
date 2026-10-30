@@ -18,6 +18,7 @@ import {
   snapshot,
 } from "./model";
 import { createEngine } from "../vendor/fizlet/kernel/engine";
+import { setting, PERF_KEY } from "../vendor/fizlet/ui/board-ui";
 import { drawIcons, dieFace, rollDie } from "./icons";
 import type { Battle, Role, Order, Input } from "./model";
 import { View } from "./view";
@@ -2574,6 +2575,24 @@ listen($("#bf-theme"), "click", () => {
     localStorage.setItem("dom-virus:theme", root.dataset.theme);
   } catch {}
 });
+/* The performance overlay (fizlet/perf): off by default, so it loads only when a player turns it
+   on (the header key or F9) and costs the default bundle nothing. It sits in the map's
+   bottom-left corner (touch: right of the left rail, style.css) and reads the battle engine's own
+   frames, so it rests while the battle is stopped. Remembered in localStorage (dom-virus:perf),
+   shared with the DOM VIRUS sites. */
+let perfOverlay: { show(on: boolean): void } | undefined, perfLoading = false;
+const perfKey = setting($("#bf-perf"), PERF_KEY, (on) => {
+  if (perfOverlay) return perfOverlay.show(on);
+  if (!on || perfLoading) return;
+  perfLoading = true;
+  import("../vendor/fizlet/perf").then(({ perf }) => {
+    if (abort.signal.aborted) return;
+    perfOverlay = perf(engine, { host: $(".bf-stage"), corner: "bl", key: null, on: perfKey.on });
+  });
+}, abort.signal);
+listen(document, "keydown", ((e: KeyboardEvent) => {
+  if (e.code === "F9" && !e.repeat) perfKey.set(!perfKey.on);
+}) as EventListener);
 /* The sound key starts in the saved state (muted stays muted after a reload). */
 function soundButton() {
   const b = $("#bf-sound");

@@ -277,6 +277,12 @@ html.bui[data-theme="light"] .panel.lit {
     display: none;
   }
 }
+@media (max-width: 440px) {
+  /* No room for a fourth key on a phone page (the game's own header keeps the switch). */
+  .head-keys [data-perf-toggle] {
+    display: none;
+  }
+}
 
 /* Theme icon swap. */
 html.bui[data-theme="dark"] .theme-light,

@@ -1169,6 +1169,37 @@ try {
     await page.close();
     console.log({ prefs: true });
   }
+  {
+    // The performance overlay: off by default; the header key (or F9) shows it over the map,
+    // it is remembered, it draws battle frames, and it rests while the battle is stopped.
+    where = "perf overlay";
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.addInitScript(() => localStorage.setItem("dom-battlefield:tips", "off"));
+    await page.goto(URL);
+    await page.waitForFunction(() => window.battlefield);
+    const off = await page.evaluate(() => [!!document.querySelector(".fizlet-perf"), performance.getEntriesByType("resource").some((r) => /perf/.test(r.name)), document.querySelector("#bf-perf").getAttribute("aria-pressed"), localStorage.getItem("dom-virus:perf")]);
+    assert.deepEqual(off, [false, false, "false", null], "off by default: not loaded, not on the page");
+    await page.locator(".bf-mission").first().click();
+    await page.locator("#bf-quick").click();
+    await page.waitForFunction(() => window.battlefield.playing && !window.battlefield.command.planning);
+    await page.locator("#bf-perf").click();
+    await page.waitForSelector(".fizlet-perf:not([hidden])");
+    await page.waitForTimeout(800);
+    const on = await page.evaluate(() => {
+      const el = document.querySelector(".fizlet-perf"), r = el.getBoundingClientRect(), s = document.querySelector(".bf-stage").getBoundingClientRect();
+      return { shown: !el.hidden, pressed: document.querySelector("#bf-perf").getAttribute("aria-pressed"), stored: localStorage.getItem("dom-virus:perf"), inMap: r.left >= s.left && r.bottom <= s.bottom && r.width > 0, fps: +el.querySelector("b").textContent };
+    });
+    assert.deepEqual({ ...on, fps: on.fps > 10 }, { shown: true, pressed: "true", stored: "1", inMap: true, fps: true }, `overlay on, in the map's corner (${on.fps} fps)`);
+    await page.keyboard.press("F9");
+    assert.equal(await page.locator("#bf-perf").getAttribute("aria-pressed"), "false", "F9 hides it and the key follows");
+    await page.keyboard.press("F9");
+    await page.reload();
+    await page.waitForFunction(() => window.battlefield);
+    assert.equal(await page.locator("#bf-perf").getAttribute("aria-pressed"), "true", "remembered across a reload");
+    await page.waitForSelector(".fizlet-perf:not([hidden])");
+    await page.close();
+    console.log({ perf: true });
+  }
 } catch (e) {
   // CI annotation: readable from the checks API even when log downloads are not.
   console.log(`::error title=Battlefield browser test (${where})::${String(e.stack || e).split("\n").slice(0, 4).join(" | ")}`);
