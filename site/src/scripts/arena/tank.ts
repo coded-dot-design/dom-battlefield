@@ -1,5 +1,5 @@
 /**
- * The hero's Sherman as fizlet/sprite data: the Sherman Bytes tank (shared/sherman-sprites.ts, the
+ * The hero's Sherman as fizlet/sprite data: the Sherman Bytes tank (src/sherman-sprites.ts, the
  * game's own art) split into a hull with two tread frames and a turret with seven recoil frames, so
  * the turret turns on its own. The rects are the shared drawing's own, one for one (the hero's
  * browser test draws both and compares the pixels). The poster (ArenaPoster.astro) draws the same

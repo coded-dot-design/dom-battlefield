@@ -1,4 +1,4 @@
-import { tankSprites } from "../shared/sherman-sprites";
+import { tankSprites } from "./sherman-sprites";
 import { point, variant, MISSIONS } from "./model";
 import type { Battle } from "./model";
 const colors = ["#39ffb0", "#ff5c8f"];

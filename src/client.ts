@@ -26,8 +26,8 @@ import { bindPlanningCards } from "./planning-cards";
 import { createLaunchEffects } from "./launch-effects";
 import { createBattleOverlays } from "./battle-overlays";
 import type { RouteLine } from "./view";
-import { createGameAudio } from "../shared/audio";
-import { createMobileSelectionLock } from "../shared/selection-lock";
+import { createGameAudio } from "./audio";
+import { createMobileSelectionLock } from "./selection-lock";
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
 const viewport = $("#bf-viewport"),

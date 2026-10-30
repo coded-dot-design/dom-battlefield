@@ -1,6 +1,6 @@
 /** Card and key icons drawn with the game's own Sherman sprite, in your team colour. Each icon has
  *  a fixed design box (in sprite pixels) and is drawn at 3x for crisp pixel edges. */
-import { tankSprites } from "../shared/sherman-sprites";
+import { tankSprites } from "./sherman-sprites";
 
 const draw = tankSprites(document);
 const UP = -Math.PI / 2;
