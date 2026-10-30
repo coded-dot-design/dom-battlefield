@@ -28,6 +28,7 @@ import { createBattleOverlays } from "./battle-overlays";
 import type { RouteLine } from "./view";
 import { createGameAudio } from "./audio";
 import { createMobileSelectionLock } from "./selection-lock";
+import { announcer } from "./announce";
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
 const viewport = $("#bf-viewport"),
@@ -147,6 +148,10 @@ const launchEffects = createLaunchEffects(root, abort.signal, () => reduced.matc
   buzz(12);
 });
 const overlays = createBattleOverlays(root, viewport, abort.signal);
+/* Screen readers hear the game through one polite region (src/announce.ts), at most once a
+   second: comms, the phase, both platoons' strength, capture time and the result. */
+const announce = announcer();
+abort.signal.addEventListener("abort", () => announce.destroy(), { once: true });
 function listen(target: EventTarget, type: string, fn: EventListener) {
   target.addEventListener(type, fn, options);
 }
@@ -214,6 +219,7 @@ let toastTimer = 0;
 function say(text: string) {
   if (announcement.textContent === text) return;
   announcement.textContent = text;
+  if (text) announce.say("comms", text);
   // Touch: comms is a radio toast. It shows briefly, then fades; tap or swipe it away sooner.
   if (text) {
     const f = $(".bf-footer");
@@ -494,7 +500,11 @@ function preview(resized = false) {
       String(roles[Number(n.closest<HTMLElement>("[data-slot]")!.dataset.slot)] === n.dataset.role),
     );
   for (const id of ["#bf-deploy", "#bf-quick", "#bf-start"]) $<HTMLButtonElement>(id).disabled = over;
-  $("#bf-cost-error").textContent = over ? "Over budget: downgrade a tank before you deploy." : "";
+  const costError = over ? "Over budget: downgrade a tank before you deploy." : "";
+  if ($("#bf-cost-error").textContent !== costError) {
+    $("#bf-cost-error").textContent = costError;
+    if (costError) announce.say("cost", costError);
+  }
   $("#bf-objective-label").textContent =
     MISSIONS[mission]!.objective === "capture"
       ? "CAPTURE HQ / 12s"
@@ -1311,6 +1321,34 @@ function reset(keepBurst = false) {
   $("#bf-controls").hidden = true;
   preview();
 }
+const PHASE_SAY: Record<string, string> = {
+  PREPARE: "Setup: choose an operation",
+  PLAN: "Planning, time frozen",
+  LIVE: "Battle on",
+  PAUSED: "Paused",
+};
+/** What the screen reader last heard: both platoons' strength and capture time (10 s steps). */
+const heard = { allies: -1, enemies: -1, a: -1, b: -1 };
+/** Change-only: counts are compared before any text is built. */
+function hudSay() {
+  if (!playing) return void (heard.allies = heard.enemies = heard.a = heard.b = -1);
+  let allies = 0,
+    enemies = 0;
+  for (const u of state.units) if (u.hp > 0) u.side === side ? allies++ : enemies++;
+  if (allies !== heard.allies || enemies !== heard.enemies) {
+    heard.allies = allies;
+    heard.enemies = enemies;
+    announce.say("units", `Friendly ${allies} of ${state.per}, hostile ${enemies} of ${state.per}`);
+  }
+  if (MISSIONS[mission]!.objective === "eliminate") return;
+  const a = Math.floor(state.capture[0]! / 10) * 10,
+    b = Math.floor(state.capture[1]! / 10) * 10;
+  if (a === heard.a && b === heard.b) return;
+  const first = heard.a < 0;
+  heard.a = a;
+  heard.b = b;
+  if (!first) announce.say("score", `Capture: A ${a} seconds, B ${b} seconds`);
+}
 function updateHUD() {
   const p = commander(state);
   // The order key the squad (or the selected tank) is locked on stays lit.
@@ -1352,7 +1390,12 @@ function updateHUD() {
       : state.winner === null
         ? "LIVE"
         : "COMPLETE";
-  if (status.textContent !== phase) status.textContent = phase;
+  if (status.textContent !== phase) {
+    status.textContent = phase;
+    const told = PHASE_SAY[phase];
+    if (told) announce.say("turn", told);
+  }
+  hudSay();
   const roster = $("#bf-roster");
   const allies = state.units.filter((u) => u.side === side);
   // Platoon keys: the same square arcade key as every control. Colour = health (green over 60%,
@@ -1469,6 +1512,7 @@ engine.add({
       $("#bf-result-kicker").textContent = won ? "STAGE CLEAR" : "INSERT COIN";
       $("#bf-result-title").textContent = won ? "MISSION COMPLETE" : "GAME OVER";
       overlays.set(result, true);
+      announce.say("status", won ? "Mission complete: you win" : "Game over: you lose");
       // The debrief goes out over comms; the overlay is just the sticker and two keys.
       const kills = state.units.filter((u) => u.side !== side && u.hp <= 0).length,
         lost = state.units.filter((u) => u.side === side && u.hp <= 0).length;
@@ -1478,6 +1522,7 @@ engine.add({
       );
       $<HTMLButtonElement>("#bf-rematch").focus({ preventScroll: true });
       updateHUD();
+      announce.flush();
     }
   },
 });
@@ -2057,6 +2102,8 @@ listen($("#bf-tips"), "click", () => {
   $("#bf-squad").setAttribute("aria-expanded", "false");
   if (paused && $("#bf-gate").hidden) setPause(false);
   coach(true);
+  // Keyboard: the tips' own key takes focus (Esc closes them and returns here).
+  $("#bf-coach-off").focus({ preventScroll: true });
 });
 listen($("#bf-coach"), "click", ((e: MouseEvent) => {
   const label = (e.target as Element).closest(".bf-tip-label");
@@ -2155,6 +2202,16 @@ for (const n of document.querySelectorAll<HTMLElement>("[data-order]"))
   press(n, () => order(n.dataset.order as Order));
 listen(document, "keydown", ((e: KeyboardEvent) => {
   if ((e.target as Element).matches("input,select,textarea")) return;
+  if (e.code === "Escape" && !$("#bf-keys-panel").hidden) {
+    e.preventDefault();
+    keysPanel(false);
+    return $("#bf-keys").focus();
+  }
+  if (e.code === "Escape" && !$("#bf-coach").hidden) {
+    e.preventDefault();
+    coach(false);
+    return $("#bf-tips").focus();
+  }
   if (!playing) return;
   if (overlays.active) {
     if (!$("#bf-giveup").hidden && (e.code === "Escape" || e.code === "KeyP")) {
@@ -2418,17 +2475,75 @@ listen(viewport, "click", ((e: MouseEvent) => {
   const p = view.location(e);
   if (p.x < 0 || p.y < 0 || p.x >= state.board.cols || p.y >= state.board.rows)
     return;
+  aimOrMove(cell(state.board, p));
+}) as EventListener);
+/** A tap on a square outside Command: lock aim there (Lock), or move the selected tank. */
+function aimOrMove(id: number) {
   if (picking) {
-    const c = point(state.board, cell(state.board, p));
+    const c = point(state.board, id);
     setAim({ mode: "cell", x: c.x, y: c.y }, "Aim locked on that square. Tap Auto to release.");
-    return;
+    return true;
   }
-  if (selected < 0) return;
-  const id = cell(state.board, p);
+  if (selected < 0) return false;
   if (command(state, { type: "move", id: selected, cell: id })) {
     view.highlight(id);
     say(state.events.at(-1)!);
   } else say("Blocked or unreachable square. Choose an open lane.");
+  return true;
+}
+/* Keyboard play on the map: with the map focused, the arrow keys move a square cursor and Space
+   acts on that square exactly as a tap would (a tank there is its button; otherwise send, plant a
+   flag, lock aim or move HQ). WASD still drives; with nothing to act on, Space still fires. */
+let cursorCell = -1;
+const unitOn = (c: number) =>
+  state.units.find((u) => u.hp > 0 && cell(state.board, u) === c);
+function sayCursor() {
+  const b = state.board,
+    u = unitOn(cursorCell);
+  announce.say(
+    "cursor",
+    `${b.tiles[cursorCell]}, column ${(cursorCell % b.cols) + 1}, row ${Math.floor(cursorCell / b.cols) + 1}` +
+      (u ? `, ${u.side === side ? (u.id === commander(state).id ? "your tank" : `tank ${tankNo(u.id)}`) : `enemy ${u.role}`}` : ""),
+  );
+}
+listen(viewport, "focus", () => {
+  if (!view) return;
+  if (cursorCell < 0 || cursorCell >= state.board.tiles.length) {
+    const u = state.units[selected] ?? commander(state);
+    cursorCell = cell(state.board, u);
+  }
+  view.cursor(cursorCell);
+  sayCursor();
+});
+listen(viewport, "blur", () => view?.cursor(-1));
+listen(viewport, "keydown", ((e: KeyboardEvent) => {
+  if (e.target !== viewport || !playing || paused || overlays.active) return;
+  const b = state.board,
+    step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -b.cols, ArrowDown: b.cols }[e.code];
+  if (step !== undefined) {
+    e.preventDefault();
+    e.stopPropagation();
+    const x = cursorCell % b.cols;
+    if ((e.code === "ArrowLeft" && x === 0) || (e.code === "ArrowRight" && x === b.cols - 1)) return;
+    const next = cursorCell + step;
+    if (next < 0 || next >= b.tiles.length) return;
+    view.cursor((cursorCell = next));
+    if (selected >= 0) view.highlight(next);
+    sayCursor();
+    return;
+  }
+  if (e.code !== "Space" || e.repeat || pan) return;
+  const u = unitOn(cursorCell);
+  let acted = true;
+  if (u) selectUnit(u.id);
+  else if (commanding) {
+    if (hqPick) moveHq(cursorCell);
+    else setDest(cursorCell);
+  } else acted = aimOrMove(cursorCell);
+  if (!acted) return;
+  e.preventDefault();
+  e.stopPropagation();
+  cmdPanel();
 }) as EventListener);
 listen(viewport, "contextmenu", (e) => e.preventDefault());
 /* Command gestures. Drag a stop or the flag to move it; drag the line to add a bend; drag open

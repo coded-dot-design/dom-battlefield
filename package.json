@@ -12,7 +12,7 @@
     "build": "npm run typecheck && vite build && node scripts/build-manifest.mjs",
     "check": "npm run typecheck && npm test && npm run build",
     "size": "node scripts/size.mjs",
-    "test:browser": "node tests/browser.mjs",
+    "test:browser": "node tests/browser.mjs && node tests/a11y.mjs",
     "site:dev": "astro dev --config site/astro.config.mjs",
     "site:build": "astro build --config site/astro.config.mjs && node scripts/pages.mjs",
     "test:site": "node tests/site.mjs && node tests/archive.mjs",

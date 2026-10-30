@@ -171,8 +171,8 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
         </div></div>
       <div class="bu-row"><span class="bui-label"><b>PLANNING</b> · round step keys · count badge · caption</span>
         <div class="bu-keys bu-orbs">
-          <button class="bui-orb" type="button" aria-label="Platoon"><svg class="bui-outline" viewBox="0 0 48 36" shape-rendering="crispEdges" style="stroke:none">{[[18,0],[4,16],[32,16]].map(([x,y]) => <g transform={`translate(${x} ${y})`} set:html={tank}/>)}</svg><span class="bui-badge">4</span></button>
-          <button class="bui-orb" type="button" aria-label="Previous step"><svg class="bui-outline" viewBox="0 0 48 36" shape-rendering="crispEdges" style="stroke:none;translate:0 -6px"><g transform="translate(4 8)" set:html={tank}/><rect x="24" y="8" width="10" height="4" fill="var(--k-sys)"/><rect x="24" y="16" width="16" height="4" fill="var(--k-sys)"/><rect x="24" y="24" width="20" height="4" fill="var(--k-sys)"/></svg><small>‹ PREV</small><span class="bui-badge">12</span></button>
+          <button class="bui-orb" type="button" aria-label="Platoon: 4 tanks"><svg class="bui-outline" viewBox="0 0 48 36" shape-rendering="crispEdges" style="stroke:none">{[[18,0],[4,16],[32,16]].map(([x,y]) => <g transform={`translate(${x} ${y})`} set:html={tank}/>)}</svg><span class="bui-badge">4</span></button>
+          <button class="bui-orb" type="button" title="Previous step"><svg class="bui-outline" viewBox="0 0 48 36" shape-rendering="crispEdges" style="stroke:none;translate:0 -6px"><g transform="translate(4 8)" set:html={tank}/><rect x="24" y="8" width="10" height="4" fill="var(--k-sys)"/><rect x="24" y="16" width="16" height="4" fill="var(--k-sys)"/><rect x="24" y="24" width="20" height="4" fill="var(--k-sys)"/></svg><small>‹ PREV</small><span class="bui-badge">12</span></button>
         </div></div>
     </div>
   </section>
@@ -206,7 +206,7 @@ applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", team
         <button class="bui-back-tab" type="button"><svg viewBox="0 0 20 20"><path d={icon.back}/></svg>LOADOUT</button>
         <span class="bu-pill"><svg viewBox="0 0 20 20"><path d={icon.command}/></svg>ROGER · GRID 0412</span>
         <div class="bu-plan-body">
-          <button class="bui-key bui-arcade bui-unit bu-big" type="button" aria-label="Shrink plan card"><b>2</b><span class="bui-pips"><s></s><s></s></span></button>
+          <button class="bui-key bui-arcade bui-unit bu-big" type="button" aria-label="Tank 2: shrink plan card"><b>2</b><span class="bui-pips"><s></s><s></s></span></button>
           <div><p class="bu-card-title">TANK 2 · MEDIUM</p><p class="bu-card-text">Pick an order beside the tank: Attack HQ, Follow, or Command.</p></div>
         </div>
       </div>

@@ -316,7 +316,7 @@ button.down {
    its icon in full aim red. */
 #bf-auto[aria-pressed="false"],
 #bf-target[aria-pressed="false"] {
-  --c: color-mix(in srgb, var(--k-aim) 26%, var(--raised));
+  --c: color-mix(in srgb, var(--k-aim) 18%, var(--raised));
   --edge: color-mix(in srgb, var(--k-aim) 45%, var(--rim));
   color: var(--k-aim);
 }
@@ -745,6 +745,19 @@ h1 {
     linear-gradient(var(--rubble), var(--rubble)) 70% 62% / 14% 14% no-repeat,
     #a77bff0d;
 }
+/* The keyboard's square cursor (the map focused): a sys-cyan frame, above the route target. */
+.bf-tile.cursor {
+  outline: 3px solid var(--k-sys-ink);
+  outline-offset: -3px;
+  z-index: 3;
+}
+#bf-viewport:focus-visible {
+  outline-offset: -3px;
+}
+/* A key's letter is drawn from data-k, so its accessible name is the label alone. */
+kbd[data-k]::after {
+  content: attr(data-k);
+}
 .bf-tile.target {
   background: color-mix(in srgb, var(--k-cmd) 25%, transparent);
   outline: 2px solid var(--k-cmd);
@@ -817,6 +830,10 @@ h1 {
 .bf-tank.selected {
   outline: 2px solid var(--k-cmd);
   outline-offset: 1px;
+}
+#battlefield .bf-tank:focus-visible {
+  outline: 3px solid var(--k-sys-ink);
+  outline-offset: 2px;
 }
 .bf-health {
   position: absolute;
