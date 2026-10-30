@@ -101,7 +101,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm test` runs the model tests, the replay test and the zero-allocation test (one file at a time, `--expose-gc`). `npm run size` checks the combined gzip size of JavaScript, styles and markup against **72,500 bytes**. Version 1.0.0 measures **71,911 bytes** (9,488 HTML + 40,211 JavaScript + 22,212 CSS). The allowance rises from 68,000 bytes for the move onto the Fizlet engine: the vendored kernel and `fizlet/rules` drops add 4,295 bytes of JavaScript over 0.18.13 (67,617 bytes), measured, with no runtime dependency.
+`dist/` is the reproducible static app copied by the DOM Virus site's build; there is no runtime framework or server requirement. `npm test` runs the model tests, the replay test and the zero-allocation test (one file at a time, `--expose-gc`). `npm run size` checks the combined gzip size of JavaScript, styles and markup against **73,000 bytes** (`scripts/size.mjs`). Today's `dist/` (Fizlet 0.20.0) measures **72,750 bytes** (9,549 HTML + 40,924 JavaScript + 22,277 CSS); 1.0.0 measured 71,911 bytes (9,488 HTML + 40,211 JavaScript + 22,212 CSS). The allowance rises from 68,000 bytes for the move onto the Fizlet engine: the vendored kernel and `fizlet/rules` drops add 4,295 bytes of JavaScript over 0.18.13 (67,617 bytes), measured, with no runtime dependency.
 
 ## Boundaries
 
