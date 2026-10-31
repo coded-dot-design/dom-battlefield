@@ -7,7 +7,7 @@ import { join, extname, resolve } from "node:path";
 import { chromium } from "playwright";
 import { checkKeys, checkTaps } from "./keys.mjs";
 import { checkHeroScrim } from "./hero-scrim.mjs";
-import { GROUPS, PAGES, hidden } from "../site/src/sitemap.mjs";
+import { FAMILY_LINE, GROUPS, PAGES, SELF, hidden } from "../site/src/sitemap.mjs";
 
 const root = resolve("artifacts/pages");
 if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: npm run site:build");
@@ -408,6 +408,9 @@ try {
       }
       const current = local.filter((l) => l.current === "page").map((l) => l.url.pathname);
       assert.deepEqual(current, PAGES.some((p) => p.path === at) ? [new URL(base + at).pathname] : [], `/${at}: aria-current on this page only`);
+      // The family line (sitemap.mjs FAMILY_LINE): the four family sites first, in order, ↗ on all but this one.
+      const family = await map.locator('ul[aria-labelledby="map-family"] a').evaluateAll((as) => as.map((a) => [a.getAttribute("href"), a.textContent.trim()]));
+      assert.deepEqual(family.slice(0, FAMILY_LINE.length), FAMILY_LINE.map((f) => [f.href, f.href === SELF ? f.label : `${f.label}↗`]), `/${at}: the family line`);
     }
     await fp.setViewportSize({ width: 390, height: 844 });
     await fp.goto(base);
