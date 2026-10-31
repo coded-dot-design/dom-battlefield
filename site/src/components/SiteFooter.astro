@@ -5,6 +5,7 @@
 import Skull from './Skull.astro';
 import { REPO, HUB_GAME, FAMILY, FIZLET, base } from '../site';
 import { GROUPS, PAGES, FAMILY_LINE, SELF } from '../sitemap.mjs';
+import { SITE } from '../lib/analytics/site.mjs';
 
 const here = Astro.url.pathname;
 const links = Object.fromEntries(GROUPS.map((g) => [g.id, []]));
@@ -45,6 +46,6 @@ links.about.push(
     ))}
   </nav>
   <div class="foot-base">
-    <div class="wrap"><span>© 2026 coded.design · MIT</span><span>Created by <a href="https://coded.design/" rel="author">Chris Cooley</a></span></div>
+    <div class="wrap"><span>© 2026 coded.design · MIT</span><span class="foot-legal"><a href={SITE.privacyUrl}>Privacy</a> · <a href={SITE.cookiesUrl}>Cookies</a><button type="button" data-cookie-settings hidden>Cookie settings</button></span><span>Created by <a href="https://coded.design/" rel="author">Chris Cooley</a></span></div>
   </div>
 </footer>
