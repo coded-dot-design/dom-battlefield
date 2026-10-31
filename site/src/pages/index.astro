@@ -247,7 +247,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       <h2 id="final-title">The squad is waiting.</h2>
       <a class="bui-key bui-sticker-key bui-call start-key final-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
       {archive.length > 0 && (
-        <div class="past-builds" data-past-builds>
+        <div class="past-builds" id="builds" data-past-builds>
           <label class="bui-label" for="past-build"><b>EVERY BUILD</b> · {archive.length}</label>
           <select id="past-build">{archive.map((b) => <option value={base(`v/${b.version}/`)}>{b.version}{b.version === `v${VERSION}` && ' · current'}</option>)}</select>
           <a class="bui-key bui-arcade bui-sys" href={base(`v/${archive[0].version}/`)}><Icon name="play" size={16} />Play build</a>

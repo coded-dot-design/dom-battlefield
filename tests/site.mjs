@@ -7,6 +7,7 @@ import { join, extname, resolve } from "node:path";
 import { chromium } from "playwright";
 import { checkKeys, checkTaps } from "./keys.mjs";
 import { checkHeroScrim } from "./hero-scrim.mjs";
+import { GROUPS, PAGES, hidden } from "../site/src/sitemap.mjs";
 
 const root = resolve("artifacts/pages");
 if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: npm run site:build");
@@ -379,6 +380,45 @@ try {
     await phone.close();
   }
 
+  where = "footer site map";
+  {
+    // The footer's site map (site/src/sitemap.mjs): on every page, one column per group, every page in
+    // PAGES linked exactly once, no hidden or noindex page, the current page marked, every section
+    // link landing on its heading. Phones: one column, no sideways scroll.
+    const noindex = (path) => /<meta\s+name="robots"\s+content="[^"]*noindex/.test(readFileSync(join(root, path, "index.html"), "utf8"));
+    const fp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    // Every page the site renders (the game at /play/ is dist and has no site footer).
+    const footed = [...PAGES.map((p) => p.path), "blitz/"].filter((p) => readFileSync(join(root, p, "index.html"), "utf8").includes('class="site-foot"'));
+    assert.deepEqual(footed, ["", "style-guide/", "blitz/"]);
+    for (const at of footed) {
+      await fp.goto(base + at);
+      const map = fp.locator('footer nav[aria-label="Site map"]');
+      assert.equal(await map.locator("ul").count(), GROUPS.length, `/${at}: a list per group`);
+      assert.deepEqual(await map.locator("h2").allTextContents(), GROUPS.map((g, i) => `${String(i + 1).padStart(2, "0")}${g.title}`), `/${at}: group headings`);
+      const links = await map.locator("a").evaluateAll((as) => as.map((a) => ({ href: a.href, current: a.getAttribute("aria-current") })));
+      const local = links.map((l) => ({ ...l, url: new URL(l.href) })).filter((l) => l.url.origin === new URL(base).origin);
+      for (const p of PAGES) {
+        const n = local.filter((l) => l.url.pathname === new URL(base + p.path).pathname && !l.url.hash).length;
+        assert.equal(n, 1, `/${at}: footer links /${p.path} once (got ${n})`);
+      }
+      for (const l of local) {
+        const path = l.url.pathname.slice(new URL(base).pathname.length);
+        assert.ok(!hidden(path) && !noindex(path), `/${at}: footer never links hidden or noindex /${path}`);
+        if (l.url.hash) assert.match(readFileSync(join(root, path, "index.html"), "utf8"), new RegExp(`id="${l.url.hash.slice(1)}"`), `${l.href} has its heading`);
+      }
+      const current = local.filter((l) => l.current === "page").map((l) => l.url.pathname);
+      assert.deepEqual(current, PAGES.some((p) => p.path === at) ? [new URL(base + at).pathname] : [], `/${at}: aria-current on this page only`);
+    }
+    await fp.setViewportSize({ width: 390, height: 844 });
+    await fp.goto(base);
+    const phone = await fp.evaluate(() => {
+      const cols = [...document.querySelectorAll(".foot-col")].map((c) => Math.round(c.getBoundingClientRect().left));
+      return { oneColumn: new Set(cols).size === 1, fits: document.documentElement.scrollWidth <= innerWidth };
+    });
+    assert.deepEqual(phone, { oneColumn: true, fits: true }, "phone: one column of groups, no sideways scroll");
+    await fp.close();
+  }
+
   where = "reduced-motion";
   const still = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
   const sp = await still.newPage();
@@ -390,7 +430,7 @@ try {
   assert.equal(await sp.locator(".arena-poster").isVisible(), true, "reduced motion: the still poster");
   assert.equal(await sp.locator("[data-fizlet-slot]").count(), 0, "reduced motion: no scene");
   await still.close();
-  console.log(`Site: landing arena (mount, strikes, letters, rest, offscreen, Recall), airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + hero scrim in both themes + drop-in, reduced motion, past builds, ${keys} page keys passed.`);
+  console.log(`Site: landing arena (mount, strikes, letters, rest, offscreen, Recall), airstrikes, radio, theme, phones, style guide, play link, Blitz board + phone app mode + hero scrim in both themes + drop-in, footer site map, reduced motion, past builds, ${keys} page keys passed.`);
 } catch (e) {
   console.error(`::error title=Battlefield site test (${where})::${e.message}`);
   throw e;
