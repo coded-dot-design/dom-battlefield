@@ -29,6 +29,8 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 | `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
 | `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
 
+The footer's site map comes from `site/src/sitemap.mjs`: add a new page there (or under `HIDDEN` for noindex and off-site pages) and the footer lists it; the build fails on a page that is in neither.
+
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
 `npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag up to and including the current version (run it after a release is tagged; `tests/archive.mjs` fails while one is missing; every `/v/<version>/` page is `noindex`); `npm run shots` retakes the landing-page screenshots from `dist/`.
 The site's Board UI is `fizlet/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
