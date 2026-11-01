@@ -108,7 +108,7 @@ const cells = Array.from({ length: 16 }, (_, i) => ({ x: (i % 4) * 16, y: Math.f
     <div class="bui bu-board" data-bui>
       <ul class="bu-roles">{roles.map(([key, name, job]) => <li><i style={`background:var(${name})`}></i><b>{key}</b><code>{name}</code><span>{job}</span><em data-hex={name}></em></li>)}</ul>
     </div>
-    <pre class="bu-code"><code>{`import { applyPalette } from "fizlet/ui";
+    <pre class="bu-code"><code>{`import { applyPalette } from "@fzlt/core/ui";
 applyPalette(boardRoot, { sys: "#06c4ff", cmd: "#8573ee", teamA: "#4bce82", teamB: "#f4457a" });
 // or in an embed config: palette: { cmd: "#8573ee" }   (hex only; anything else is ignored)`}</code></pre>
   </section>

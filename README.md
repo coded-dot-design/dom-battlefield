@@ -33,7 +33,7 @@ The footer's site map comes from `site/src/sitemap.mjs`: add a new page there (o
 
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
 `npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag up to and including the current version (run it after a release is tagged; `tests/archive.mjs` fails while one is missing; every `/v/<version>/` page is `noindex`); `npm run shots` retakes the landing-page screenshots from `dist/`.
-The site's Board UI is `fizlet/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
+The site's Board UI is `@fzlt/core/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
 [BOARD-UI.md](https://github.com/coded-dot-design/fizlet/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
 
 **Battlefield Blitz** (the arcade version) is its own repo,
@@ -130,8 +130,9 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
-### Unreleased
+### 1.0.2 — Blitz 1.0.0 (on @fzlt/core 0.21.2)
 
+- **Blitz 1.0.0 (on @fzlt/core 0.21.2)** in `vendor/blitz/` (tag `v1.0.0`, `15bf501`; `node scripts/sync-blitz.mjs`, no hand edits), up from 0.6.5. `/blitz/`, `/blitz/play/` and the drop-in `/blitz/blitz.js` serve it; the landing page's eyebrow and JSON-LD read the version from `ORIGIN.json`. The build adds `blitz-net.mjs` (lockstep net play), which the site doesn't load. The style guide's palette snippet imports from `@fzlt/core/ui` (Fizlet's npm name). The game's `dist/` files are unchanged (only `build.json`'s version moves).
 - **Site: GA4 + PostHog behind a consent banner (pending owner review).** The astro-engine analytics kit (`kit/src/lib/analytics`, as in dom-virus#38 and fizlet#214) in `site/src/lib/analytics/`, at the end of `<body>` in `Base.astro`: Consent Mode all denied by default, nothing loads before Accept, Reject as easy as Accept (remembered under `dom-battlefield:consent`), GPC and DNT treated as Reject, banner in the Board UI tokens (on a phone game page, below the key row and clear of the fire pad). Footer: Privacy, Cookies (domvirus.com/legal/) and Cookie settings. `/blitz/play/` sends `game_start` and `game_end` (your kills, deaths, place, tanks, seconds); no names or free text, never from `src/`, `dist/` or `vendor/`. `/play/` (the committed game build) carries no analytics. Ids from repository Variables `PUBLIC_GA4_ID`, `PUBLIC_POSTHOG_KEY`, `PUBLIC_POSTHOG_HOST`; unset, the build ships no analytics code. `tests/site-analytics.mjs` in `test:site`; `dist/` unchanged.
 - **Fizlet 0.20.0** in `vendor/fizlet/` (tag `v0.20.0`, `bf42a8c`; `node scripts/sync-fizlet.mjs`, no hand edits). No gameplay change.
   - The kernel's fps-cap fix: a capped engine counts its slot from the frame's start, so the landing hero's `fps: 30` now really draws 30. `test:site` on a 390 × 844 phone: **30.0 rAF/s** battling (0 once settled); before, slow frames napped past their slot (23.1 rAF/s measured at 4× CPU in the 30 fps change above).
