@@ -130,6 +130,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### 1.0.3 — Blitz 1.0.1
+
+- **Blitz 1.0.1** in `vendor/blitz/` (tag `v1.0.1`, `5556e0d`; `node scripts/sync-blitz.mjs`, no hand edits), up from 1.0.0. Phone start screen: the directions move behind an (i) key next to Home (they open at PRESS START and close during the countdown; the key toggles them mid-match), the mode description is a quiet sub-header that stays readable over board tiles, and the BLITZ sticker is sized to its content with a tilted mode tag. `/blitz/`, `/blitz/play/` and the drop-in `/blitz/blitz.js` serve it. The game's `dist/` files are unchanged (only `build.json`'s version moves).
+
 ### 1.0.2 — Blitz 1.0.0 (on @fzlt/core 0.21.2)
 
 - **Blitz 1.0.0 (on @fzlt/core 0.21.2)** in `vendor/blitz/` (tag `v1.0.0`, `15bf501`; `node scripts/sync-blitz.mjs`, no hand edits), up from 0.6.5. `/blitz/`, `/blitz/play/` and the drop-in `/blitz/blitz.js` serve it; the landing page's eyebrow and JSON-LD read the version from `ORIGIN.json`. The build adds `blitz-net.mjs` (lockstep net play), which the site doesn't load. The style guide's palette snippet imports from `@fzlt/core/ui` (Fizlet's npm name). The game's `dist/` files are unchanged (only `build.json`'s version moves).
