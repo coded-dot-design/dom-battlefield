@@ -394,18 +394,35 @@ a.bui-sticker-key {
   letter-spacing: 0.08em;
   color: var(--muted);
 }
-.foot-legal a,
-.foot-legal button {
+.foot-legal a {
   color: inherit;
 }
-.foot-legal button {
-  min-height: 24px;
-  margin-left: 0.6em;
+/* "Cookie settings" reopens the consent banner, so it is a <button>, but it reads as the Privacy and
+   Cookies links beside it: no Board UI key (border, base, lift), the same underline and focus ring.
+   .site-foot outranks every .bui button state (hover, press, focus). */
+.site-foot .foot-legal button[data-cookie-settings] {
+  min-height: 0;
+  margin: 0 0 0 1ch;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+  transition: none;
   font: inherit;
   letter-spacing: inherit;
+  color: inherit;
+  text-decoration: underline;
 }
-.foot-legal button::before {
-  content: "· ";
+.site-foot .foot-legal button[data-cookie-settings]:focus-visible {
+  outline: 3px solid var(--k-sys-ink);
+  outline-offset: 3px;
+}
+.site-foot .foot-legal button[data-cookie-settings]::before {
+  content: "·\00a0";
+  display: inline-block; /* keeps the separator out of the underline */
+  white-space: pre;
 }
 /* Consent banner (site/src/lib/analytics, the astro-engine kit): the Board UI tokens, as fizlet.com. */
 :root {
