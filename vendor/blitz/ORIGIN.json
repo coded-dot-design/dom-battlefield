@@ -1,13 +1,13 @@
 {
   "note": "Pinned build of Battlefield Blitz (its dist/). Release coded-dot-design/dom-battlefield-blitz, then run node scripts/sync-blitz.mjs.",
   "repository": "https://github.com/coded-dot-design/dom-battlefield-blitz",
-  "version": "1.0.0",
-  "commit": "15bf50115d28f259ba05a21d6ca4dfd3faf2fa1a",
+  "version": "1.0.1",
+  "commit": "5556e0d2a69a06de42b77a935564260f2950303d",
   "files": {
-    "blitz.js": "a9a91f5146fd21e79d2a60d2e877dd2bdcfa1f653f5d1d6a0d9bbc0fa8a47940",
-    "blitz.mjs": "8bce4d98343a9f79cfb896695b2bb56fb58b2bcf97437dc972e5ac35ff3f2264",
+    "blitz.js": "a4a7eb2443db6cbd111146a3e29b925758ae1be4f801f30b1a8fe327cf81b673",
+    "blitz.mjs": "968d3858461dd3cebf00eae71b3ecd7373c0240559bd236582939b88d3a651ff",
     "blitz.d.ts": "e7fb12dab49ff2d942775e8e5e42c72f644d26f8071b8d8e690094e5735e3636",
-    "blitz-net.mjs": "a7db3c159302e498af9dd62ae6740cafd79e7f52abf0f67b750f2f81264206eb",
+    "blitz-net.mjs": "7e6f5671d74b75680f60f6ff2fe5554d67e5b898637e670a3fbd697f831bd893",
     "blitz-net.d.ts": "fe02f9bfabd477168a3fa132c9b7cbdd514850583267c335562f31cf4b4d5e1e"
   }
 }
