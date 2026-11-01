@@ -1,5 +1,9 @@
 [
   {
+    "version": "v1.0.2",
+    "commit": "e1407a589efc1368966f307565aec961bc99f211"
+  },
+  {
     "version": "v1.0.1",
     "commit": "35884bc3d76d7426f413ea8b6ee2cc448c980eb6"
   },
