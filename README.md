@@ -130,6 +130,10 @@ MIT · Chris Cooley / coded.design
 
 ## Changelog
 
+### Site — Cookie settings reads as a link (no game change)
+
+- **Footer: Cookie settings is a link, not a key** (owner report: the Cookie settings key broke the footer). The control that reopens the consent banner (`site/src/lib/analytics`) sat in the Board UI key styles (border, base, 40px tall) between the Privacy and Cookies links. It now reads as those links: same mono text, underline and focus ring, `· ` separator, on the row's baseline. It stays a `<button type="button" data-cookie-settings>`, so click, Enter and Space open the banner. CSS only (`site/src/styles/site.css`); `dist/` unchanged.
+
 ### 1.0.3 — Blitz 1.0.1
 
 - **Blitz 1.0.1** in `vendor/blitz/` (tag `v1.0.1`, `5556e0d`; `node scripts/sync-blitz.mjs`, no hand edits), up from 1.0.0. Phone start screen: the directions move behind an (i) key next to Home (they open at PRESS START and close during the countdown; the key toggles them mid-match), the mode description is a quiet sub-header that stays readable over board tiles, and the BLITZ sticker is sized to its content with a tilted mode tag. `/blitz/`, `/blitz/play/` and the drop-in `/blitz/blitz.js` serve it. The game's `dist/` files are unchanged (only `build.json`'s version moves).
