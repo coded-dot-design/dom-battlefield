@@ -5,6 +5,7 @@ import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Skull from '../components/Skull.astro';
 import ArenaPoster from '../components/ArenaPoster.astro';
+import HeroPlay from '../components/HeroPlay.astro';
 import { MISSIONS, ROLES } from '../../../src/model';
 import { VERSION, REPO, HUB, HUB_GAME, base, abs } from '../site';
 import { gameLd } from '../schema.mjs';
@@ -39,8 +40,10 @@ const terrain = { hedge: 'Hedges, houses', sand: 'Ridges, fences', snow: 'Crossr
 const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold: 'Hold the crossroads' };
 ---
 <Base title={title} description={description} page="home" jsonld={gameLd({ home: abs('', Astro.site), name: 'DOM Battlefield', description, image: abs('shots/og.png', Astro.site), version: VERSION, play: abs('play/', Astro.site) })}>
-  <!-- HERO: a live battle across the whole hero. Tap the field to call an airstrike. -->
-  <section class="hero" data-arena data-touch-lock="y" aria-labelledby="hero-title">
+  <!-- HERO: a live battle across the whole hero, in the background (the page scrolls through it).
+       Play in page pins the hero over the screen; then a tap on the field calls an airstrike. -->
+  <section class="hero" data-arena data-hero-play aria-labelledby="hero-title">
+    <HeroPlay part="exit" label="DOM Battlefield, playing in page" />
     <div class="hero-field" aria-hidden="true"></div>
     <div class="wrap hero-inner">
       <div class="hero-top">
@@ -56,6 +59,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       <div class="hero-ctas">
         <a class="bui-key bui-sticker-key bui-call start-key hero-start" href={base('play/')} data-launch-link><Skull size={64} /><b>START<br />BATTLE</b></a>
         <div class="hero-side">
+          <HeroPlay />
           <a class="bui-key bui-arcade bui-sys" href="#how"><Icon name="down" size={16} />How it plays</a>
           <a class="hero-hub" href={HUB_GAME}><Icon name="cart" size={16} />Play it inside DOM VIRUS ↗</a>
         </div>
@@ -261,10 +265,40 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
 <script>
   import { slot } from "../../../vendor/fizlet/slot";
   import { launch } from "../../../vendor/fizlet/ui/board-ui";
+  import { Ledger } from "../../../vendor/fizlet/kernel/ledger";
+  import { heroPlay } from "../scripts/hero-play";
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   // The hero battle (Fizlet): loads once the hero is near and the page is idle; reduced motion keeps the poster.
   const hero = document.querySelector<HTMLElement>("[data-arena]");
   const arena = hero && slot(hero, () => import("../scripts/arena/scene").then((m) => m.mountArena));
+  // Play in page: the battle takes taps only while the hero is engaged (the scene reads data-play).
+  // Reduced motion has no background battle, so Play in page starts one for the visit and Exit
+  // takes it away again (the poster comes back).
+  let played: { destroy(): void } | null = null, run = 0;
+  if (hero)
+    heroPlay(hero, {
+      engage() {
+        if (!reduced() || arena?.mounted) return;
+        const id = ++run, L = new Ledger();
+        played = { destroy: () => L.restore() };
+        void import("../scripts/arena/scene").then(({ mountArena }) => {
+          if (id !== run) return;
+          for (const p of hero.querySelectorAll<HTMLElement>(".arena-poster")) L.style(p, "display", "none");
+          const stage = L.add(document.createElement("div"));
+          stage.setAttribute("data-fizlet-slot", "");
+          stage.setAttribute("aria-hidden", "true");
+          stage.style.cssText = "position:absolute;inset:0;contain:strict;overflow:hidden";
+          hero.append(stage);
+          const scene = mountArena(stage, hero, null);
+          played = { destroy: () => (scene.destroy(), L.restore()) };
+        });
+      },
+      exit() {
+        run++;
+        played?.destroy();
+        played = null;
+      },
+    });
   // ?debug: the site test's handle on the slot (Recall: destroy() gives the hero back as served).
   if (arena && location.search.includes("debug")) (window as unknown as { arenaSlot: typeof arena }).arenaSlot = arena;
   // Start keys launch like the game's: press, invert, shatter, then the game.
@@ -288,7 +322,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
       if (toast) toast.textContent = on ? `COMMS · ${k.dataset.says}` : "COMMS · Order released. The squad is on its own.";
     });
   addEventListener("keydown", (e) => {
-    if (e.metaKey || e.ctrlKey || e.altKey || (e.target as Element).closest("input, textarea")) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || hero?.dataset.play || (e.target as Element).closest("input, textarea")) return;
     const k = keys.find((b) => b.querySelector("kbd")?.textContent?.toLowerCase() === e.key.toLowerCase());
     const radio = document.querySelector("#radio")!.getBoundingClientRect();
     if (k && radio.top < innerHeight && radio.bottom > 0) k.click();
@@ -306,11 +340,12 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     align-items: center;
     border-bottom: 2px solid var(--line);
     background: radial-gradient(ellipse 80% 70% at 75% 30%, color-mix(in srgb, var(--k-cmd) 16%, transparent), transparent 70%), var(--bg);
+  }
+  /* Played in page (hero-play.css pins it): the field takes taps, nothing selects. */
+  .hero[data-play="on"] {
     cursor: crosshair;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: pan-y;
-    overscroll-behavior: none;
   }
   .hero-field {
     position: absolute;
@@ -403,7 +438,7 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
     color: var(--ink);
   }
   .hero-hint {
-    display: inline-flex;
+    display: none;
     align-items: center;
     gap: 10px;
     margin: 30px 0 0;
@@ -418,6 +453,11 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   @keyframes blink {
     50% {
       opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .blink {
+      animation: none;
     }
   }
   .arena-hud {
@@ -454,6 +494,19 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   .arena-hud [data-flat] {
     color: var(--hurt);
   }
+  /* The hint and the strike key are for play: engaged only. */
+  .hero[data-play="on"] .hero-hint {
+    display: inline-flex;
+  }
+  .hero:not([data-play="on"]) [data-airstrike] {
+    display: none;
+  }
+  .hero[data-play="on"] .hero-inner {
+    padding-top: calc(80px + env(safe-area-inset-top, 0px));
+  }
+  .hero[data-play="on"] .arena-hud {
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  }
   .arena-hud [data-sound][aria-pressed="false"] .snd-on,
   .arena-hud [data-sound][aria-pressed="true"] .snd-off {
     display: none;
@@ -485,15 +538,6 @@ const objective = { capture: 'Capture HQ', eliminate: 'Eliminate platoon', hold:
   }
   @media (max-width: 420px) {
     .arena-hud > span:nth-of-type(3) {
-      display: none;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .hero {
-      cursor: default;
-    }
-    .hero-hint,
-    .arena-hud [data-airstrike] {
       display: none;
     }
   }

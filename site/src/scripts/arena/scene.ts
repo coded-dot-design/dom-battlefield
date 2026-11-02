@@ -1,11 +1,13 @@
 /**
  * Hero arena: the landing page's live mini battle, on Fizlet. Two platoons drawn with the game's own
  * tank sprites roam the whole hero, shell each other, flatten the board's shapes, and knock the
- * headline's letters around (shots and treads both). Tap the field (or the AIRSTRIKE key) to call a
- * strike.
+ * headline's letters around (shots and treads both). In the page it is a background animation that
+ * takes no tap (the page scrolls through it); played in page (hero-play.ts: the hero carries
+ * data-play="on") a tap on the field (or the AIRSTRIKE key) calls a strike.
  *
  * fizlet/slot mounts it (index.astro) once the hero is near and the main thread is idle; under
- * reduced motion it never loads and the hero keeps its still poster (ArenaPoster.astro). One engine
+ * reduced motion the hero keeps its still poster (ArenaPoster.astro) and the scene loads only for
+ * Play in page (index.astro mounts it, and Exit takes it away). One engine
  * (kernel): layout is read in its read phase (only after a resize, a font load or a theme change),
  * the battle steps at a fixed 60 Hz (sim.ts: no allocation, no DOM), and render draws the canvas
  * and writes the page (letters, HUD, the copy's shake) through the engine's ledger only, change-only.
@@ -295,9 +297,10 @@ export const mountArena: SlotMount = (stage, hero, first) => {
     strike(pick < 0 ? F[A.W]! / 2 : tx[pick]!, pick < 0 ? F[A.H]! / 2 : ty[pick]!);
   };
   const keyed = (t: EventTarget | null) => (t as Element | null)?.closest?.("a, button, input, label, [data-no-strike]");
+  const played = () => hero.dataset.play === "on";
   hero.addEventListener("pointerdown", (ev) => {
     visit();
-    if (keyed(ev.target)) return;
+    if (!played() || keyed(ev.target)) return;
     audio?.unlock(ev);
     const r = hero.getBoundingClientRect(); // one read per tap, outside any frame
     strike(ev.clientX - r.left, ev.clientY - r.top);
@@ -314,8 +317,8 @@ export const mountArena: SlotMount = (stage, hero, first) => {
     a.unlock(ev);
     L.attr(sound, "aria-pressed", String(a.enabled));
   }, on);
-  // The tap that loaded the scene: a key's own action, or a strike on the field.
-  if (first) {
+  // The tap that loaded the scene (played in page): a key's own action, or a strike on the field.
+  if (first && played()) {
     const r = hero.getBoundingClientRect(), at = doc.elementFromPoint(r.left + first.x, r.top + first.y), k = keyed(at);
     if (!k) strike(first.x, first.y);
     else if (k.matches("[data-airstrike]")) airstrike();
