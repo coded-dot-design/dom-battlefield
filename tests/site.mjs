@@ -347,7 +347,10 @@ try {
     for (const [opts, check] of [[{ viewport: { width: 1440, height: 900 } }, checkKeys], [{ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, checkTaps]]) {
       const kc = await browser.newContext(opts);
       const kp = await kc.newPage();
-      await kp.goto(base + path);
+      await kp.goto(base + path + (path ? "" : "?debug"));
+      // Home: the hero battle shakes and knocks the hero's keys (the CTA row too), so a key moves
+      // under the pointer. Give the hero back first (Recall, final: no later mount), so keys hold still.
+      if (!path) await kp.evaluate(() => window.arenaSlot.destroy());
       keys += await check(kp, where, { skip: '[tabindex="-1"]' }); // style guide: frozen state specimens
       await kc.close();
     }
