@@ -8,6 +8,7 @@
   z-index: 100;
   min-height: 0;
   margin: 0;
+  border-width: 0;
   overscroll-behavior: contain;
   outline: none;
   /* The expand: from the hero's box on the page (--hp-*: set on open) out to the viewport. */
@@ -21,14 +22,10 @@
     clip-path: inset(0 round 0);
   }
 }
-/* The game's layer stays inside the safe areas (the notch, the home bar). */
-:root [data-hero-play][data-play="on"] :is([data-fizlet-slot], [data-play-stage]) {
+/* A slot scene stays inside the safe areas (the notch, the home bar). A page's own game layer
+   ([data-play-stage]) gets the whole viewport: a game that keeps its own keys clear of the safe areas. */
+:root [data-hero-play][data-play="on"] [data-fizlet-slot] {
   inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px) !important;
-}
-/* A page's own game layer ([data-play-stage]) starts under the Exit row, so the game's top bar and
-   keys stay clear of it. */
-:root [data-hero-play][data-play="on"] [data-play-stage] {
-  top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
 }
 /* Attract mode: the game's layer never takes a pointer, so the page scrolls through it. */
 [data-hero-play]:not([data-play="on"]) [data-play-stage] {
@@ -55,6 +52,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+/* at="start": Exit leads the game's own top-left key row (no tag); the page makes room for it in the
+   game (Blitz: --bz-lead), so it sits where the game's first key would. */
+[data-hero-play][data-play="on"] .hero-play-bar.at-start {
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: auto;
+  left: max(12px, env(safe-area-inset-left, 0px));
+}
+.hero-play-bar.at-start .hero-play-tag {
+  display: none;
 }
 .hero-play-tag {
   padding: 6px 10px;

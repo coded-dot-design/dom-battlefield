@@ -44,6 +44,9 @@ export function heroPlay(root: HTMLElement, o: HeroPlayOptions): HeroPlay {
   const live = root.querySelector<HTMLElement>("[data-hero-play-live]");
   const label = root.querySelector<HTMLElement>("[data-hero-play-label]");
   let L: Ledger | null = null, ac: AbortController | null = null, y = 0, backing = false;
+  // While our history entry lives, the browser must not restore a scroll of its own on the way back
+  // (it would land late, over the exact one close() restores).
+  const hist = win.history, auto = () => (hist.scrollRestoration = "auto");
 
   function open() {
     if (L) return;
@@ -53,7 +56,8 @@ export function heroPlay(root: HTMLElement, o: HeroPlayOptions): HeroPlay {
     y = win.scrollY;
     const r = root.getBoundingClientRect(), vw = html.clientWidth, vh = win.innerHeight;
     // Android back closes it: one entry while engaged (same URL), pushed before the lock.
-    if (!win.history.state?.heroPlay || backing) win.history.pushState({ heroPlay: 1 }, "");
+    hist.scrollRestoration = "manual";
+    if (!hist.state?.heroPlay || backing) hist.pushState({ heroPlay: 1 }, "");
     // The hero keeps its place in the flow (a spacer of its height), so nothing below it moves.
     const spacer = L.add(doc.createElement("div"));
     spacer.style.height = `${r.height}px`;
@@ -103,12 +107,16 @@ export function heroPlay(root: HTMLElement, o: HeroPlayOptions): HeroPlay {
     L = ac = null;
     win.scrollTo({ top: y, left: 0, behavior: "instant" });
     key?.focus({ preventScroll: true });
-    if (!fromHistory && win.history.state?.heroPlay) (backing = true), win.history.back();
+    if (!fromHistory && hist.state?.heroPlay) (backing = true), hist.back();
+    else if (!backing) auto();
   }
 
   key?.addEventListener("click", open);
   // The back gesture closes it (but not the back() an exit sent itself, which lands a moment later).
-  win.addEventListener("popstate", () => (backing ? (backing = false) : close(true)));
+  win.addEventListener("popstate", () => {
+    if (backing) (backing = false), L || auto();
+    else close(true);
+  });
   root.querySelector("[data-hero-play-exit]")?.addEventListener("click", () => close());
   return {
     open,

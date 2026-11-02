@@ -35,7 +35,7 @@ const rules = [
 ---
 <Base title="Battlefield Blitz · the Blitz version of DOM Battlefield" description={description} page="blitz" canonical={BLITZ} jsonld={gameLd({ home: BLITZ, name: 'Battlefield Blitz', description, image: `${BLITZ}shots/og.png`, version: pin.version, play: `${BLITZ}play/`, basedOn: { name: 'DOM Battlefield', url: abs('', Astro.site) } })}>
   <section class="bz-hero" data-hero-play aria-labelledby="bz-title">
-    <HeroPlay part="exit" label="Battlefield Blitz, playing in page" />
+    <HeroPlay part="exit" label="Battlefield Blitz, playing in page" at="start" />
     <div class="bz-demo" id="bz-demo" data-play-stage aria-hidden="true"></div>
     <div class="wrap bz-hero-inner">
       <p class="eyebrow"><span class="dot"></span> DOM BATTLEFIELD <span>/</span> <b>BLITZ VERSION</b> · V{pin.version}</p>
@@ -111,6 +111,7 @@ const rules = [
   import { createBlitz, install } from "../../../../vendor/blitz/blitz.mjs";
   import { launch } from "../../../../vendor/fizlet/ui/board-ui";
   import { heroPlay } from "../../scripts/hero-play";
+  import { Ledger } from "../../../../vendor/fizlet/kernel/ledger";
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   // The hero is a live bot battle (attract mode): every tank a bot, no input, the page scrolls
   // through it; it pauses itself when scrolled away. Reduced motion: one still frame of it (the
@@ -126,17 +127,27 @@ const rules = [
   expose();
   // Play in page: the bots make way for a real match (you against the bots) right in the hero; Exit
   // ends it and the attract battle comes back.
+  // The match gets the whole viewport; Exit leads its top-left key row: --bz-lead (Blitz's own room
+  // for a lead key) moves its first key and PAUSE right by Exit's width, so Exit sits in their row.
+  // The desktop directions strip (centred, 64 px clear of each edge) is kept clear of that row too.
   let match: ReturnType<typeof createBlitz> | null = null;
-  heroPlay(document.querySelector<HTMLElement>(".bz-hero")!, {
+  const hero = document.querySelector<HTMLElement>(".bz-hero")!, lead = new Ledger();
+  heroPlay(hero, {
     engage() {
       demo?.destroy();
       demo = null;
+      const exit = hero.querySelector<HTMLElement>("[data-hero-play-exit]")!;
+      lead.style(demoHost, "--bz-lead", `${Math.ceil(exit.getBoundingClientRect().width) + 8}px`);
       match = createBlitz(demoHost, { mode: "board" });
+      const clear = lead.add(document.createElement("style"));
+      clear.textContent = ".legend{max-width:calc(100% - 2 * (64px + var(--bz-lead, 0px)))}";
+      demoHost.shadowRoot?.append(clear);
       (window as unknown as { blitzMatch: unknown }).blitzMatch = match;
     },
     exit() {
       match?.destroy();
       match = null;
+      lead.restore();
       demo = attract();
       expose();
     },

@@ -145,7 +145,9 @@ try {
         const under = () => page.evaluate((sel) => [document.querySelector("main").getBoundingClientRect().top, document.querySelector(sel).nextElementSibling.getBoundingClientRect().top, document.querySelector(".site-head .wrap").getBoundingClientRect().left]
           .map((v) => Math.round(v * 10) / 10), L.hero);
         const placed = await under();
-        phone ? await key.tap() : await key.click();
+        // Pressed where it is (a locator's tap or click would scroll it into view first).
+        const kb = await key.boundingBox(), kx = kb.x + kb.width / 2, ky = kb.y + kb.height / 2;
+        phone ? await page.touchscreen.tap(kx, ky) : await page.mouse.click(kx, ky);
         await page.waitForFunction((sel) => {
           const h = document.querySelector(sel);
           return h.dataset.play === "on" && !h.getAnimations().length;
@@ -157,7 +159,7 @@ try {
             dialog: [h.getAttribute("role"), h.getAttribute("aria-modal"), document.getElementById(h.getAttribute("aria-labelledby"))?.textContent],
             focus: h.contains(a),
             said: h.querySelector("[data-hero-play-live]").textContent,
-            exit: (() => { const e = h.querySelector("[data-hero-play-exit]").getBoundingClientRect(); return e.height >= 44 && e.width >= 44 && e.top < 80 && e.right > innerWidth - 80; })(),
+            exit: (() => { const e = h.querySelector("[data-hero-play-exit]").getBoundingClientRect(); return e.height >= 44 && e.width >= 44 && e.top < 80 && (e.right > innerWidth - 80 || e.left < 80); })(),
             inert: [...document.body.children].filter((c) => !c.contains(h) && !/^(SCRIPT|STYLE)$/.test(c.tagName)).every((c) => c.inert),
             overflow: getComputedStyle(document.documentElement).overflow,
           };
@@ -166,6 +168,19 @@ try {
         assert.deepEqual(state, {
           rect: [0, 0, vp.width, vp.height], dialog: ["dialog", "true", L.label], focus: true, said: SAY, exit: true, inert: true, overflow: "hidden",
         }, "engaged: a labelled modal dialog over the whole viewport, focused, announced, the page inert");
+        if (L.name === "blitz") {
+          // Exit leads the game's own top-left key row: the (i) / full screen key's top (±2 px), just
+          // to its left, never over it; the match has the whole viewport.
+          await page.waitForFunction(() => window.blitzMatch?.state === "intro", null, { timeout: 5000 });
+          const row = await page.evaluate(() => {
+            const k = [...document.querySelector("#bz-demo").shadowRoot.querySelectorAll("[data-dir], [data-fs]")].map((e) => e.getBoundingClientRect()).find((r) => r.width);
+            const e = document.querySelector("[data-hero-play-exit]").getBoundingClientRect(), h = document.querySelector("#bz-demo").getBoundingClientRect();
+            return { dTop: Math.abs(e.top - k.top), gap: k.left - e.right, host: [h.top, h.left, h.width, h.height].map(Math.round) };
+          });
+          assert.ok(row.dTop <= 2, `Exit shares the (i) key's row (tops ${row.dTop} px apart)`);
+          assert.ok(row.gap >= 0 && row.gap <= 12, `Exit sits just left of the game's first key (gap ${row.gap} px)`);
+          assert.deepEqual(row.host, [0, 0, vp.width, vp.height], "the match has the whole viewport");
+        }
         // The page does not scroll under it.
         assert.deepEqual(await under(), placed, "engaged: the page under the dialog has not moved (no jump, no scrollbar shift)");
         const pinned = () => page.evaluate(() => [scrollY, document.body.style.top]);
