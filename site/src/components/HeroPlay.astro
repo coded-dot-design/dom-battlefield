@@ -1,0 +1,21 @@
+---
+// Play in page (site/src/scripts/hero-play.ts, styles/hero-play.css): the hero's two parts.
+//   part="open": the Play in page key, next to the hero's own CTAs (the Play CTA still opens the game).
+//   part="exit": the Exit key (top corner, engaged only; at="start": top left, leading the game's own key row), the dialog's name (`label`, hidden) and the
+//   announcement's live region. One hero per page (the name's id is fixed).
+import '../styles/hero-play.css';
+import Icon from './Icon.astro';
+const { part = 'open', label = '', tag = 'PLAYING IN PAGE', at = 'end' } = Astro.props;
+---
+{part === 'open' ? (
+  <button class="bui-key bui-arcade bui-cmd" type="button" data-hero-play-open aria-haspopup="dialog"><Icon name="full" size={16} />Play in page</button>
+) : (
+  <>
+    <div class:list={['hero-play-bar', { 'at-start': at === 'start' }]}>
+      <span class="hero-play-tag">{tag}</span>
+      <button class="bui-key bui-arcade bui-sys" type="button" data-hero-play-exit><Icon name="close" size={16} />Exit<kbd>Esc</kbd></button>
+    </div>
+    <span class="hero-play-live" id="hero-play-label" data-hero-play-label>{label}</span>
+    <p class="hero-play-live" data-hero-play-live aria-live="polite"></p>
+  </>
+)}

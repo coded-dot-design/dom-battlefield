@@ -5,6 +5,7 @@
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
 import Skull from '../../components/Skull.astro';
+import HeroPlay from '../../components/HeroPlay.astro';
 import { base, BLITZ, abs } from '../../site';
 import { gameLd } from '../../schema.mjs';
 const description = 'Battlefield Blitz is the arcade version of DOM Battlefield: solo or platoon-vs-platoon, where every tank parachutes in, the grid blinks with power-ups and mines, and most kills in three minutes wins. Drop it onto any website with one line.';
@@ -33,8 +34,9 @@ const rules = [
 ];
 ---
 <Base title="Battlefield Blitz · the Blitz version of DOM Battlefield" description={description} page="blitz" canonical={BLITZ} jsonld={gameLd({ home: BLITZ, name: 'Battlefield Blitz', description, image: `${BLITZ}shots/og.png`, version: pin.version, play: `${BLITZ}play/`, basedOn: { name: 'DOM Battlefield', url: abs('', Astro.site) } })}>
-  <section class="bz-hero" aria-labelledby="bz-title">
-    <div class="bz-demo" id="bz-demo" aria-hidden="true"></div>
+  <section class="bz-hero" data-hero-play aria-labelledby="bz-title">
+    <HeroPlay part="exit" label="Battlefield Blitz, playing in page" at="start" />
+    <div class="bz-demo" id="bz-demo" data-play-stage aria-hidden="true"></div>
     <div class="wrap bz-hero-inner">
       <p class="eyebrow"><span class="dot"></span> DOM BATTLEFIELD <span>/</span> <b>BLITZ VERSION</b> · V{pin.version}</p>
       <h1 id="bz-title">Battlefield Blitz.<br /><em>Every tank for itself.</em></h1>
@@ -42,6 +44,7 @@ const rules = [
       <div class="bz-ctas">
         <a class="bui-key bui-sticker-key bui-call start-key" href={base('blitz/play/')} data-launch-link><Skull size={64} /><b>PLAY<br />BLITZ</b></a>
         <div class="bz-side">
+          <HeroPlay />
           <a class="bui-key bui-arcade bui-sys" href="#drop"><Icon name="out" size={16} />Put it on your site</a>
           <a class="bz-og" href={base()}><Icon name="cart" size={16} />The original: DOM Battlefield</a>
         </div>
@@ -107,11 +110,48 @@ const rules = [
 <script>
   import { createBlitz, install } from "../../../../vendor/blitz/blitz.mjs";
   import { launch } from "../../../../vendor/fizlet/ui/board-ui";
+  import { heroPlay } from "../../scripts/hero-play";
+  import { Ledger } from "../../../../vendor/fizlet/kernel/ledger";
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // The hero is a live bot battle (attract mode); it pauses itself when scrolled away.
+  // The hero is a live bot battle (attract mode): every tank a bot, no input, the page scrolls
+  // through it; it pauses itself when scrolled away. Reduced motion: one still frame of it (the
+  // battle four seconds in, drawn once, its engine stopped: no frames after that).
   const demoHost = document.getElementById("bz-demo")!;
-  let demo = reduced() ? null : createBlitz(demoHost, { mode: "board", demo: true, bots: 6 });
-  (window as unknown as { blitzDemo: unknown }).blitzDemo = demo;
+  const attract = () => {
+    const d = createBlitz(demoHost, { mode: "board", demo: true, bots: 6 });
+    if (reduced()) (d.engine.stop(), d.engine.advance(4));
+    return d;
+  };
+  const expose = () => ((window as unknown as { blitzDemo: unknown }).blitzDemo = demo);
+  let demo: ReturnType<typeof createBlitz> | null = attract();
+  expose();
+  // Play in page: the bots make way for a real match (you against the bots) right in the hero; Exit
+  // ends it and the attract battle comes back.
+  // The match gets the whole viewport; Exit leads its top-left key row: --bz-lead (Blitz's own room
+  // for a lead key) moves its first key and PAUSE right by Exit's width, so Exit sits in their row.
+  // The desktop directions strip (centred, 64 px clear of each edge) is kept clear of that row too.
+  let match: ReturnType<typeof createBlitz> | null = null;
+  const hero = document.querySelector<HTMLElement>(".bz-hero")!, lead = new Ledger();
+  heroPlay(hero, {
+    engage() {
+      demo?.destroy();
+      demo = null;
+      const exit = hero.querySelector<HTMLElement>("[data-hero-play-exit]")!;
+      lead.style(demoHost, "--bz-lead", `${Math.ceil(exit.getBoundingClientRect().width) + 8}px`);
+      match = createBlitz(demoHost, { mode: "board" });
+      const clear = lead.add(document.createElement("style"));
+      clear.textContent = ".legend{max-width:calc(100% - 2 * (64px + var(--bz-lead, 0px)))}";
+      demoHost.shadowRoot?.append(clear);
+      (window as unknown as { blitzMatch: unknown }).blitzMatch = match;
+    },
+    exit() {
+      match?.destroy();
+      match = null;
+      lead.restore();
+      demo = attract();
+      expose();
+    },
+  });
   for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-launch-link]"))
     a.addEventListener("click", (e) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
@@ -155,6 +195,14 @@ const rules = [
     inset: 0;
     z-index: 0;
     opacity: 0.85;
+  }
+  /* Played in page: the match takes the whole hero; the copy and its scrim step aside. */
+  .bz-hero[data-play="on"] .bz-demo {
+    opacity: 1;
+  }
+  .bz-hero[data-play="on"] .bz-hero-inner,
+  .bz-hero[data-play="on"]::after {
+    display: none;
   }
   .bz-hero::after {
     content: "";

@@ -54,8 +54,9 @@ try {
   where = "hero";
   {
     // The hero is a live battle on Fizlet (site/src/scripts/arena): fizlet/slot mounts it, the canvas
-    // paints, the HUD counts, a tap calls an airstrike, the letters react, it rests and settles to no
-    // frames, it pauses offscreen, and Recall gives the hero back byte for byte.
+    // paints, the HUD counts, played in page (tests/hero-play.mjs) a tap calls an airstrike and the
+    // letters react, it rests and settles to no frames, it pauses offscreen, and Recall gives the
+    // hero back byte for byte.
     const hp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const herr = [];
     hp.on("pageerror", (e) => herr.push(e.message));
@@ -78,6 +79,8 @@ try {
       return window.arena.arena.tx.slice(0, 10).some((v, i) => v !== x[i]);
     });
     assert.ok(moved, "the tanks drive");
+    await hp.locator("[data-hero-play-open]").click();
+    await hp.waitForFunction(() => document.querySelector(".hero").dataset.play === "on" && !document.querySelector(".hero").getAnimations().length);
     const hero = await hp.locator(".hero").boundingBox();
     await hp.mouse.click(hero.x + hero.width * 0.8, hero.y + hero.height * 0.5);
     await hp.waitForFunction(() => document.querySelector("[data-strikes]").textContent === "01");
@@ -93,6 +96,8 @@ try {
     await hp.locator("[data-sound]").click();
     await hp.waitForFunction(() => document.querySelector("[data-sound]").getAttribute("aria-pressed") === "true");
     await hp.waitForFunction(() => document.querySelector("[data-wrecks]").textContent !== "000", null, { timeout: 8000 });
+    await hp.keyboard.press("Escape");
+    await hp.waitForFunction(() => !document.querySelector(".hero").dataset.play);
     const stats = await hp.evaluate(() => window.arena.engine.stats());
     console.log(`hero: ${stats.frames} frames, ${stats.frameMs.avg.toFixed(2)} ms avg / ${stats.frameMs.max.toFixed(2)} ms max per frame, ${stats.dropped} steps dropped`);
     // Left alone it rests: the last shots land, then no frames at all; a visitor wakes it.
@@ -353,13 +358,17 @@ try {
 
   where = "touch";
   {
-    // Phones (390 x 844, touch): a double-tap, a pinch or a sideways swipe on the hero battle never
-    // zooms or pans the page; the page is touch-action: manipulation (no double-tap zoom) and stays
-    // 390 wide. Raw touch points: Chromium's synthesized touch pinch never zooms headless.
+    // Phones (390 x 844, touch): played in page, a double-tap, a pinch or a sideways swipe on the
+    // hero battle never zooms or pans the page; the page is touch-action: manipulation (no double-tap
+    // zoom) and stays 390 wide. In the page (attract) the hero is page: it scrolls and pinch-zooms
+    // like any content (tests/hero-play.mjs). Raw touch points: Chromium's synthesized touch pinch
+    // never zooms headless.
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
     const tp = await phone.newPage();
     await tp.goto(base);
     await tp.waitForTimeout(500);
+    await tp.locator("[data-hero-play-open]").tap();
+    await tp.waitForFunction(() => document.querySelector(".hero").dataset.play === "on" && !document.querySelector(".hero").getAnimations().length);
     const cdp = await phone.newCDPSession(tp);
     const pts = (type, list) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: list.map(([x, y], id) => ({ x, y, id })) });
     const state = () => tp.evaluate(() => ({ scale: visualViewport.scale, x: scrollX, w: document.documentElement.scrollWidth }));
@@ -379,7 +388,7 @@ try {
     await tp.waitForTimeout(300);
     assert.equal((await state()).scale, 1, "a double-tap on the hero does not zoom");
     const ta = await tp.evaluate(() => [getComputedStyle(document.documentElement).touchAction, getComputedStyle(document.querySelector("[data-touch-lock]")).touchAction]);
-    assert.deepEqual(ta, ["manipulation", "pan-y"], "page touch-action manipulation, hero pan-y");
+    assert.deepEqual(ta, ["manipulation", "none"], "page touch-action manipulation, the played hero none");
     await phone.close();
   }
 

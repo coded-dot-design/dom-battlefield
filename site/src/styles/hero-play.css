@@ -1,0 +1,104 @@
+/* ---------- Play in page (site/src/scripts/hero-play.ts) ----------
+   A hero marked [data-hero-play] plays its game as a background animation; its Play in page key
+   pins it over the viewport ([data-play="on"]: fixed, inset 0), where the game takes input. Board
+   UI keys and tokens only. `:root` lifts these over a page's own scoped hero rules. */
+:root [data-hero-play][data-play="on"] {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  min-height: 0;
+  margin: 0;
+  border-width: 0;
+  overscroll-behavior: contain;
+  outline: none;
+  /* The expand: from the hero's box on the page (--hp-*: set on open) out to the viewport. */
+  animation: hero-play-in 0.32s var(--bui-out) backwards;
+}
+@keyframes hero-play-in {
+  from {
+    clip-path: inset(var(--hp-t) var(--hp-r) var(--hp-b) var(--hp-l) round 12px);
+  }
+  to {
+    clip-path: inset(0 round 0);
+  }
+}
+/* A slot scene stays inside the safe areas (the notch, the home bar). A page's own game layer
+   ([data-play-stage]) gets the whole viewport: a game that keeps its own keys clear of the safe areas. */
+:root [data-hero-play][data-play="on"] [data-fizlet-slot] {
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px) !important;
+}
+/* Attract mode: the game's layer never takes a pointer, so the page scrolls through it. */
+[data-hero-play]:not([data-play="on"]) [data-play-stage] {
+  pointer-events: none;
+}
+/* The keys take a pointer even inside copy that lets clicks through to the game. */
+[data-hero-play-open],
+.hero-play-bar {
+  pointer-events: auto;
+}
+/* The opener steps aside while engaged (focus comes back to it on exit). */
+[data-hero-play][data-play="on"] [data-hero-play-open] {
+  display: none;
+}
+/* Exit: a visible key in the top corner (44 px tall: the kit's arcade key), Escape too. */
+.hero-play-bar {
+  display: none;
+}
+[data-hero-play][data-play="on"] .hero-play-bar {
+  position: absolute;
+  z-index: 10;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: max(14px, env(safe-area-inset-right, 0px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* at="start": Exit leads the game's own top-left key row (no tag); the page makes room for it in the
+   game (Blitz: --bz-lead), so it sits where the game's first key would. */
+[data-hero-play][data-play="on"] .hero-play-bar.at-start {
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: auto;
+  left: max(12px, env(safe-area-inset-left, 0px));
+}
+.hero-play-bar.at-start .hero-play-tag {
+  display: none;
+}
+.hero-play-tag {
+  padding: 6px 10px;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--k-sys-ink);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+}
+.hero-play-bar .bui-key {
+  min-width: 44px;
+}
+@media (pointer: coarse) {
+  .hero-play-bar kbd {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .hero-play-tag {
+    display: none;
+  }
+}
+/* The announcement: read, never seen. */
+.hero-play-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root [data-hero-play][data-play="on"] {
+    animation: none;
+  }
+}

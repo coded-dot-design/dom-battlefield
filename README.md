@@ -21,13 +21,21 @@ Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `p
 
 | Path | What | Source |
 |---|---|---|
-| `/` | Landing page; the hero is a live battle on Fizlet (game sprites, airstrikes, shootable headline; a still poster under reduced motion) | `site/src/pages/index.astro`, `site/src/scripts/arena/`, `site/src/components/ArenaPoster.astro` |
+| `/` | Landing page; the hero is a live battle on Fizlet in the background (game sprites, shootable headline; a still poster under reduced motion); **Play in page** makes it playable (airstrikes) | `site/src/pages/index.astro`, `site/src/scripts/arena/`, `site/src/components/ArenaPoster.astro` |
 | `/style-guide/` | Board UI, live (palette switcher, every component, isolation demo) | `site/src/pages/style-guide/index.astro` |
 | `/play/` | The game: a copy of `dist/` | `scripts/pages.mjs` |
 | `/v/<version>/` | Every release, the current one included: each release's own committed `dist/` at its tag, unchanged and `noindex`; the landing page's EVERY BUILD picker opens them | `site/archive.json`, `scripts/archive.mjs` |
-| `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero | `site/src/pages/blitz/index.astro` |
+| `/blitz/` | **Battlefield Blitz** (the Blitz version): landing page, a live bot battle in the hero (a still frame under reduced motion); **Play in page** plays a real match there | `site/src/pages/blitz/index.astro` |
 | `/blitz/play/` | Blitz, the game (free for all, 3-minute match) | `site/src/pages/blitz/play/index.astro` |
 | `/blitz/blitz.js` | Blitz drop-in for any website | `vendor/blitz/` |
+
+**Play in page** (both landings): the hero's game is a background animation that takes no input, so the
+page scrolls straight through it. The Play in page key pins the hero over the viewport (`position: fixed`,
+inset 0; not the Fullscreen API) as a modal dialog, locks the page's scroll and hands the game its input;
+Exit, Escape or the phone's back gesture put the page back exactly (scroll, focus, HTML). One script and
+one stylesheet: `site/src/scripts/hero-play.ts` (`heroPlay(hero, { engage, exit })`),
+`site/src/styles/hero-play.css`, and the keys in `site/src/components/HeroPlay.astro`. `tests/hero-play.mjs`
+checks it.
 
 The footer's site map comes from `site/src/sitemap.mjs`: add a new page there (or under `HIDDEN` for noindex and off-site pages) and the footer lists it; the build fails on a page that is in neither.
 
@@ -129,6 +137,13 @@ The presets are fictional arcade exercises, not accurate reconstructions or auth
 MIT · Chris Cooley / coded.design
 
 ## Changelog
+
+### Site — Play in page (no game change)
+
+- **The landing heroes no longer hold the page's scroll** (owner report: a swipe or a wheel over the hero was eaten by the game). On `/` the hero battle carried `touch-action: pan-y` and `overscroll-behavior: none` on the whole hero (a wheel over it did nothing; a swipe did nothing on phones), and on `/blitz/` the bot battle took the touches over it. Measured on `main` before this change (Chromium, headless): a 300 px wheel over the `/` hero scrolled 0 px; a finger swipe over either hero at 390 px scrolled 0 px. Now both heroes are attract mode: the game plays in the background with no input and the page scrolls through it (wheel, trackpad, keyboard, swipe).
+- **Play in page**: a Board UI key in each hero pins the hero over the viewport (fixed, inset 0, safe areas kept, a clip expand that is instant under reduced motion), locks the page's scroll (the body pinned in place, the scrollbar's width kept: no jump), and makes the hero a labelled modal dialog (the rest of the page inert) that says "Playing in page, press Escape to exit." On `/`, a tap on the field calls an airstrike; on `/blitz/`, a real match (SOLO, PLATOON or PRACTICE) replaces the bots. Exit (on `/`, top right with a PLAYING IN PAGE tag; on `/blitz/`, leading the game's own top-left key row, beside its (i) / full screen key, the match on the whole viewport), Escape or the back gesture return the hero, the exact scroll position, the focus (the Play in page key) and the page's HTML byte for byte (a Fizlet ledger). START BATTLE / PLAY BLITZ still open the full game.
+- Reduced motion: `/` keeps its poster and `/blitz/` now shows one still frame of the bot battle (its engine stopped); Play in page starts the game for the visit and Exit takes it away.
+- `tests/hero-play.mjs` (in `npm run test:site`): both landings at 1440 and 390, attract scroll, engaged lock + input + focus, Exit / Escape / back restore, reduced motion. `tests/site.mjs` plays the hero in page for its strike and touch checks.
 
 ### Site — Cookie settings reads as a link (no game change)
 
