@@ -1,68 +1,108 @@
 {
   "note": "Generated snapshot. Edit coded-dot-design/fizlet, then run node scripts/sync-fizlet.mjs.",
   "repository": "https://github.com/coded-dot-design/fizlet",
-  "version": "0.20.0",
-  "commit": "bf42a8c8e642168c55f7b4bf4900c2197525874c",
+  "version": "0.27.0",
+  "commit": "d372e26bd2719ed595928c4373f044ee6c4b349e",
   "files": [
     {
+      "path": "actor.ts",
+      "sha256": "851772774019717acdae6ef7054e432e8c69f7782de231dbc1469da733e86227"
+    },
+    {
+      "path": "aim.ts",
+      "sha256": "000725d1e0cddba05bcdefb920d644d5b57b77231a0445c8388cfd8dae06d4b7"
+    },
+    {
+      "path": "announce.ts",
+      "sha256": "41c9e5636a4335bc41bc3921ad7da74351ca25ed819c8124fe39d4cec8bea8bd"
+    },
+    {
       "path": "arcade-parts.ts",
-      "sha256": "1ce7698f2ac96596d9f737356ccb61ef0817a6a9956a52111355b040f4d18a9d"
+      "sha256": "a13122dbe27d03d96698fdb089b48a85e54e5db5c168732bdf3c913bc3e817d2"
     },
     {
       "path": "arcade-skirmish.ts",
-      "sha256": "3b6b17c0ef08af164ac144f2067664c98585a476ca74893714f55c01b63a21ab"
+      "sha256": "7ee0a147d13db54d8ffac867ae95384e452addc786b54084f996eac4cf6c86a3"
     },
     {
       "path": "arcade.ts",
-      "sha256": "8f38913e02d71ba6b40fd660c4b5f1662da237b094e2a07999d5e1475a0e9b44"
+      "sha256": "ac48cdc7dfa4ff98fbb22aa015adaa2926ab69413ebf84ed92d2efdd9a61588d"
+    },
+    {
+      "path": "beam.ts",
+      "sha256": "06d903392ddd8d9d7687f4d01d9f19a5fb096c8b45f5ba35257f24949dd07536"
     },
     {
       "path": "board-page.ts",
-      "sha256": "2d83a64e7fc3b61323b2a895254e6feb14dff0eb7398366544442df70bd947a6"
+      "sha256": "38e1f613de3027a8b8662e6c277ea7737826eb29fe4dca7c841f7a8a3fd8da36"
     },
     {
       "path": "camera.ts",
-      "sha256": "6da4f75b1f2a4f7fb5956db2fb795e8dec212663965442d4820a9101b6cefedb"
+      "sha256": "5561329419259c4b513279045c1ccd7882deabd9697df4c9f9b69cb71d15dab6"
+    },
+    {
+      "path": "cards.ts",
+      "sha256": "9bb86d931ad44bdd43ea69469705477a3fac6741b50cf845aaeaef7155ec72ea"
     },
     {
       "path": "coach.ts",
-      "sha256": "8827f28a5e51b4fc6973832f76b7ba81c1ed027fd7c66632e01adb5fe98f3a23"
+      "sha256": "3b46563e7371df815fed55a21c3881d8e036a4662d414b25cddf7b8e10c0e2ee"
     },
     {
       "path": "collide.ts",
-      "sha256": "464659a2ea07c36976ac18965b872dfcc53dd9effe1e614e8d1357db52856282"
+      "sha256": "a71500e4cdb963db2e8684bf8e1780871380a53611bd03f8298de1a2ea7c54a1"
+    },
+    {
+      "path": "css-clock.ts",
+      "sha256": "c88eb1527276b4b475dbd2d976d7b2108a85c4af45bd63cdd3957b01b73b94e9"
     },
     {
       "path": "debug.ts",
-      "sha256": "7f5dc8adafbb0b8bedac7cf5102496144eef4926f97446098097bf7dbea1d5d2"
+      "sha256": "67fbd6aba8f1d94f2eb325284503d7353c244806ca812896c68efe4bdb743c75"
+    },
+    {
+      "path": "dice.ts",
+      "sha256": "188b57a8aea8fc66cb36ddca9ff8ca759439c0b24ea693837a4924aedba7c99e"
+    },
+    {
+      "path": "diorama.ts",
+      "sha256": "1aec6289bb92fa92613e10fd6c438d7324c79b069506a7c45f223b10e3a453f0"
+    },
+    {
+      "path": "drive.ts",
+      "sha256": "21de37d4e488e1bf0ad08d05623f5438cdca1840423b14f06a4b5b4069518bd1"
     },
     {
       "path": "embed.ts",
-      "sha256": "9c06b988a05d31a1a2688bd1336922e3e68e14a909a80184e671746df5fefffd"
+      "sha256": "2a270582f980d4d4dc92d27249556c2b6ac8ab97fa8c80409446f40bfa743ac5"
+    },
+    {
+      "path": "flick.ts",
+      "sha256": "a77fa840158fa453f13ed848dc2a4d27e39eb373623031b8823821480f5a8e6d"
     },
     {
       "path": "fx.ts",
-      "sha256": "06fc2232479bfd987e61317ff700243a28ab33f5f484d9bfba9a1e04d9667b2a"
+      "sha256": "f6a00219928cd700aad8ebd61eeb038cc5e4f894561aa365000b2810413c1614"
     },
     {
       "path": "grid.ts",
-      "sha256": "15f62a2b0f877acb802211a9278db280983f8e43c73eafb2e7c9706bc6b7752e"
+      "sha256": "e39b1154bc182f2fcdcc7939fe69189ab6f97a7ecc1116b2a252ab015815ff0c"
     },
     {
       "path": "hud.ts",
-      "sha256": "a83b6420f88124000830b822cf9c42d2f37703f3195bc839bb29abd91d365968"
+      "sha256": "f30e29afae3180d4bfa5ca25224eb65b529f7a02ff3157d98e26ad47d0453b34"
     },
     {
       "path": "index.ts",
-      "sha256": "ce583813a38ce1f1dd787fba1dd4077734b1e932789ed4ba2b4c3d736230899c"
+      "sha256": "212d9d75ff2943b82efa175e3f085b71ebd80c64c90b403b0e2480a41feefa30"
     },
     {
       "path": "input.ts",
-      "sha256": "7fe5fe9d1b10845d92647b6bfb8a51f168eb3b2786ea64ecf23fec60527cbbd4"
+      "sha256": "f3d08f5ece0cfa52e19346149ec546f29683dc9df626af7aee71674b5f29d2f4"
     },
     {
       "path": "kernel/engine.ts",
-      "sha256": "9cacf0ad396c688adec088da31a37ac50a48589083195bde2848c31488ce62d5"
+      "sha256": "413ccda7b327f36aaf52f29f8a03b5a23fd7bed5fa2742d26d94ef1011d3ea70"
     },
     {
       "path": "kernel/index.ts",
@@ -70,83 +110,119 @@
     },
     {
       "path": "kernel/ledger.ts",
-      "sha256": "f11fe030976a8ad0fccb733c4f485157990a6c75e3c57834e789b8ac0c2af3aa"
+      "sha256": "777c76c10c36237cdc8647a5073bb1bcd92aebc4e3b63d01f10cfe3c1bb8e3d3"
     },
     {
       "path": "kernel/need.ts",
-      "sha256": "dd7626c7bba10daf4ae0a0aecbd929d1ff9903e6f5be0c3470e51595bb7ee740"
+      "sha256": "9251ae0678c156cd3c9459a3c7714c94e6bc12ff9e2ddaaeb0d6da76437a94f2"
     },
     {
       "path": "kernel/pool.ts",
-      "sha256": "d5201f9d7db9362717614a8cfb1bc519dabecbe981a0cac94740d98cf0998627"
+      "sha256": "b28782b31d27f4e55702fc265a2d5aee17cca7bf09ab9b3c383fde534fdb4c51"
     },
     {
       "path": "kernel/random.ts",
-      "sha256": "fe38d96f0634ee0c067f6a2bea4a03417915bde70016a6928a2d383449a1c284"
+      "sha256": "9f57fdfa7ca9eaa5cc8b52bfb60c37e0e617b87195e733f8ec3f332c09824750"
     },
     {
       "path": "kernel/ring.ts",
-      "sha256": "c2a2c57bf69651ab703ca88c4d2dc65f92a1f7f126caad17f2d7d43211b02449"
+      "sha256": "2bb6a75be21bf365fedd848c5fc8955b9f5918d6ac8dccbebad85be4d0264eb5"
+    },
+    {
+      "path": "layout.ts",
+      "sha256": "958b0990b42a546a2691a687a0ea94973a8a2113411b505d14f196adc343f69a"
     },
     {
       "path": "match.ts",
-      "sha256": "262c5e915b60e8ec3bea0c46364d75d6b1cbc4cc1a4b64677e0283c84e92f7cf"
+      "sha256": "46be62feec9be61c4c88114cdbdc1f73a55bd413047a46b17124bcc957094479"
+    },
+    {
+      "path": "math.ts",
+      "sha256": "9ea7c26021706de52ff2237eb5667e0330385a87922a64227f09e3802156f280"
     },
     {
       "path": "pad.ts",
-      "sha256": "7258427e20a2f1f25f031e9b41122cdef4aba44fa8dddd50c5310013bdcd09b4"
+      "sha256": "9a5764ab81303281ebcc8f1b45edb807709ed4e692353f2e44952f4a88972379"
     },
     {
       "path": "perf.ts",
-      "sha256": "83eb2ffd66fa31a6d96c3d954240519f0c8e00e13fdba0102b2ae16a537c7bc6"
+      "sha256": "1c247bdd696c05104e49074f7454f96f631765f2ac7712aaa8c60bd2d82fe329"
     },
     {
       "path": "presence-check.ts",
-      "sha256": "827d5e825ca69a52848bb00540fe488af1a67d239f1c3df57060f0f7e97c7e16"
+      "sha256": "e0af97cf6ebf1f0102d4e4045b5c928aed02047f54c1155c49ec113a6f3e2c21"
     },
     {
       "path": "presence.ts",
-      "sha256": "35c43808c88974f44b87d75cb44d8d691a47e7ecb201aafdaf7a8cb76707db80"
+      "sha256": "c378d76ee04e63e3ad1ac04bd55489cc9708e639cd241a16325f4ef14887f993"
+    },
+    {
+      "path": "props.ts",
+      "sha256": "861ba13dcea23423841585c20963bb23a2cbb9d429b65df9e58da4e415afd341"
+    },
+    {
+      "path": "rollback.ts",
+      "sha256": "63c22c3d65dc9705b5ca0cb8fc6cc92f95cb0fd61d1c396a99443b3408876b60"
     },
     {
       "path": "rules.ts",
-      "sha256": "a07897ce035b0b67f96df64b7def3c500cbdd34e0b1f75b1ad2ce6017d9de960"
+      "sha256": "5b7ec826a1f8fcb95abd6e53d41859e1cc15635beacca1efb693aeef34165f9a"
     },
     {
       "path": "slot.ts",
-      "sha256": "477e506f06dcaa57a0b25afe86bcd8e6f8afe58ab89606966f3db62e201362f8"
+      "sha256": "29183153bff6c47672b6c78bfbf2ab41f2ef043b33ab39197fc1eb5a4c21baed"
     },
     {
       "path": "sound.ts",
-      "sha256": "53ce1e92c189c26833bb70a5f107cec0bcfe20a79f3d63aa885054edd58be51b"
+      "sha256": "6cc5290e3f4d893eb77aea894bfd75c0896fc84a00e726dfc902168295e2a13e"
     },
     {
       "path": "sprite.ts",
-      "sha256": "8468e9aba3c499567342aaa5d621be1b86cb73788e4e0c5e4e0163a647c044cd"
+      "sha256": "dd613ebc657c0cf12d104e1ae7c345e016bb880162afee6fcdcb8aced46c3466"
     },
     {
       "path": "steer.ts",
-      "sha256": "1f88f6b2ac51cf773fefed194edeb6ad38b65d5bba9c7c2c5d99a094d6633002"
+      "sha256": "d8e39a37310483adfd663d3b48128ef785d2c65af1fe991e1ec093dc07977cda"
+    },
+    {
+      "path": "terrain.ts",
+      "sha256": "99989ea88c8cf069dafef6ceccb5c3f6f44386f9d5458c2b37f940911e10f520"
     },
     {
       "path": "timeline.ts",
-      "sha256": "e593520cdbab21e8dc3e377bf7c6f710ee2f3158cb15a9addadb5d5277754cc8"
+      "sha256": "fa03221a98efbca422f63e9c792f645005a716dbf5b74092dfba3a843a7d89e1"
     },
     {
       "path": "touch.ts",
-      "sha256": "8f4024d77440fe58601d566ee1d8796da86024e7369abed46d68b2f4c04369fc"
+      "sha256": "bf13132a2db706f0eb1eb5dd482ccdf2e639c58ab5516c8d74331294161fe594"
+    },
+    {
+      "path": "track.ts",
+      "sha256": "07be0d21f98d004d97070db4933d6247213b1e9be8cafb05277f0b52e57f40c9"
     },
     {
       "path": "ui/board-ui.css",
-      "sha256": "46989160f4d9e4ccaf07cf5437aae5725b45f9dcc5d15dce35d47fd51903ccb6"
+      "sha256": "0ceab1503af697b5942f07434701d6b446e83ab2f87875e85870128d832e54b0"
     },
     {
       "path": "ui/board-ui.ts",
-      "sha256": "aff234dee4004fe07c0c3e39c7ebd5f20b5edf3f116668ba70910df0d78c1b33"
+      "sha256": "4174d7ed6ad6a2bff7c2eda1586b6e1b5e26ff631101e1e9a95ed333d676ee6f"
     },
     {
       "path": "ui/tokens.json",
-      "sha256": "c974b1fd82b80f611110f5936874ff6705a30f25e8f068795302adca241332ea"
+      "sha256": "3f334889bad4bc717499ac2c63e2c23fe6663b0794cf4bfdf85672bf74e40317"
+    },
+    {
+      "path": "view-canvas.ts",
+      "sha256": "62fa4240f5d23d51a6a04e3be75d94b29262e5f278f254393e8530bc6c6d2575"
+    },
+    {
+      "path": "view-dom.ts",
+      "sha256": "7eae8617e8883d58a3f6d7e8695d1b71ce7bff8a59e3fbf712fcb16bbd6b6efc"
+    },
+    {
+      "path": "water.ts",
+      "sha256": "3948dc1869010cc60376b1b7585a1d208acd6337c2b57cbad431985864b0972e"
     }
   ]
 }

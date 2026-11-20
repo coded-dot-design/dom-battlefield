@@ -1,5 +1,5 @@
 /**
- * fizlet/input: one controller for keys, pointer and a touch stick, mapped to named intents.
+ * @fzlt/core/input: one controller for keys, pointer and a touch stick, mapped to named intents.
  * Listeners only record; the engine's read phase latches edges and measures the target, so a step
  * sees a stable snapshot. Keys typed into the host page's fields (or inside [data-fizlet-ignore])
  * never count. Keys, the pointer, `press()` and `steer()` wake a settled engine. Held state is
@@ -12,6 +12,7 @@
  */
 import type { Engine, System } from "./kernel/engine";
 
+/** Options for `controls()`: the intents and their keys, the pointer target and the touch stick. */
 export interface ControlsOptions {
   /** intent → key codes, e.g. { fire: ["Space"], up: ["KeyW", "ArrowUp"] } (KeyboardEvent.code). */
   keys?: Record<string, string[]>;
@@ -27,6 +28,9 @@ const EDIT = "input,textarea,select,[contenteditable],[data-fizlet-ignore]";
 /** An intent by name, or by the number `id(name)` gave. */
 export type Intent = string | number;
 
+/** One controller for keys, pointer and a touch stick on engine `e`, mapped to named intents:
+ *  `down(intent)`, `hit(intent)` (one step per press), `pointer` and `stick`. It registers its
+ *  own read-phase system; `dispose()` removes it. */
 export function controls(e: Engine, o: ControlsOptions = {}) {
   const ctl = new AbortController(), on = { signal: ctl.signal };
   const names = Object.keys(o.keys ?? {}), N = names.length;
@@ -106,7 +110,10 @@ export function controls(e: Engine, o: ControlsOptions = {}) {
     if (editing(pe.target)) return;
     e.wake();
     measure(); // a press is rare and decides the stick side: measure it fresh
-    if (pe.pointerType === "touch" && o.stick && s[5]! < 0 && (o.stick === "any" || pe.clientX - p[6]! < p[8]! / 2)) {
+    // A touch on the stick side takes a free stick, and a held one too when it is the primary
+    // pointer: no other finger is down, so the old one is stale (iOS can end a touch with no
+    // pointerup). A second finger while the stick is held stays a pointer (multi-touch).
+    if (pe.pointerType === "touch" && o.stick && (s[5]! < 0 || pe.isPrimary) && (o.stick === "any" || pe.clientX - p[6]! < p[8]! / 2)) {
       s[2] = 1;
       s[3] = pe.clientX;
       s[4] = pe.clientY;
@@ -186,7 +193,7 @@ export function controls(e: Engine, o: ControlsOptions = {}) {
       if (down && !isDown(i)) pend[i] = 1;
       btn[i] = +down;
     },
-    /** Drive the stick from code (an on-screen stick, fizlet/pad): x, y in -1..1; `on = false` lets go. */
+    /** Drive the stick from code (an on-screen stick, @fzlt/core/pad): x, y in -1..1; `on = false` lets go. */
     steer(x: number, y: number, on = true) {
       e.wake();
       s[0] = on ? x : 0;
@@ -197,4 +204,98 @@ export function controls(e: Engine, o: ControlsOptions = {}) {
     system,
   };
 }
+/** The controller `controls()` returns. */
 export type Controls = ReturnType<typeof controls>;
+
+/** Options for `gamepad()`: which buttons press which intents, the dead zone, which pad. */
+export interface GamepadOptions {
+  /** intent → standard-layout button indices, e.g. { fire: [0], jump: [1, 7] } (0 is A / cross). */
+  map?: Record<string, number[]>;
+  /** Dead zone, 0..1, for the left stick and analog buttons (default 0.15). */
+  dead?: number;
+  /** Read only the pad at this `navigator.getGamepads()` index (local multiplayer: a controller per
+   *  seat); default: every pad, merged. */
+  index?: number;
+}
+
+/** Gamepads into a `controls()` controller: mapped buttons `press` their intents (down from half
+ *  a pull), the left stick `steer`s the controller's stick, both past the dead zone. It polls in
+ *  the controller's read phase, before the edges latch, and only while a pad is connected: a page
+ *  without one never calls `getGamepads()` per frame. Pads have no events for buttons, so a
+ *  settled engine is not polled: a pad connecting wakes it, and a game that settles between rounds
+ *  wakes it from its own start key. Zero allocation per read. `stop()` removes it (listeners,
+ *  polling, held intents and the stick). */
+export function gamepad(c: Controls, o: GamepadOptions = {}) {
+  const ctl = new AbortController(), on = { signal: ctl.signal };
+  const map = o.map ?? {}, names = Object.keys(map), N = names.length, D = o.dead ?? 0.15, only = o.index ?? -1;
+  const held = new Uint8Array(N), val = new Float64Array(N);
+  const sys = c.system, read = sys.read!;
+  let count = 0, steering = 0;
+  const poll = () => {
+    const pads = navigator.getGamepads();
+    let x = 0, y = 0, m = D * D;
+    val.fill(0);
+    for (let k = 0; k < pads.length; k++) {
+      const g = pads[k];
+      if (!g || !g.connected || (only >= 0 && g.index !== only)) continue;
+      for (let i = 0; i < N; i++) {
+        const b = map[names[i]!]!;
+        for (let j = 0; j < b.length; j++) {
+          const btn = g.buttons[b[j]!];
+          const v = btn ? btn.value || +btn.pressed : 0;
+          if (v > val[i]!) val[i] = v;
+        }
+      }
+      // The stick tilted furthest, by its squared length (a pad with no axes reads NaN: never past).
+      const ax = g.axes[0]!, ay = g.axes[1]!, d = ax * ax + ay * ay;
+      if (d > m) (m = d), (x = ax), (y = ay);
+    }
+    for (let i = 0; i < N; i++) {
+      const v = val[i]!, d = +(v >= 0.5);
+      val[i] = v > D ? (v - D) / (1 - D) : 0;
+      if (d !== held[i]) (held[i] = d), c.press(names[i]!, d > 0);
+    }
+    if (m > D * D) {
+      // Rescaled past the dead zone, so the stick starts at 0 at its edge and reaches 1. Input
+      // side, never the sim: a plain square root is fine here (steer's exact hypot is for steps).
+      m = Math.sqrt(m);
+      const k = Math.min(1, (m - D) / (1 - D)) / m;
+      c.steer(x * k, y * k);
+      steering = 1;
+    } else if (steering) (steering = 0), c.steer(0, 0, false);
+  };
+  const free = () => {
+    for (let i = 0; i < N; i++) if (held[i]) (held[i] = 0), c.press(names[i]!, false);
+    val.fill(0);
+    if (steering) (steering = 0), c.steer(0, 0, false);
+  };
+  const seen = () => {
+    count = 0;
+    try {
+      for (const g of navigator.getGamepads()) if (g && (only < 0 || g.index === only)) count++;
+    } catch {} // no Gamepad API, or a frame whose permissions policy blocks it: none
+    if (!count) free(); // the last one left: let go of what it held
+  };
+  sys.read = (e) => {
+    if (count) poll();
+    read(e);
+  };
+  addEventListener("gamepadconnected", () => (seen(), c.stick.active || c.steer(0, 0, false)), on);
+  addEventListener("gamepaddisconnected", seen, on);
+  seen();
+  return {
+    /** A pad is connected (the one at `index`, when given). */
+    get connected() { return count > 0; },
+    /** Pads connected (the one at `index` counts as at most 1). */
+    get count() { return count; },
+    /** An intent's analog value, 0..1 past the dead zone (a trigger's pull), as of the last read. */
+    value: (intent: string) => val[names.indexOf(intent)] ?? 0,
+    /** Stop reading pads: listeners off, polling off, its held intents and the stick let go. */
+    stop() {
+      ctl.abort();
+      sys.read = read;
+      count = 0;
+      free();
+    },
+  };
+}
