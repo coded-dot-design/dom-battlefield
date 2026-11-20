@@ -23,7 +23,6 @@ export function gameLd({ home, name, description, image, version, play, basedOn 
         gamePlatform: "Web browser",
         applicationCategory: "Game",
         softwareVersion: version,
-        license: "https://opensource.org/licenses/MIT",
         ...(basedOn ? { isBasedOn: { "@type": "VideoGame", ...basedOn } } : {}),
         potentialAction: { "@type": "PlayAction", target: play },
       },

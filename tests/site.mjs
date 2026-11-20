@@ -1,5 +1,5 @@
-// Battlefield site (GitHub Pages): landing page, style guide and the game under /play/.
-// Run after `npm run build && npm run site:build`. Serves artifacts/pages at /dom-battlefield/.
+// Battlefield site (Cloudflare Pages): landing page, style guide and the game under /play/.
+// Run after `npm run build && npm run site:build`. Serves artifacts/pages at / (the default SITE_BASE).
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
@@ -33,15 +33,15 @@ if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: np
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
-  if (!path.startsWith("/dom-battlefield/")) return res.writeHead(404).end();
-  let file = join(root, path.slice("/dom-battlefield".length));
+  if (!path.startsWith("/")) return res.writeHead(404).end();
+  let file = join(root, path);
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
   if (!existsSync(file)) return res.writeHead(404).end();
   res.writeHead(200, { "content-type": types[extname(file)] || "application/octet-stream" });
   res.end(readFileSync(file));
 });
 await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
-const base = `http://127.0.0.1:${server.address().port}/dom-battlefield/`;
+const base = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 let where = "start";
 try {
@@ -56,12 +56,12 @@ try {
   for (const path of ["", "style-guide/"]) {
     await page.goto(base + path);
     assert.equal(await page.locator("h1").count(), 1, `${path || "home"} has one h1`);
-    assert.match(await page.locator('meta[property="og:image"]').getAttribute("content"), /^https:\/\/.+\/dom-battlefield\/shots\/og\.png$/);
-    assert.match(await page.locator('link[rel="canonical"]').getAttribute("href"), /^https:\/\/.+\/dom-battlefield\//);
+    assert.match(await page.locator('meta[property="og:image"]').getAttribute("content"), /^https:\/\/battlefield\.fzlt\.games\/shots\/og\.png$/);
+    assert.match(await page.locator('link[rel="canonical"]').getAttribute("href"), /^https:\/\/battlefield\.fzlt\.games\//);
     const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
     assert.deepEqual(ld["@graph"].map((g) => g["@type"]), path ? ["WebPage", "BreadcrumbList"] : ["WebSite", "VideoGame"], `${path || "home"} structured data`);
     assert.equal(await page.locator('a[href="https://domvirus.com/"]').count() > 0, true, `${path || "home"} links back to DOM VIRUS`);
-    assert.ok(await page.locator('a[href="https://battlefieldblitz.domvirus.com/"]').count() > 0, `${path || "home"} links to Blitz on its own host`);
+    assert.ok(await page.locator('a[href="https://battlefieldblitz.fzlt.games/"]').count() > 0, `${path || "home"} links to Blitz on its own host`);
   }
   where = "hero";
   {
@@ -232,7 +232,7 @@ try {
   where = "play";
   await page.goto(base);
   await page.locator(".hero-start").click();
-  await page.waitForURL(/\/dom-battlefield\/play\/$/);
+  await page.waitForURL(/\/play\/$/);
   await page.waitForFunction(() => window.battlefield || document.querySelector("#battlefield"));
   assert.deepEqual(errors, []);
 
@@ -244,7 +244,7 @@ try {
   assert.equal(await pick.locator("option").count(), archive.length);
   const old = archive.at(-1).version;
   await pick.selectOption({ label: old });
-  assert.equal(new URL(await page.locator("[data-past-builds] a").getAttribute("href"), base).pathname, `/dom-battlefield/v/${old}/`);
+  assert.equal(new URL(await page.locator("[data-past-builds] a").getAttribute("href"), base).pathname, `/v/${old}/`);
   for (const { version } of archive) {
     const build = JSON.parse(readFileSync(join(root, "v", version, "build.json"), "utf8"));
     assert.equal(`v${build.version}`, version, `${version} is its own build`);
@@ -315,10 +315,10 @@ try {
   assert.match(await lp.locator(".bz-hero .eyebrow").textContent(), /BLITZ VERSION/);
   await lp.waitForFunction(() => window.blitzDemo?.world.tanks.filter((t) => t.alive).length >= 5, null, { timeout: 8000 });
   assert.equal(await lp.evaluate(() => window.blitzDemo.world.tanks.some((t) => t.you)), false, "the hero battle is all bots");
-  assert.equal(new URL(await lp.locator(".start-key").getAttribute("href"), base).pathname, "/dom-battlefield/blitz/play/");
-  assert.ok(await lp.locator('a[href="/dom-battlefield/"]').count() > 0, "links back to the original");
+  assert.equal(new URL(await lp.locator(".start-key").getAttribute("href"), base).pathname, "/blitz/play/");
+  assert.ok(await lp.locator('a[href="/"]').count() > 0, "links back to the original");
   // Blitz's home is its own site: this copy stays for old links and points search engines there.
-  assert.equal(await lp.locator('link[rel="canonical"]').getAttribute("href"), "https://battlefieldblitz.domvirus.com/");
+  assert.equal(await lp.locator('link[rel="canonical"]').getAttribute("href"), "https://battlefieldblitz.fzlt.games/");
   assert.match(await lp.locator("#drop pre").first().textContent(), /blitz\/blitz\.js/);
   await lp.setViewportSize({ width: 390, height: 844 });
   await lp.waitForTimeout(300);

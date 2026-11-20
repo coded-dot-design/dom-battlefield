@@ -52,7 +52,7 @@ it isn't done."
 - Four fronts: Hedgerow breach, Desert spearhead, Winter crossroads, Twin bridges.
   <!-- src: site/src/pages/index.astro line 22 -->
 - A single-player game. Multiplayer is future work, said without a date. <!-- src: dom-battlefield README line 110 -->
-- No runtime dependencies. Open source, MIT: github.com/coded-dot-design/dom-battlefield.
+- No runtime dependencies. Open source, MIT: github.com/fizlet/battlefield.
   <!-- src: dom-battlefield scripts/size.mjs comment; site/src/layouts/Base.astro line 96 -->
 - Size: **about 68 KB gzipped, the whole game** (HTML + JS + CSS). Measured: 67,632 bytes gzip on
   the committed `dist/`, v0.18.12, budget 68,000 enforced. Pair it with a play benefit.

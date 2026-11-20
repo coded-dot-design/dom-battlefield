@@ -1,22 +1,23 @@
-# DOM Battlefield
+# Battlefield (DOM Battlefield)
 
 A separate, lightweight squad-tactics app in the DOM Virus family. Battlefield builds the map, terrain, objectives and platoon simulation. Sherman Bytes owns the tank artwork and its cached renderer. Battlefield adds **zero bytes** to the Sherman game bundle.
 
-Site: https://coded-dot-design.github.io/dom-battlefield/ (landing page, every checked `main` push)
-Style guide: https://coded-dot-design.github.io/dom-battlefield/style-guide/ (Board UI, the board design system)
-Preview: https://coded-dot-design.github.io/dom-battlefield/play/ (the game, every checked `main` push)
-Play: https://coded-dot-design.github.io/dom-virus/battlefield/ (latest release, via the hub)
+Site: https://battlefield.fzlt.games/ (landing page, every checked `main` push)
+Style guide: https://battlefield.fzlt.games/style-guide/ (Board UI, the board design system)
+Staging: https://battlefield-staging.fzlt.games/play/ (every checked `main` push; noindex, behind Cloudflare Access)
+Play: https://domvirus.com/battlefield/ (latest release, via the hub)
 
-Custom domain (battlefield.domvirus.com): set the repo variables `SITE_URL=https://battlefield.domvirus.com`
-and `SITE_BASE=/`, then the Pages custom domain in the repo settings. The Pages build writes `CNAME` from
-`SITE_URL`. Blitz's own site is battlefieldblitz.domvirus.com (repo dom-battlefield-blitz); `/blitz/` here stays
-for old links and embeds (`/blitz/blitz.js`), with its canonical on battlefieldblitz.domvirus.com.
+Hosting: Cloudflare Pages on battlefield.fzlt.games (`.github/workflows/cloudflare.yml`: a PR deploys a preview,
+`main` deploys staging on battlefield-staging.fzlt.games (`PUBLIC_DEPLOY_TARGET=staging`: noindex, no sitemap), and
+promoting a green `main` SHA deploys production; no `CNAME` file). The build defaults to `SITE_URL=https://battlefield.fzlt.games` and `SITE_BASE=/`; the
+build env overrides them per target. Blitz's own site is battlefieldblitz.fzlt.games (repo dom-battlefield-blitz); `/blitz/` here stays
+for old links and embeds (`/blitz/blitz.js`), with its canonical on battlefieldblitz.fzlt.games.
 
-Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the site deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
+Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the site deploys to staging; production moves when that SHA is promoted (Actions → cloudflare → Run workflow). The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
 
 ## The site
 
-`site/` is an Astro site for GitHub Pages, seeded from the game: the page is a Board UI root
+`site/` is an Astro site (Cloudflare Pages), seeded from the game: the page is a Board UI root
 (`<html class="bui">`), so it wears the game's own tokens, keys and vertical shadows.
 
 | Path | What | Source |
@@ -42,17 +43,13 @@ The footer's site map comes from `site/src/sitemap.mjs`: add a new page there (o
 `npm run build && npm run site:build` writes `artifacts/pages` (and checks every local link);
 `npm run test:site` tests it; `npm run sync:archive` re-pins `site/archive.json` to every tag up to and including the current version (run it after a release is tagged; `tests/archive.mjs` fails while one is missing; every `/v/<version>/` page is `noindex`); `npm run shots` retakes the landing-page screenshots from `dist/`.
 The site's Board UI is `@fzlt/core/ui` from the vendored Fizlet engine (`vendor/fizlet/ui/`); its spec is
-[BOARD-UI.md](https://github.com/coded-dot-design/fizlet/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
+[BOARD-UI.md](https://github.com/fizlet/fzlt/blob/main/src/ui/BOARD-UI.md) in the Fizlet repo.
 
 **Battlefield Blitz** (the arcade version) is its own repo,
-[dom-battlefield-blitz](https://github.com/coded-dot-design/dom-battlefield-blitz), built on the
-[Fizlet](https://github.com/coded-dot-design/fizlet) engine. Its pages live here so they share the
+[dom-battlefield-blitz](https://github.com/fizlet/battlefield-blitz), built on the
+[Fizlet](https://github.com/fizlet/fzlt) engine. Its pages live here so they share the
 Battlefield brand and styling; `vendor/blitz/` pins its build (`node scripts/sync-blitz.mjs` after a
 Blitz release; `ORIGIN.json` records the version and commit).
-
-**Custom domain (dombattlefield.com):** set the repo variables `SITE_URL=https://dombattlefield.com`
-and `SITE_BASE=/` (Settings → Secrets and variables → Actions), add the domain under
-Settings → Pages, and point the DNS at GitHub Pages. Both the original and Blitz then live there.
 
 ## The game
 
@@ -137,7 +134,7 @@ npm run test:browser
 - `src/planning-cards.ts`: native fold keys, card state, navigation focus and reset behaviour.
 - `src/battle-overlays.ts`: pause/result focus containment, saved background `inert` state, map-relative placement and repeatable sticker entry.
 - `src/launch-effects.ts` and `src/launch-effects.css`: bounded launch feedback cloned from the pressed button; transient animations and timers clean up on completion, reset or abort.
-- `vendor/fizlet/`: the [Fizlet](https://github.com/coded-dot-design/fizlet) engine's source, vendored with its version, commit and SHA-256 per file in `ORIGIN.json`. `node scripts/sync-fizlet.mjs` refreshes it from a sibling checkout (`../fizlet`, or `FIZLET_DIR`). Never edit it by hand.
+- `vendor/fizlet/`: the [Fizlet](https://github.com/fizlet/fzlt) engine's source, vendored with its version, commit and SHA-256 per file in `ORIGIN.json`. `node scripts/sync-fizlet.mjs` refreshes it from a sibling checkout (`../fizlet`, or `FIZLET_DIR`). Never edit it by hand.
 - `src/sherman-sprites.ts`: the tank art (two cached tread frames, turret drawn separately), taken from Sherman Bytes 0.5.1. The game, its icons and the site's hero arena use it.
 - `src/audio.ts`: the event-driven synth (no assets), taken from the DOM VIRUS core 0.11.1. The game and the site's hero arena use it.
 - `src/selection-lock.ts`: the reversible mobile selection policy while a battle runs, taken from the DOM VIRUS core 0.11.1.
@@ -150,12 +147,14 @@ This is a **single-player** game. Multiplayer, friend invites, co-op/opposing pl
 
 The presets are fictional arcade exercises, not accurate reconstructions or authentic opposing armies. Both teams currently use the Sherman silhouette. Inspiration: [US Army Ordnance Corps — Rhino tanks and Normandy hedgerows](https://goordnance.army.mil/history/Rhino.html), [National Army Museum — El Alamein](https://www.nam.ac.uk/explore/battle-alamein), and [US Army Center of Military History — The Ardennes](https://history.army.mil/Publications/Publications-Catalog/The-Ardennes-Battle-Of-The-Bulge/). Twin bridges is a fictional training drill.
 
-MIT · Chris Cooley / coded.design
+Copyright (c) Chris Cooley. All rights reserved. Private repository (`fizlet/battlefield`); versions up
+to 1.0.3 were published under MIT (see the changelog).
 
 ## Changelog
 
 ### Unreleased
 
+- **Moved to `fizlet/battlefield`, a private repository; all rights reserved.** Every version up to and including 1.0.3 was published under the MIT licence, and copies of those stay MIT for whoever has one. From here on: "Copyright (c) Chris Cooley. All rights reserved." (`LICENSE`; package.json `"license": "UNLICENSED"`, package name `battlefield`). The site builds for `https://battlefield.fzlt.games/` at `/` by default (Cloudflare Pages serves the custom domain: the Pages workflow writes no `CNAME`); links follow the new names (engine `fizlet/fzlt`, Blitz `battlefieldblitz.fzlt.games`). `/v/<version>/` keeps reading released tags from the archived public repo. `vendor/` is re-synced from the same commits (Fizlet 0.27.0 `d372e26`, Blitz 1.0.1 `5556e0d`): only `ORIGIN.json` provenance changes. `scripts/sync-blitz.mjs` reads `BLITZ_DIR`.
 - **Accessible play (E14).** No gameplay change: same rules, same battles (`npm test`'s replay and zero-allocation tests unchanged and green).
   - Keyboard only, a whole match: the map takes focus (`role="application"`); the arrow keys move a square cursor and Space acts on that square through the same code a tap runs (send a tank, plant a flag, lock aim, move HQ, or select the tank there). Tanks show a focus ring; Esc closes the keys panel and the button tips and returns focus to their key; the tips' key takes focus when they open. The in-game keys panel and the README list the keys; the landing page has a keys table (`#keys`). `tests/a11y.mjs` (in `npm run test:browser`) plays boot → Plan battle → a routed tank → battle → pause → result → rematch → surrender with the keyboard alone and checks every Tab stop shows focus.
   - Screen readers: one polite live region, `src/announce.ts` (the contract of Fizlet's coming `fizlet/announce` brick, so a later Fizlet sync swaps the import): `[data-fz-announce]`, `role="status"`, created on first write, at most one write a second, pending texts per key coalesced. The game says the phase, both platoons' strength, capture time (10 s steps), comms and the result (flushed at once), change-only from the HUD pass, never from the model. The four other live roles (boot status, cost error, comms footer, result section) are gone: their text goes through the one region. `tests/announce.test.mjs` covers the region, coalescing, the rate limit and repeats.
@@ -205,7 +204,7 @@ MIT · Chris Cooley / coded.design
 
 ### 1.0.0 — On the Fizlet engine
 
-- The battle runs on [Fizlet](https://github.com/coded-dot-design/fizlet) 0.15.0, vendored in `vendor/fizlet/` (`node scripts/sync-fizlet.mjs`): the game's own animation loop is gone, and one Fizlet engine reads input, steps the battle at a fixed 60 Hz and renders. Command mode's half speed is every other step; planning still freezes time.
+- The battle runs on [Fizlet](https://github.com/fizlet/fzlt) 0.15.0, vendored in `vendor/fizlet/` (`node scripts/sync-fizlet.mjs`): the game's own animation loop is gone, and one Fizlet engine reads input, steps the battle at a fixed 60 Hz and renders. Command mode's half speed is every other step; planning still freezes time.
 - Replayable: every random roll in a battle (repair kits, salvage) comes from the engine's seeded `random`, restarted from the map's seed. Same seed and orders, same battle, frame for frame; no `Math.random` in play (`tests/replay.test.mjs`).
 - Zero allocation once warm: shells and bursts are pooled, paths fill typed buffers, line-of-sight candidates sort in scratch arrays, tanks share one object shape, and `Math.hypot` is gone from the step. Twenty thousand busy steps (twelve a side, every system working) make no minor GC (`tests/zero-gc.test.mjs`).
 - Repair kits are `fizlet/rules` drops (they land where they spawn and stay until collected); the battle still times them (first at 4.2 s, then every 7 s) and caps them as before.
@@ -218,10 +217,10 @@ MIT · Chris Cooley / coded.design
 - Every key on the site pages, link or button, presses onto its base and clicks anywhere on face or base. On a mouse a link key used to stay lifted when pressed (the kit's hover rule outranked press), and a click on the base missed (the base is a box-shadow). `board-ui/` takes Fizlet 0.14.1's fix: press beats hover, a `.bui-key::before` hit area over face and base, `pressCue` (Enter shows the press; iOS `:active`), aria-disabled link keys, a darker face under reduced motion.
 - Every in-page key wears `bui-key`; START BATTLE and PLAY BLITZ are the kit sticker key (`bui-key bui-sticker-key bui-call`) at page size instead of their own `.start-key` states. `test:site` presses every page key (`tests/keys.mjs`: centre, top edge and base, Enter, taps at 390). `dist/` unchanged.
 
-### 0.18.13 — Its own host: battlefield.domvirus.com
+### 0.18.13 — Its own host: battlefield.fzlt.games
 
-- The site is ready for battlefield.domvirus.com: with the repo variables `SITE_URL` and `SITE_BASE=/` the Pages build writes its `CNAME` and every canonical and og URL moves to the new host. The game's and the site's DOM VIRUS links now go to domvirus.com.
-- Blitz lives on its own site, battlefieldblitz.domvirus.com: the nav and footer link there, and `/blitz/` here stays for old links and embeds with its canonical on the new host.
+- The site is ready for battlefield.fzlt.games: with the repo variables `SITE_URL` and `SITE_BASE=/` the Pages build writes its `CNAME` and every canonical and og URL moves to the new host. The game's and the site's DOM VIRUS links now go to domvirus.com.
+- Blitz lives on its own site, battlefieldblitz.fzlt.games: the nav and footer link there, and `/blitz/` here stays for old links and embeds with its canonical on the new host.
 
 ### 0.18.12 — Your tank's orders on the plan card
 
