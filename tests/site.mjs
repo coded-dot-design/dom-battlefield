@@ -1,4 +1,4 @@
-// Battlefield site (GitHub Pages): landing page, style guide and the game under /play/.
+// Battlefield site (Cloudflare Pages): landing page, style guide and the game under /play/.
 // Run after `npm run build && npm run site:build`. Serves artifacts/pages at / (the default SITE_BASE).
 import assert from "node:assert/strict";
 import { createServer } from "node:http";

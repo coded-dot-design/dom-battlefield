@@ -4,19 +4,20 @@ A separate, lightweight squad-tactics app in the DOM Virus family. Battlefield b
 
 Site: https://battlefield.fzlt.games/ (landing page, every checked `main` push)
 Style guide: https://battlefield.fzlt.games/style-guide/ (Board UI, the board design system)
-Preview: https://battlefield.fzlt.games/play/ (the game, every checked `main` push)
+Staging: https://battlefield-staging.fzlt.games/play/ (every checked `main` push; noindex, behind Cloudflare Access)
 Play: https://domvirus.com/battlefield/ (latest release, via the hub)
 
-Hosting: Cloudflare Pages on battlefield.fzlt.games (Cloudflare serves the custom domain, so there is
-no `CNAME` file). The build defaults to `SITE_URL=https://battlefield.fzlt.games` and `SITE_BASE=/`; the
+Hosting: Cloudflare Pages on battlefield.fzlt.games (`.github/workflows/cloudflare.yml`: a PR deploys a preview,
+`main` deploys staging on battlefield-staging.fzlt.games (`PUBLIC_DEPLOY_TARGET=staging`: noindex, no sitemap), and
+promoting a green `main` SHA deploys production; no `CNAME` file). The build defaults to `SITE_URL=https://battlefield.fzlt.games` and `SITE_BASE=/`; the
 build env overrides them per target. Blitz's own site is battlefieldblitz.fzlt.games (repo dom-battlefield-blitz); `/blitz/` here stays
 for old links and embeds (`/blitz/blitz.js`), with its canonical on battlefieldblitz.fzlt.games.
 
-Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the site deploys. The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
+Release flow: push to `main` → checks pass → `vX.Y.Z` tag is created from `package.json` and the site deploys to staging; production moves when that SHA is promoted (Actions → cloudflare → Run workflow). The hub's hourly Pages build picks up the newest tag in the pinned major line automatically; bump `dom-virus/battlefield.json` only for a new major line or to pin a specific build. Roll back by re-pinning an older tag in the hub.
 
 ## The site
 
-`site/` is an Astro site for GitHub Pages, seeded from the game: the page is a Board UI root
+`site/` is an Astro site (Cloudflare Pages), seeded from the game: the page is a Board UI root
 (`<html class="bui">`), so it wears the game's own tokens, keys and vertical shadows.
 
 | Path | What | Source |
