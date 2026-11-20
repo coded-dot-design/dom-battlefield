@@ -27,4 +27,7 @@ console.log(`Total: ${total} gzip bytes`);
 // the performance overlay switch: 71,911 -> 72,720 B (+809: the kit's setting(), the header key,
 // F9 and the lazy loader; measured). The overlay itself (fizlet/perf, 1.87 KB gzip) is a separate
 // chunk that loads only when a player turns it on, so it is not in this total.
-if (total > 73000) throw Error("73KB compressed app budget exceeded");
+// 74,360 for accessible play (E14): 72,693 -> 74,053 B on Fizlet 0.27.0 (+1,360: the one polite
+// announcer, the map's keyboard square cursor, Esc for the keys panel and tips, tank focus rings,
+// the keys panel's map rows; HTML +108, JavaScript +1,207, CSS +45; measured). Raised by that delta.
+if (total > 74360) throw Error("74,360 B compressed app budget exceeded");
