@@ -57,5 +57,6 @@ export const PAGES = [
 export const HIDDEN = [
   { match: /^v\/[^/]+\/$/, why: "released builds: noindex, canonical on /play/" },
   { match: /^blitz\//, why: "old Blitz links: canonical on battlefieldblitz.fzlt.games" },
+  { match: /^404\.html$/, why: "the not-found page the host serves for a missing path: noindex" },
 ];
 export const hidden = (path) => HIDDEN.some((h) => h.match.test(path));

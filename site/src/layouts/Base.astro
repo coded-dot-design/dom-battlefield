@@ -15,8 +15,9 @@ import { SITE, consentSnippet } from '../lib/analytics/site.mjs';
 const { title, description, page = 'home', app = false, jsonld } = Astro.props;
 const consent = consentSnippet(import.meta.env); // '' when no analytics id is set: nothing ships
 const canonical = Astro.props.canonical ? new URL(Astro.props.canonical) : new URL(Astro.url.pathname, Astro.site);
-// Staging and PR previews (Cloudflare, PUBLIC_DEPLOY_TARGET=staging) stay out of search.
-const noindex = import.meta.env.PUBLIC_DEPLOY_TARGET === 'staging';
+// Staging and PR previews (Cloudflare, PUBLIC_DEPLOY_TARGET=staging) stay out of search, and so does a page
+// that asks (noindex: the not-found page).
+const noindex = Astro.props.noindex || import.meta.env.PUBLIC_DEPLOY_TARGET === 'staging';
 const nav = [
   ['home', 'Game', base()],
   ['how', 'How it plays', base('#how')],

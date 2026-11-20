@@ -18,6 +18,11 @@ if (!existsSync(join(root, "index.html"))) throw Error("Build the site first: np
   const ld = JSON.parse(play.match(/<script type="application\/ld\+json">(.*?)<\/script>/)[1]);
   assert.deepEqual(ld["@graph"].map((g) => g["@type"]), ["WebPage", "BreadcrumbList"]);
 }
+// The not-found page (site/src/pages/404.astro): 404.html at the root, noindex, a key home.
+{
+  const nf = readFileSync(join(root, "404.html"), "utf8");
+  assert.ok(/<meta name="robots" content="noindex/.test(nf) && nf.includes('href="/"'), "404.html is noindex and links home");
+}
 // Discovery files (scripts/discovery.mjs): robots.txt names the sitemap; the sitemap and llms.txt list the
 // indexable pages (home, /play/, /style-guide/) and nothing that is noindex or canonical elsewhere.
 {
