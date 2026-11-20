@@ -1,10 +1,10 @@
 {
-  "name": "@coded-design/dom-battlefield",
+  "name": "battlefield",
   "version": "1.0.3",
   "private": true,
   "type": "module",
-  "description": "A separate DOM battlefield and squad tactics app, powered by Sherman Bytes artwork.",
-  "license": "MIT",
+  "description": "Battlefield: a squad tactics board game on the DOM, powered by Sherman Bytes artwork. By Chris Cooley.",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc --noEmit",

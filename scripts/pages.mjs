@@ -1,5 +1,5 @@
 // After `astro build`: copy the committed game build (dist) to /play/ and check the site links up.
-// artifacts/pages is exactly what GitHub Pages serves:
+// artifacts/pages is exactly what the host (Cloudflare Pages) serves:
 //   /                landing page        (site/src/pages/index.astro)
 //   /style-guide/    Board UI guide      (site/src/pages/style-guide/index.astro)
 //   /play/           the game            (dist, the same bytes the DOM VIRUS hub ships)
@@ -18,7 +18,7 @@ if (!existsSync("dist/index.html")) throw Error("Build the game first (npm run b
 cpSync("dist", join(out, "play"), { recursive: true });
 // The served copies of dist (/play/, /v/<version>/) get the head every page of the site has: canonical,
 // share tags and JSON-LD (from the page's own title and description). dist stays the bytes the hub ships.
-const home = new URL((process.env.SITE_BASE || "/dom-battlefield").replace(/\/?$/, "/"), process.env.SITE_URL || "https://coded-dot-design.github.io").href;
+const home = new URL((process.env.SITE_BASE || "/").replace(/\/?$/, "/"), process.env.SITE_URL || "https://battlefield.fzlt.games").href;
 const playUrl = `${home}play/`;
 const unescape = (s) => s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const attr = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -60,7 +60,7 @@ console.log(`Blitz ${blitzPin.version}: /blitz/ (about), /blitz/play/ (game), /b
 console.log(`Discovery: ${writeDiscovery(out, home, "DOM Battlefield").length} pages in sitemap.xml and llms.txt`);
 
 // Every local href/src in the built pages must resolve to a file.
-const BASE = `${(process.env.SITE_BASE || "/dom-battlefield").replace(/\/$/, "")}/`;
+const BASE = `${(process.env.SITE_BASE || "/").replace(/\/$/, "")}/`;
 const pages = [];
 const walk = (dir) => readdirSync(dir).forEach((n) => {
   const f = join(dir, n);

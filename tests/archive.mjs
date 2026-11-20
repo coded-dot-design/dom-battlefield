@@ -68,15 +68,15 @@ if (newest === current) assert.ok(landing.includes(`>${current} · current</opti
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
-  if (!path.startsWith("/dom-battlefield/")) return res.writeHead(404).end();
-  let file = join(root, path.slice("/dom-battlefield".length));
+  if (!path.startsWith("/")) return res.writeHead(404).end();
+  let file = join(root, path);
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
   if (!existsSync(file)) return res.writeHead(404).end();
   res.writeHead(200, { "content-type": types[extname(file)] || "application/octet-stream" });
   res.end(readFileSync(file));
 });
 await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
-const base = `http://127.0.0.1:${server.address().port}/dom-battlefield/`;
+const base = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -90,7 +90,7 @@ try {
   const pick = page.locator("[data-past-builds] select");
   for (const version of ["v0.15.8", newest]) {
     await page.goto(base);
-    await pick.selectOption({ value: `/dom-battlefield/v/${version}/` });
+    await pick.selectOption({ value: `/v/${version}/` });
     await page.locator("[data-past-builds] a").click();
     await page.waitForURL(new RegExp(`/v/${version.replaceAll(".", "\\.")}/$`));
     await page.waitForFunction(() => document.querySelector("#battlefield")?.children.length > 0);

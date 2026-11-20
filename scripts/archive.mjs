@@ -7,6 +7,8 @@ import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 
+// The released builds' tags live in the old public repo (archived): fizlet/battlefield is a fresh
+// private repo whose first commit is the 1.0.3 tree, so it has none of these commits.
 const REPO = "https://github.com/coded-dot-design/dom-battlefield.git";
 export const NOINDEX = '<meta name="robots" content="noindex">';
 

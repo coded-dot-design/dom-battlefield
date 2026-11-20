@@ -2,7 +2,7 @@
 // provenance in vendor/fizlet/ORIGIN.json. The game runs on its kernel and fizlet/rules; the site's
 // Board UI comes from vendor/fizlet/ui (fizlet/ui).
 //   node scripts/sync-fizlet.mjs
-// Never edit vendor/fizlet by hand: change coded-dot-design/fizlet, then run this.
+// Never edit vendor/fizlet by hand: change fizlet/fzlt, then run this.
 import { cpSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -18,8 +18,8 @@ walk("vendor/fizlet");
 const version = JSON.parse(readFileSync(`${from}/package.json`, "utf8")).version;
 const commit = execFileSync("git", ["-C", from, "rev-parse", "HEAD"]).toString().trim();
 writeFileSync("vendor/fizlet/ORIGIN.json", JSON.stringify({
-  note: "Generated snapshot. Edit coded-dot-design/fizlet, then run node scripts/sync-fizlet.mjs.",
-  repository: "https://github.com/coded-dot-design/fizlet",
+  note: "Generated snapshot. Edit fizlet/fzlt, then run node scripts/sync-fizlet.mjs.",
+  repository: "https://github.com/fizlet/fzlt",
   version,
   commit,
   files: files.sort().map((f) => ({ path: relative("vendor/fizlet", f), sha256: sha(f) })),

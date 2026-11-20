@@ -1,8 +1,8 @@
 {
-  "$comment": "Astro page engine config for the DOM Battlefield site (DOM Battlefield + Battlefield Blitz). Run the engine with --site site (page JSON in site/src/content/pages). siteUrl is the live GitHub Pages address until battlefield.domvirus.com is pointed. Board pages never carry install copy (brand/README in dom-virus, \u00a73). Play pages are the games (app mode) and stay outside the engine's page types.",
+  "$comment": "Astro page engine config for the DOM Battlefield site (DOM Battlefield + Battlefield Blitz). Run the engine with --site site (page JSON in site/src/content/pages). siteUrl is the production host (Cloudflare Pages). Board pages never carry install copy (brand/README in dom-virus, \u00a73). Play pages are the games (app mode) and stay outside the engine's page types.",
   "brand": {
     "name": "DOM Battlefield",
-    "siteUrl": "https://coded-dot-design.github.io/dom-battlefield",
+    "siteUrl": "https://battlefield.fzlt.games",
     "defaultImage": "/shots/og.png",
     "author": {
       "name": "Chris Cooley",
